@@ -28,7 +28,7 @@ export default function PlayGate({
   onPaid: () => void;
 }) {
   const { user } = useAuthContext();
-  const { wallet, guestBalance, spendForPlay } = useTokens();
+  const { wallet, guestBalance, spendForPlay, adFree } = useTokens();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [adOpen, setAdOpen] = useState(false);
@@ -82,10 +82,12 @@ export default function PlayGate({
 
         {user && (short || again) ? (
           <span className="tk-gatebar-earn">
-            <button type="button" className="tk-mini" onClick={() => setAdOpen(true)} title="Watch an ad">
-              <Tv size={15} aria-hidden="true" />+{wallet?.ad_reward ?? 50}
-              <TokenIcon size={14} />
-            </button>
+            {!adFree?.active ? (
+              <button type="button" className="tk-mini" onClick={() => setAdOpen(true)} title="Watch an ad">
+                <Tv size={15} aria-hidden="true" />+{wallet?.ad_reward ?? 50}
+                <TokenIcon size={14} />
+              </button>
+            ) : null}
             <Link className="tk-mini" to="/tokens#buy" title="Get tokens" aria-label="Get tokens">
               <Plus size={15} aria-hidden="true" />
               <TokenIcon size={14} />

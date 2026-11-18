@@ -9,6 +9,7 @@ import TokenPill from "../components/TokenPill";
 import FeatureCarousel from "../components/FeatureCarousel";
 import LaptopIconSmoke from "../components/LaptopIconSmoke";
 import "../components/feature-carousel.css";
+import AdSlot from "../components/AdSlot";
 import "./home3.css";
 
 /*
@@ -412,6 +413,7 @@ export default function Home3({ videoHero = false }: { videoHero?: boolean }) {
             <Link to="/login">Sign in</Link>
             <Link to="/privacy">Privacy policy</Link>
           </nav>
+          <AdSlot placement="home-footer" className="h3-ad" />
           <p className="h3-studio-copy">© {new Date().getFullYear()} Senevon Game Studio</p>
         </footer>
       </>

@@ -63,8 +63,23 @@ function writeGuest(g: GuestWallet) {
   }
 }
 
+/** Ad-free status (supabase/adfree.sql). `reason`: a paid pass, or included with a
+ *  subscription / Pro / unlimited account. */
+export type AdFree = {
+  active: boolean;
+  reason: "pass" | "subscriber" | "pro" | "unlimited" | null;
+  expires_at: string | null;
+  auto_renew: boolean;
+  price: number;
+};
+export const AD_FREE_PRICE = 85;
+
 type Ctx = {
   wallet: Wallet | null;
+  /** undefined while loading; null = no ad-free status (guest, or not set up on the server) */
+  adFree: AdFree | null | undefined;
+  buyAdFree: () => Promise<void>;
+  cancelAdFree: () => Promise<void>;
   /** guest's browser balance; null when signed in */
   guestBalance: number | null;
   loading: boolean;
@@ -94,6 +109,7 @@ export function tokenErrorText(err: unknown) {
   if (msg.includes("already_subscribed")) return "You already have a subscription.";
   if (msg.includes("mock_payments_disabled")) return "Payments aren't available yet.";
   if (msg.includes("not_signed_in")) return "Sign in first.";
+  if (msg.includes("insufficient_tokens")) return "Not enough tokens.";
   if (msg.includes("Could not find the function")) return "Tokens aren't set up on the server yet (run supabase/tokens.sql).";
   return "Something went wrong. Please try again.";
 }
@@ -109,6 +125,20 @@ export function TokensProvider({ children }: { children: ReactNode }) {
     if (error) throw new Error(error.message);
     return data as T;
   }, []);
+
+  const [adFree, setAdFree] = useState<AdFree | null | undefined>(undefined);
+  const loadAdFree = useCallback(async () => {
+    try {
+      setAdFree(await rpc<AdFree>("ad_free_state"));
+    } catch {
+      setAdFree(null); // not set up yet (supabase/adfree.sql): ads as normal
+    }
+  }, [rpc]);
+  // guests always see ads; signed-in players: known once their state loads
+  useEffect(() => {
+    if (authLoading) setAdFree(undefined);
+    else if (!user || !supabase) setAdFree(null);
+  }, [user, authLoading]);
 
   const [guestBalance, setGuestBalance] = useState<number | null>(null);
   useEffect(() => {
@@ -151,8 +181,10 @@ export function TokensProvider({ children }: { children: ReactNode }) {
       setWallet(null);
     } finally {
       setLoading(false);
+      // after the wallet: renewals are charged from it, and a subscription makes you ad-free
+      void loadAdFree();
     }
-  }, [user, rpc]);
+  }, [user, rpc, loadAdFree]);
 
   useEffect(() => {
     void refresh();
@@ -194,6 +226,16 @@ export function TokensProvider({ children }: { children: ReactNode }) {
 
   const subscribe = useCallback(async (plan: "monthly" | "yearly", currency: string) => {
     setWallet(await rpc<Wallet>("mock_subscribe", { p_plan: plan, p_currency: currency }));
+    void loadAdFree(); // subscribers are ad-free
+  }, [rpc, loadAdFree]);
+
+  const buyAdFree = useCallback(async () => {
+    setAdFree(await rpc<AdFree>("ad_free_buy"));
+    setWallet(await rpc<Wallet>("token_wallet"));
+  }, [rpc]);
+
+  const cancelAdFree = useCallback(async () => {
+    setAdFree(await rpc<AdFree>("ad_free_cancel"));
   }, [rpc]);
 
   const buyPack = useCallback(async (pack: string, currency: string) => {
@@ -222,8 +264,8 @@ export function TokensProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const value = useMemo(
-    () => ({ wallet, guestBalance, loading, refresh, spendForPlay, startAdView, claimAd, subscribe, buyPack, cancel, history, redeem }),
-    [wallet, guestBalance, loading, refresh, spendForPlay, startAdView, claimAd, subscribe, buyPack, cancel, history, redeem],
+    () => ({ wallet, adFree, buyAdFree, cancelAdFree, guestBalance, loading, refresh, spendForPlay, startAdView, claimAd, subscribe, buyPack, cancel, history, redeem }),
+    [wallet, adFree, buyAdFree, cancelAdFree, guestBalance, loading, refresh, spendForPlay, startAdView, claimAd, subscribe, buyPack, cancel, history, redeem],
   );
   return <TokensContext.Provider value={value}>{children}</TokensContext.Provider>;
 }
@@ -232,6 +274,12 @@ export function useTokens() {
   const ctx = useContext(TokensContext);
   if (!ctx) throw new Error("useTokens must be used inside <TokensProvider>");
   return ctx;
+}
+
+/** Should ads show? false while we don't know yet (so ad-free players never see one flash up). */
+export function useShowAds() {
+  const { adFree } = useTokens();
+  return adFree !== undefined && !adFree?.active;
 }
 
 /* ---------- prices (public, cached for the session) ---------- */

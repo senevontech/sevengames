@@ -15,7 +15,7 @@
 -- token ledger: allow 'carrom' spends (keep this list in sync with tokens.sql)
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
-  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom'));
+  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree'));
 
 -- 1) Catalog ---------------------------------------------------------
 create table if not exists public.carrom_catalog (

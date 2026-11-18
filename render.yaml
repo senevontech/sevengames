@@ -11,6 +11,11 @@ services:
         sync: false
       - key: VITE_GAM_REWARDED_UNIT
         sync: false
+      # Google AdSense (publisher id ca-pub-… and a responsive display ad unit id)
+      - key: VITE_ADSENSE_CLIENT
+        sync: false
+      - key: VITE_ADSENSE_SLOT
+        sync: false
     routes:
       # SPA fallback: serve index.html for any path without a file extension
       - type: rewrite

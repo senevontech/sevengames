@@ -13,6 +13,7 @@ import { pushRecent } from "../lib/recent";
 import { useGameCost, useTokens } from "../lib/tokens";
 import { formatTokens } from "../lib/currency";
 import PlayGate from "../components/PlayGate";
+import AdSlot from "../components/AdSlot";
 import TokenIcon from "../components/TokenIcon";
 import "./game-page.css";
 import "../games/game-skin.css";
@@ -274,6 +275,7 @@ export default function GamePage() {
             )}
           </section>
         </div>
+        <div className="gp-side">
         <Leaderboard
           leaders={leaders}
           loading={loading}
@@ -283,6 +285,8 @@ export default function GamePage() {
           personalBest={best}
           gameId={game.id}
         />
+        <AdSlot placement="game-side" />
+        </div>
       </div>
 
       {nudge && !user ? (

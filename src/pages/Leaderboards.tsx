@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Crown, Medal, Trophy } from "lucide-react";
 import { games, scoreLabel, type Game } from "../catalog";
 import { GamePoster } from "../components/GamePoster";
+import AdSlot from "../components/AdSlot";
 import PlayerAvatar from "../components/PlayerAvatar";
 import { useAuthContext } from "../context/AuthContext";
 import { isLowerBetter, useLeaderboard, useOverallLeaderboard } from "../lib/scores";
@@ -168,6 +169,8 @@ export default function Leaderboards() {
       <section className="ac-card lb-board" aria-live="polite">
         {game ? <GameBoard key={game.id} game={game} you={user?.id} /> : <OverallBoard you={user?.id} />}
       </section>
+
+      <AdSlot placement="leaderboards" />
     </div>
   );
 }

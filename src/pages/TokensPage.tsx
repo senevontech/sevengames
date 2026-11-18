@@ -12,9 +12,11 @@ import {
   Tv,
   X,
   Zap,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import TokenIcon from "../components/TokenIcon";
+import { AD_FREE_PRICE } from "../lib/tokens";
 import { useAuthContext } from "../context/AuthContext";
 import { tokenErrorText, usePlanPrices, useTokenPacks, useTokens, type LedgerRow, type TokenPack } from "../lib/tokens";
 import { formatMoney, formatTokens, pickCurrency } from "../lib/currency";
@@ -33,6 +35,7 @@ const REASON: Record<string, { label: string; Icon: LucideIcon }> = {
   guest: { label: "Guest tokens carried over", Icon: Gift },
   purchase: { label: "Bought a token pack", Icon: ShoppingBag },
   carrom: { label: "Carrom shop", Icon: Gamepad2 },
+  adfree: { label: "Ad-free month", Icon: ShieldCheck },
 };
 
 const PACK_META: Record<string, { name: string; flag?: string; coins: number }> = {
@@ -68,7 +71,14 @@ function CoinStack({ n }: { n: number }) {
 
 export default function TokensPage() {
   const { user } = useAuthContext();
-  const { wallet, guestBalance, loading, subscribe, buyPack, cancel, history, refresh, redeem } = useTokens();
+  const { wallet, guestBalance, loading, subscribe, buyPack, cancel, history, refresh, redeem, adFree, buyAdFree, cancelAdFree } = useTokens();
+  const noAds = Boolean(adFree?.active);
+  const [adFreeArmed, setAdFreeArmed] = useState(false);
+  useEffect(() => {
+    if (!adFreeArmed) return;
+    const id = window.setTimeout(() => setAdFreeArmed(false), 3500);
+    return () => window.clearTimeout(id);
+  }, [adFreeArmed]);
   const location = useLocation();
   const [code, setCode] = useState("");
   const [codeOpen, setCodeOpen] = useState(false);
@@ -206,14 +216,16 @@ export default function TokensPage() {
               <ShoppingBag size={16} aria-hidden="true" /> Buy tokens
             </a>
           ) : null}
-          <button
-            type="button"
-            className="ac-btn ac-btn-ghost"
-            disabled={!wallet || adsLeft === 0}
-            onClick={() => setAdOpen(true)}
-          >
-            <Tv size={16} aria-hidden="true" /> Watch ad · +{wallet?.ad_reward ?? 50}
-          </button>
+          {!noAds ? (
+            <button
+              type="button"
+              className="ac-btn ac-btn-ghost"
+              disabled={!wallet || adsLeft === 0}
+              onClick={() => setAdOpen(true)}
+            >
+              <Tv size={16} aria-hidden="true" /> Watch ad · +{wallet?.ad_reward ?? 50}
+            </button>
+          ) : null}
           {!wallet && !loading ? (
             <button type="button" className="ac-btn ac-btn-ghost" onClick={() => void refresh()}>
               Retry
@@ -377,8 +389,73 @@ export default function TokensPage() {
         <p className="tw-fine">Prices shown in {currency}. Unused tokens never expire.</p>
       </section>
 
+      {/* ---------- ad-free pass ---------- */}
+      <section className="tw-section" id="adfree">
+        <div className="ac-section-head">
+          <div>
+            <h2 className="ac-h2">Go ad-free</h2>
+            <p className="ac-sub">
+              No ads anywhere on Senevon for <TokenIcon size={14} /> {AD_FREE_PRICE} tokens a month. Renews automatically; cancel any time.
+            </p>
+          </div>
+        </div>
+        <div className="ac-card tw-sub tw-adfree">
+          <span className="tw-icon" aria-hidden="true">
+            <ShieldCheck size={20} />
+          </span>
+          <div className="tw-sub-text">
+            <p>
+              <b>Ad-free</b>
+              {noAds ? <span className="tw-status active">Active</span> : null}
+            </p>
+            <p className="ac-sub">
+              {adFree === undefined
+                ? "Checking…"
+                : adFree === null
+                  ? "Not available yet."
+                  : adFree.reason === "subscriber"
+                    ? "Included with your subscription."
+                    : adFree.reason === "pro"
+                      ? "Included with Senevon Pro."
+                      : adFree.reason === "unlimited"
+                        ? "Included with your unlimited account."
+                        : adFree.active && adFree.expires_at
+                          ? adFree.auto_renew
+                            ? `Ad-free until ${fmtDate(adFree.expires_at)} · renews for ${AD_FREE_PRICE} tokens`
+                            : `Ad-free until ${fmtDate(adFree.expires_at)} · won't renew`
+                          : "Hide every ad on the site, including ad breaks, for 30 days at a time."}
+            </p>
+          </div>
+          {adFree && adFree.reason === "pass" ? (
+            adFree.auto_renew ? (
+              <button type="button" className="ac-btn ac-btn-sm" disabled={busy} onClick={() => void run(cancelAdFree, "Renewal off. You stay ad-free until the paid days run out.")}>
+                Cancel renewal
+              </button>
+            ) : (
+              <button type="button" className="ac-btn ac-btn-sm ac-btn-primary" disabled={busy} onClick={() => void run(buyAdFree, "Renewal is back on.")}>
+                Turn renewal on
+              </button>
+            )
+          ) : adFree && !adFree.active ? (
+            <button
+              type="button"
+              className={`ac-btn ac-btn-sm ac-btn-primary${adFreeArmed ? " is-armed" : ""}`}
+              disabled={busy || !wallet || wallet.balance < AD_FREE_PRICE}
+              onClick={() => {
+                if (!adFreeArmed) return setAdFreeArmed(true);
+                setAdFreeArmed(false);
+                void run(buyAdFree, "You're ad-free for 30 days!");
+              }}
+            >
+              {adFreeArmed ? "Confirm" : "Go ad-free"} · <TokenIcon size={14} /> {AD_FREE_PRICE}
+            </button>
+          ) : null}
+        </div>
+      </section>
+
       {/* ---------- earn + code ---------- */}
       <div className="tw-row">
+        {!noAds ? (
         <section className="ac-card tw-earn">
           <span className="tw-icon" aria-hidden="true">
             <Tv size={20} />
@@ -396,6 +473,7 @@ export default function TokensPage() {
             Watch
           </button>
         </section>
+        ) : null}
 
         {wallet && !wallet.unlimited ? (
           <section className="ac-card tw-code">

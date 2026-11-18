@@ -590,3 +590,7 @@
   width: 100%;
   height: 100%;
 }
+
+.tw-adfree .ac-btn .token-icon {
+  margin: 0 2px;
+}
