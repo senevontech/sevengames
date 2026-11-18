@@ -200,7 +200,17 @@ export default function CarromGame({ onFinish }: GameProps) {
       const world = worldRef.current;
       if (!world || phaseRef.current !== "place") return;
       if (world.players[world.turn].kind === "remote") return;
-      if (modeRef.current.startsWith("host") && world.turn !== mySeatRef.current) return;
+      const online = modeRef.current.startsWith("host") || modeRef.current === "join";
+      if (online && world.turn !== mySeatRef.current) return;
+      if (netRef.current && modeRef.current === "join") {
+        // Online guest: the host plays the shot. Don't simulate it here too (the two would fight);
+        // follow the host's live positions and its snapshot when the shot ends, as for its own shots.
+        if (!world.striker.alive) return;
+        netRef.current.sendShot(world.turn, world.strikerT[world.turn] ?? 500, dir, power);
+        shotStartRef.current = performance.now();
+        setPhase("shooting");
+        return;
+      }
       if (!shootStriker(world, dir, power)) return;
       shotStartRef.current = performance.now();
       setPhase("shooting");
@@ -232,6 +242,8 @@ export default function CarromGame({ onFinish }: GameProps) {
   const finishShot = useCallback(() => {
     const world = worldRef.current;
     if (!world) return;
+    // online guest: the host decides the outcome (pots, fouls, next turn) and sends a snapshot
+    if (modeRef.current === "join") return;
     const shooter = world.turn;
     const res = resolveShot(world);
     setPotted({ white: world.potted.white.length, black: world.potted.black.length });
@@ -550,6 +562,8 @@ export default function CarromGame({ onFinish }: GameProps) {
       onStart: (cfg: { seats: Seats; players: Array<{ name: string; kind: "human" | "cpu" }> }) => {
         finishedRef.current = false;
         setReward(null);
+        // a guest's seat comes from the host's roster (the host is always seat 0)
+        if (modeRef.current === "join" && netRef.current) mySeatRef.current = netRef.current.mySeatIndex;
         // online: equal strikers for everyone, so upgrades never decide a match
         const players = cfg.players.map((p, i): { seat: number; name: string; kind: SeatKind; stats: StrikerStats } => ({
           seat: i,

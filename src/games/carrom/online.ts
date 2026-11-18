@@ -99,7 +99,8 @@ export class CarromNet {
     const ch = this.makeChannel(code);
 
     this.wirePresence(ch, name);
-    this.wireGuestMessages(ch);
+    // the host listens for what guests send (place / shot)
+    this.wireHostMessages(ch);
 
     ch.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
@@ -128,7 +129,8 @@ export class CarromNet {
     const ch = this.makeChannel(clean);
 
     this.wirePresence(ch, name);
-    this.wireHostMessages(ch);
+    // guests listen for what the host sends (roster / start / snapshots / live positions)
+    this.wireGuestMessages(ch);
 
     ch.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
