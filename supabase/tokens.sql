@@ -330,10 +330,18 @@ begin
   if v_user is null then raise exception 'not_signed_in'; end if;
   if p_source not in ('network', 'house') then raise exception 'bad_source'; end if;
   if _tok_ads_today(v_user) >= _tok_const('ad_daily_cap') then raise exception 'ad_cap_reached'; end if;
-  -- at most a few open views at once (stops pre-opening a stack of views)
-  if (select count(*) from ad_views where user_id = v_user and claimed_at is null
-      and started_at > now() - interval '10 minutes') >= 3 then
-    raise exception 'too_many_open_ads';
+  -- One open view per player: an ad that was closed early (or opened twice) is reused and its
+  -- clock restarts, instead of piling up views until new ones are refused. The minimum watch
+  -- time still counts from this new start, so a reused view can't be claimed any sooner.
+  select id into v_id from ad_views
+    where user_id = v_user and claimed_at is null and started_at > now() - interval '30 minutes'
+    order by started_at desc limit 1
+    for update;
+  if v_id is not null then
+    update ad_views set started_at = now(), source = p_source, ad_id = p_ad where id = v_id;
+    -- tidy away any older unclaimed views
+    delete from ad_views where user_id = v_user and claimed_at is null and id <> v_id;
+    return v_id;
   end if;
   insert into ad_views (user_id, source, ad_id) values (v_user, p_source, p_ad) returning id into v_id;
   return v_id;

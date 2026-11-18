@@ -1021,3 +1021,38 @@
     border-radius: 24px;
   }
 }
+
+/* ad with no (working) cover image: a branded tile with its logo or initial */
+.tk-ad-tile {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgba(255, 176, 103, 0.55), transparent 60%),
+    linear-gradient(145deg, #3a2414, #1b1d24);
+}
+
+.tk-ad-tile img {
+  width: 34%;
+  max-width: 120px;
+  aspect-ratio: 1;
+  object-fit: contain;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px;
+  box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.7);
+}
+
+.tk-ad-tile b {
+  font-size: clamp(40px, 9vw, 64px);
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+}
+
+.tk-ad-done-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}

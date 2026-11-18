@@ -106,6 +106,8 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
   const ads = useLiveAds();
   const [stage, setStage] = useState<Stage>({ kind: "loading" });
   const viewRef = useRef<{ id: string; started: number } | null>(null);
+  // bumps to start another ad without closing the modal
+  const [restart, setRestart] = useState(0);
   const runRef = useRef(0);
 
   const claim = useCallback(async () => {
@@ -169,7 +171,7 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
       runRef.current++;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, restart]);
 
   // House ad countdown
   const houseLeft = stage.kind === "house" ? stage.left : -1;
@@ -208,7 +210,7 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
         {stage.kind === "house" ? (
           <div className="tk-ad">
             <span className="tk-ad-tag">Sponsored</span>
-            {stage.ad.cover_url ? <img className="tk-ad-cover" src={stage.ad.cover_url} alt="" /> : null}
+            <AdArt ad={stage.ad} />
             <h3>{stage.ad.title}</h3>
             {stage.ad.body ? <p>{stage.ad.body}</p> : null}
             <a
@@ -241,9 +243,16 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
             <p>
               {wallet ? `${wallet.ads_today} of ${wallet.ad_daily_cap} ads watched today.` : null}
             </p>
-            <button type="button" className="tk-btn tk-btn-primary" onClick={onClose}>
-              Done
-            </button>
+            <div className="tk-ad-done-actions">
+              {wallet && wallet.ads_today < wallet.ad_daily_cap ? (
+                <button type="button" className="tk-btn" onClick={() => setRestart((n) => n + 1)}>
+                  Watch another
+                </button>
+              ) : null}
+              <button type="button" className="tk-btn tk-btn-primary" onClick={onClose}>
+                Done
+              </button>
+            </div>
           </div>
         ) : null}
 
@@ -258,5 +267,24 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
       </div>
     </div>,
     document.body,
+  );
+}
+
+/** The ad's picture: its cover image, else its thumbnail on a tile, else a tile with its initial.
+ *  A link that fails to load falls back the same way, so the ad never shows a broken image. */
+function AdArt({ ad }: { ad: Ad }) {
+  const [coverOk, setCoverOk] = useState(true);
+  const [thumbOk, setThumbOk] = useState(true);
+  if (ad.cover_url && coverOk) {
+    return <img className="tk-ad-cover" src={ad.cover_url} alt="" onError={() => setCoverOk(false)} />;
+  }
+  return (
+    <span className="tk-ad-cover tk-ad-tile" aria-hidden="true">
+      {ad.thumb_url && thumbOk ? (
+        <img src={ad.thumb_url} alt="" onError={() => setThumbOk(false)} />
+      ) : (
+        <b>{(ad.title || "?").trim().charAt(0).toUpperCase()}</b>
+      )}
+    </span>
   );
 }

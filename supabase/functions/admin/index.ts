@@ -245,6 +245,15 @@ const optDate = (v: unknown) => {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 };
 const optTime = (v: unknown) => (typeof v === "string" && /^\d{2}:\d{2}(:\d{2})?$/.test(v) ? v : null);
+/** Optional image link: empty → null; anything that isn't an http(s) URL is an error
+ *  (it used to be dropped silently, saving the ad with no image). */
+const imageUrl = (v: unknown, label: string) => {
+  const raw = typeof v === "string" ? v.trim() : "";
+  if (!raw) return null;
+  const ok = httpUrl(raw);
+  if (!ok || raw.length > 800) throw new Error(`${label} must be an http(s) image link`);
+  return ok;
+};
 const httpUrl = (v: unknown) => {
   const s = text(v, 800);
   try {
@@ -264,8 +273,8 @@ function cleanAd(input: Record<string, unknown>) {
   return {
     title,
     link_url: link,
-    cover_url: httpUrl(input.cover_url) || null,
-    thumb_url: httpUrl(input.thumb_url) || null,
+    cover_url: imageUrl(input.cover_url, "Cover image"),
+    thumb_url: imageUrl(input.thumb_url, "Thumbnail"),
     body: optText(input.body, 240),
     cta_label: text(input.cta_label, 30) || "Learn more",
     active: input.active !== false,

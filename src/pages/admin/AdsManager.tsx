@@ -140,6 +140,23 @@ export default function AdsManager({ stats }: { stats?: Record<string, { impress
 
   async function save() {
     if (!draft) return;
+    // the server only stores http(s) image links: say so instead of silently losing the image
+    const badImage = (["cover_url", "thumb_url"] as const).find((k) => {
+      const v = draft[k].trim();
+      if (!v) return false;
+      try {
+        const u = new URL(v);
+        return !(u.protocol === "https:" || u.protocol === "http:") || v.length > 800;
+      } catch {
+        return true;
+      }
+    });
+    if (badImage) {
+      setError(
+        `${badImage === "cover_url" ? "Cover image" : "Thumbnail"}: use the upload button, or paste a full https:// image link (not a file path or pasted image data).`,
+      );
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -273,6 +290,7 @@ export default function AdsManager({ stats }: { stats?: Record<string, { impress
                 value={draft.max_impressions}
                 onChange={(e) => set("max_impressions", e.target.value)}
               />
+              <small>Total views across ALL players. When reached, the ad stops for everyone. Leave empty for unlimited.</small>
             </div>
             <label className="adm-check">
               <input type="checkbox" checked={draft.active} onChange={(e) => set("active", e.target.checked)} />
