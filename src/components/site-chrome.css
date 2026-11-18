@@ -49,6 +49,15 @@
   display: block;
 }
 
+.site-footer .footer-logo-dark,
+.site[data-gtheme="light"] .site-footer .footer-logo-light {
+  display: none;
+}
+
+.site[data-gtheme="light"] .site-footer .footer-logo-dark {
+  display: block;
+}
+
 .site-footer-copy {
   margin-top: 6px;
   font-size: 12.5px;

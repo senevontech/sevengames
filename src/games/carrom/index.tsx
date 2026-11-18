@@ -46,6 +46,9 @@ import {
   seatRingColor,
 } from "./render";
 import { CarromNet, type NetStatus, type RosterEntry } from "./online";
+import { useCarromLobby, type LobbyApi, type Matched } from "./matchmaking";
+import { useAvatar } from "../../lib/avatar";
+import PlayerAvatar from "../../components/PlayerAvatar";
 import { useAuthContext } from "../../context/AuthContext";
 import { carromAudio } from "./audio";
 import { STRIKERS, type StrikerSkin } from "./skins";
@@ -162,6 +165,11 @@ export default function CarromGame({ onFinish }: GameProps) {
   const [secsLeft, setSecsLeft] = useState(TURN_SECONDS);
   const [placeT, setPlaceT] = useState(500);
   const [onlineOpen, setOnlineOpen] = useState(false);
+  // invite / random match: who we're playing (shown in the room lobby) and the host's handshake
+  const [matchWith, setMatchWith] = useState<{ name: string; role: "host" | "guest" } | null>(null);
+  const hostMatchRef = useRef<Matched | null>(null); // host: tell this player the room code
+  const autoStartRef = useRef(false); // host: start as soon as the matched player is in
+  const lobbyRef = useRef<LobbyApi | null>(null);
 
   const setPhase = useCallback((p: Phase) => {
     phaseRef.current = p;
@@ -516,12 +524,27 @@ export default function CarromGame({ onFinish }: GameProps) {
       onStatus: (status: NetStatus, note?: string) => {
         setNetStatus(status);
         setNetNote(note ?? null);
+        // matched host: the room is open, send its code to the other player
+        const m = hostMatchRef.current;
+        const code = netRef.current?.roomCode;
+        if (status === "lobby" && m && code) {
+          hostMatchRef.current = null;
+          lobbyRef.current?.sendGo(m, code);
+        }
       },
       onRoster: (list: RosterEntry[], seats: Seats) => {
         setRoster(list);
         setRoomSeats(seats);
-        if (netRef.current?.isHostClient) {
-          netRef.current.broadcastRoster(false);
+        const net = netRef.current;
+        if (net?.isHostClient) {
+          net.broadcastRoster(false);
+          // matched game: start as soon as the other player is seated (the roster goes out first)
+          if (autoStartRef.current && list.length >= seats) {
+            autoStartRef.current = false;
+            window.setTimeout(() => {
+              if (netRef.current === net) startNetGameRef.current(seats);
+            }, 400);
+          }
         }
       },
       onStart: (cfg: { seats: Seats; players: Array<{ name: string; kind: "human" | "cpu" }> }) => {
@@ -582,49 +605,99 @@ export default function CarromGame({ onFinish }: GameProps) {
     [onFinish, queenTextOf, setPhase, awardXp, tallyBoard],
   );
 
-  function hostRoom(seats: Seats) {
+  /** `match`: an invite / random match — host for that player and start once they join. */
+  function hostRoom(seats: Seats, match?: Matched) {
     carromAudio.unlock();
     netRef.current?.leave();
     finishedRef.current = false;
     setIsHost(true);
     modeRef.current = seats === 4 ? "host4" : "host2";
     mySeatRef.current = 0;
+    hostMatchRef.current = match ?? null;
+    autoStartRef.current = Boolean(match);
+    setMatchWith(match ? { name: match.partnerName, role: "host" } : null);
     setPhase("net-lobby");
     setNetStatus("connecting");
     setNetNote(null);
-    const net = CarromNet.createHost("You", seats, netEvents());
+    const net = CarromNet.createHost(match ? myName : "You", seats, netEvents());
     netRef.current = net;
     setRoomCode(net.roomCode);
   }
 
-  function joinRoom() {
+  /** `match`: joining the room of a player we matched with (code from them, not typed). */
+  function joinRoom(match?: { m: Matched; code: string }) {
     carromAudio.unlock();
     netRef.current?.leave();
     finishedRef.current = false;
     setIsHost(false);
     modeRef.current = "join";
+    hostMatchRef.current = null;
+    autoStartRef.current = false;
+    setMatchWith(match ? { name: match.m.partnerName, role: "guest" } : null);
     setPhase("net-lobby");
     setNetStatus("connecting");
     setNetNote(null);
-    const net = CarromNet.createGuest("You", joinCode, netEvents());
+    const net = CarromNet.createGuest(match ? myName : "You", match ? match.code : joinCode, netEvents());
     netRef.current = net;
     setRoomCode(net.roomCode);
   }
 
-  function startNetGame() {
+  function startNetGame(seatsOverride?: Seats) {
     const net = netRef.current;
     if (!net || !net.isHostClient) return;
+    const seats = seatsOverride ?? roomSeats;
     const players: Array<{ name: string; kind: "human" | "cpu" }> = net.rosterList.map((entry) => ({
       name: entry.name,
       kind: "human",
     }));
-    while (players.length < roomSeats) players.push({ name: "CPU", kind: "cpu" });
-    const cfg = { seats: roomSeats, players };
+    while (players.length < seats) players.push({ name: "CPU", kind: "cpu" });
+    const cfg = { seats, players };
     net.broadcastStart(cfg);
     netEvents().onStart(cfg);
   }
+  const startNetGameRef = useRef(startNetGame);
+  startNetGameRef.current = startNetGame;
+
+  /* ============ players online: invites + random match ============ */
+  const meta = auth.user?.user_metadata ?? {};
+  const myName = (
+    (meta.full_name as string | undefined) ||
+    (meta.name as string | undefined) ||
+    auth.user?.email?.split("@")[0] ||
+    "Player"
+  ).slice(0, 40);
+  const { choice: myAvatar } = useAvatar(auth.user);
+  const [guestWait, setGuestWait] = useState<string | null>(null); // "joining X's table…"
+  const [playersOpen, setPlayersOpen] = useState(false);
+  const lobby = useCarromLobby({
+    enabled: CarromNet.configured && Boolean(auth.user),
+    userId: auth.user?.id ?? null,
+    name: myName,
+    avatar: myAvatar,
+    available: screen === "menu",
+    onMatched: (m) => {
+      if (m.role === "host") {
+        setGuestWait(null);
+        hostRoom(2, m);
+      } else {
+        setGuestWait(m.partnerName);
+      }
+    },
+    onGo: (m, code) => {
+      setGuestWait(null);
+      joinRoom({ m, code });
+    },
+  });
+  lobbyRef.current = lobby;
+  // the guest's wait ends with an error note if the host never sends the room
+  useEffect(() => {
+    if (lobby.note) setGuestWait(null);
+  }, [lobby.note]);
 
   function leaveNet() {
+    hostMatchRef.current = null;
+    autoStartRef.current = false;
+    setMatchWith(null);
     netRef.current?.leave();
     netRef.current = null;
     setRoomCode(null);
@@ -969,17 +1042,122 @@ export default function CarromGame({ onFinish }: GameProps) {
                 </button>
               </div>
               {onlineOpen ? (
-                <div className="carrom-start-more is-online">
-                  <button type="button" className="carrom-chip-btn" onClick={() => hostRoom(2)}>
-                    Host · 2P
+                <>
+                  <div className="carrom-start-more is-online">
+                    <button
+                      type="button"
+                      className={`carrom-chip-btn carrom-chip-accent${lobby.searching ? " on" : ""}`}
+                      disabled={!auth.user || !lobby.connected || Boolean(guestWait)}
+                      onClick={() => (lobby.searching ? lobby.cancelSearch() : lobby.findMatch())}
+                    >
+                      {lobby.searching ? "Cancel search" : "Find match"}
+                    </button>
+                    <button
+                      type="button"
+                      className={`carrom-chip-btn${playersOpen ? " on" : ""}`}
+                      aria-expanded={playersOpen}
+                      disabled={!auth.user || !lobby.connected}
+                      onClick={() => setPlayersOpen((o) => !o)}
+                    >
+                      Players online{lobby.connected ? ` · ${lobby.players.length}` : ""}
+                    </button>
+                    <button type="button" className="carrom-chip-btn" onClick={() => hostRoom(2)}>
+                      Host · 2P
+                    </button>
+                    <button type="button" className="carrom-chip-btn" onClick={() => hostRoom(4)}>
+                      Host · 4P
+                    </button>
+                    <button type="button" className="carrom-chip-btn" onClick={() => setPhase("join-form")}>
+                      Join a room
+                    </button>
+                  </div>
+
+                  {!auth.user ? (
+                    <p className="carrom-mm-hint">
+                      <a href={`/login?next=${encodeURIComponent(window.location.pathname)}`}>Sign in</a> to find a match or
+                      invite players online.
+                    </p>
+                  ) : !lobby.connected ? (
+                    <p className="carrom-mm-hint">Connecting to players online…</p>
+                  ) : null}
+
+                  {lobby.searching ? (
+                    <div className="carrom-mm-card carrom-mm-search" role="status">
+                      <span className="carrom-mm-spinner" aria-hidden="true" />
+                      <span>
+                        Finding an opponent… <SearchClock since={lobby.searchSince} />
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {playersOpen && lobby.connected ? (
+                    <div className="carrom-mm-card">
+                      {lobby.players.length === 0 ? (
+                        <p className="carrom-mm-empty">No one else is free right now. Try Find match and wait, or check back soon.</p>
+                      ) : (
+                        <ul className="carrom-mm-list">
+                          {lobby.players.map((p) => {
+                            const pending = lobby.outgoing?.to === p.key;
+                            return (
+                              <li key={p.key}>
+                                <PlayerAvatar id={p.userId} name={p.name} avatar={p.avatar} size={30} className="lb-initial carrom-mm-av" />
+                                <span className="carrom-mm-name">
+                                  <b>{p.name}</b>
+                                  <small>{p.status === "searching" ? "looking for a match" : "available"}</small>
+                                </span>
+                                {pending ? (
+                                  <button type="button" className="carrom-chip-btn" onClick={lobby.cancelInvite}>
+                                    Waiting… · Cancel
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="carrom-chip-btn carrom-chip-accent"
+                                    disabled={Boolean(guestWait)}
+                                    onClick={() => lobby.invite(p)}
+                                  >
+                                    Invite
+                                  </button>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+
+              {/* invites reach you anywhere on this menu, even with the Online options closed */}
+              {lobby.incoming.map((inv) => (
+                <div key={inv.id} className="carrom-mm-card carrom-mm-invite" role="alert">
+                  <PlayerAvatar id={inv.from} name={inv.name} avatar={inv.avatar} size={34} className="lb-initial carrom-mm-av" />
+                  <span className="carrom-mm-name">
+                    <b>{inv.name}</b>
+                    <small>wants to play carrom</small>
+                  </span>
+                  <button type="button" className="carrom-chip-btn carrom-chip-accent" onClick={() => lobby.accept(inv)}>
+                    Accept
                   </button>
-                  <button type="button" className="carrom-chip-btn" onClick={() => hostRoom(4)}>
-                    Host · 4P
-                  </button>
-                  <button type="button" className="carrom-chip-btn" onClick={() => setPhase("join-form")}>
-                    Join a room
+                  <button type="button" className="carrom-chip-btn" onClick={() => lobby.decline(inv)}>
+                    Decline
                   </button>
                 </div>
+              ))}
+              {guestWait ? (
+                <div className="carrom-mm-card carrom-mm-search" role="status">
+                  <span className="carrom-mm-spinner" aria-hidden="true" />
+                  <span>Match found! Joining {guestWait}&rsquo;s table…</span>
+                </div>
+              ) : null}
+              {lobby.note ? (
+                <p className="carrom-mm-hint" role="status">
+                  {lobby.note}{" "}
+                  <button type="button" className="carrom-mm-dismiss" onClick={lobby.clearNote} aria-label="Dismiss">
+                    ✕
+                  </button>
+                </p>
               ) : null}
 
               <button type="button" className="carrom-profile carrom-start-profile" onClick={() => setPhase("locker")}>
@@ -1055,8 +1233,16 @@ export default function CarromGame({ onFinish }: GameProps) {
                 </li>
               ))}
             </ul>
-            {isHost ? (
-              <button type="button" className="primary-btn" onClick={startNetGame}>
+            {matchWith ? (
+              <p className="carrom-hint">
+                {roster.length >= roomSeats
+                  ? "Starting…"
+                  : matchWith.role === "host"
+                    ? `Waiting for ${matchWith.name} to join…`
+                    : "Waiting for the game to start…"}
+              </p>
+            ) : isHost ? (
+              <button type="button" className="primary-btn" onClick={() => startNetGame()}>
                 Start game
                 {roomSeats - roster.length > 0
                   ? ` (${roomSeats - roster.length} CPU fill${roomSeats - roster.length > 1 ? "s" : ""})`
@@ -1250,5 +1436,20 @@ export default function CarromGame({ onFinish }: GameProps) {
         where you want it to go) · release to shoot · {TURN_SECONDS}s per turn · arrow keys fine-tune, space shoots
       </p>
     </div>
+  );
+}
+
+/** Seconds spent searching, as m:ss. */
+function SearchClock({ since }: { since: number }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const secs = Math.max(0, Math.floor((now - since) / 1000));
+  return (
+    <span className="carrom-mm-clock">
+      {Math.floor(secs / 60)}:{String(secs % 60).padStart(2, "0")}
+    </span>
   );
 }

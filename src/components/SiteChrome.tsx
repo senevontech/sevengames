@@ -109,7 +109,9 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
       </main>
 
       <footer className="site-footer">
-        <img src="/logo/logo-h-light-nav.webp" width={432} height={120} alt="Senevon Game Studio" loading="lazy" />
+        {/* Light-text logo on the usual dark footer; dark-text logo on light-mode game pages */}
+        <img className="footer-logo-light" src="/logo/logo-h-light-nav.webp" width={432} height={120} alt="Senevon Game Studio" loading="lazy" />
+        <img className="footer-logo-dark" src="/logo/logo-h-dark-nav.webp" width={432} height={120} alt="" aria-hidden="true" loading="lazy" />
         <p>Play instantly, discover new worlds, and be part of a global gaming universe.</p>
         <p className="site-footer-copy">
           © {new Date().getFullYear()} Senevon Game Studio · <Link to="/privacy">Privacy policy</Link>
