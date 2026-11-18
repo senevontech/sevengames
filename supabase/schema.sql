@@ -10,6 +10,27 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 
+-- Avatar shown on the leaderboards: {"style": "<dicebear style>", "seed": "..."} for a generated
+-- avatar, or {"style": "google", "seed": "<photo url>"} for the photo from a Google account.
+-- Only Google's image host is allowed, so players can't show arbitrary images to others.
+-- Keep in sync with parseAvatar() in src/lib/avatar.ts.
+alter table public.profiles add column if not exists avatar jsonb;
+
+alter table public.profiles drop constraint if exists profiles_avatar_valid;
+alter table public.profiles add constraint profiles_avatar_valid check (
+  avatar is null
+  or (
+    jsonb_typeof(avatar) = 'object'
+    and (
+      (avatar ->> 'style' = 'google'
+        and length(avatar ->> 'seed') <= 1024
+        and avatar ->> 'seed' ~ '^https://[a-z0-9-]+\.googleusercontent\.com/')
+      or (avatar ->> 'style' in ('pixel-art', 'bottts', 'avataaars', 'lorelei', 'notionists', 'thumbs')
+        and length(avatar ->> 'seed') between 1 and 64)
+    )
+  )
+);
+
 alter table public.profiles enable row level security;
 
 drop policy if exists "Public read access to profiles" on public.profiles;
@@ -31,6 +52,18 @@ to authenticated
 using (auth.uid() = id)
 with check (auth.uid() = id);
 
+-- The Google photo from a user's sign-up metadata as an avatar, or null.
+create or replace function public.google_avatar(meta jsonb)
+returns jsonb
+language sql immutable
+as $$
+  select case
+    when url ~ '^https://[a-z0-9-]+\.googleusercontent\.com/' and length(url) <= 1024
+      then jsonb_build_object('style', 'google', 'seed', url)
+  end
+  from (select coalesce(meta ->> 'avatar_url', meta ->> 'picture') as url) m;
+$$;
+
 -- Auto-create a profile whenever a user signs up
 create or replace function public.handle_new_user()
 returns trigger
@@ -38,14 +71,15 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, display_name)
+  insert into public.profiles (id, display_name, avatar)
   values (
     new.id,
     coalesce(
       new.raw_user_meta_data ->> 'full_name',
       new.raw_user_meta_data ->> 'name',
       split_part(new.email, '@', 1)
-    )
+    ),
+    public.google_avatar(new.raw_user_meta_data)
   )
   on conflict (id) do nothing;
   return new;
@@ -68,6 +102,14 @@ select u.id,
   )
 from auth.users u
 on conflict (id) do nothing;
+
+-- Backfill avatars: Google photos for Google users who haven't got one yet
+update public.profiles p
+set avatar = public.google_avatar(u.raw_user_meta_data)
+from auth.users u
+where u.id = p.id
+  and p.avatar is null
+  and public.google_avatar(u.raw_user_meta_data) is not null;
 
 -- 2) Game scores: one row per finished round
 create table if not exists public.game_scores (
@@ -108,10 +150,11 @@ select
   s.game_id,
   s.user_id,
   coalesce(p.display_name, 'Player') as display_name,
-  max(s.score) as best_score
+  max(s.score) as best_score,
+  p.avatar
 from public.game_scores s
 left join public.profiles p on p.id = s.user_id
-group by s.game_id, s.user_id, p.display_name;
+group by s.game_id, s.user_id, p.display_name, p.avatar;
 
 create or replace view public.leaderboard_fastest
 with (security_invoker = false) as
@@ -119,10 +162,11 @@ select
   s.game_id,
   s.user_id,
   coalesce(p.display_name, 'Player') as display_name,
-  min(s.score) as best_score
+  min(s.score) as best_score,
+  p.avatar
 from public.game_scores s
 left join public.profiles p on p.id = s.user_id
-group by s.game_id, s.user_id, p.display_name;
+group by s.game_id, s.user_id, p.display_name, p.avatar;
 
 grant select on public.leaderboard to anon, authenticated;
 grant select on public.leaderboard_fastest to anon, authenticated;

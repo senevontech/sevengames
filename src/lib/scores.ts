@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../supabase";
+import { parseAvatar, type AvatarChoice } from "./avatar";
 
 export type ScoreRow = {
   gameId: string;
@@ -15,6 +16,7 @@ export type LeaderRow = {
   displayName: string;
   score: number;
   isYou: boolean;
+  avatar: AvatarChoice | null;
 };
 
 export function isLowerBetter(gameId: string) {
@@ -120,7 +122,8 @@ export function useLeaderboard(gameId: string, limit = 10) {
 
     supabase
       .from(isLowerBetter(gameId) ? "leaderboard_fastest" : "leaderboard")
-      .select("user_id, display_name, best_score")
+      // "*" rather than a column list: works whether or not the avatar column exists yet
+      .select("*")
       .eq("game_id", gameId)
       .order("best_score", { ascending: isLowerBetter(gameId) })
       .order("user_id", { ascending: true }) // stable order for ties
@@ -142,6 +145,7 @@ export function useLeaderboard(gameId: string, limit = 10) {
             displayName: row.display_name || "Player",
             score: row.best_score,
             isYou: false,
+            avatar: parseAvatar(row.avatar),
           })),
         );
         setLoading(false);
@@ -163,6 +167,7 @@ export type OverallRow = {
   firsts: number;
   rounds: number;
   games: number;
+  avatar: AvatarChoice | null;
 };
 
 /** Players ranked across every game (supabase/leaderboard.sql → leaderboard_overall). */
@@ -183,7 +188,7 @@ export function useOverallLeaderboard(limit = 25) {
     void Promise.resolve(
       supabase
         .from("leaderboard_overall")
-        .select("user_id, display_name, points, firsts, rounds, games")
+        .select("*")
         .order("points", { ascending: false })
         .order("firsts", { ascending: false })
         .order("rounds", { ascending: false })
@@ -205,6 +210,7 @@ export function useOverallLeaderboard(limit = 25) {
             firsts: Number(r.firsts) || 0,
             rounds: Number(r.rounds) || 0,
             games: Number(r.games) || 0,
+            avatar: parseAvatar(r.avatar),
           })),
         );
       }

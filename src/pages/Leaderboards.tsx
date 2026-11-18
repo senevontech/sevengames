@@ -3,31 +3,18 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Crown, Medal, Trophy } from "lucide-react";
 import { games, scoreLabel, type Game } from "../catalog";
 import { GamePoster } from "../components/GamePoster";
+import PlayerAvatar from "../components/PlayerAvatar";
 import { useAuthContext } from "../context/AuthContext";
 import { isLowerBetter, useLeaderboard, useOverallLeaderboard } from "../lib/scores";
 import { formatTokens } from "../lib/currency";
+import type { AvatarChoice } from "../lib/avatar";
 import "./account.css";
 import "./leaderboards.css";
 
 // only built-in games report scores
 const boardGames = games.filter((g) => g.kind === "builtin");
 
-type Row = { rank: number; userId: string; name: string; value: string; sub?: string };
-
-/** Stable colour per player for their initial badge. */
-const hueOf = (id: string) => {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 360;
-  return h;
-};
-
-function Initial({ id, name, size = 36 }: { id: string; name: string; size?: number }) {
-  return (
-    <span className="lb-initial" style={{ width: size, height: size, "--h": hueOf(id) } as React.CSSProperties} aria-hidden="true">
-      {name.charAt(0).toUpperCase()}
-    </span>
-  );
-}
+type Row = { rank: number; userId: string; name: string; value: string; sub?: string; avatar: AvatarChoice | null };
 
 function Board({ rows, loading, error, you, unit }: { rows: Row[]; loading: boolean; error: string | null; you?: string; unit: string }) {
   if (loading) {
@@ -65,7 +52,7 @@ function Board({ rows, loading, error, you, unit }: { rows: Row[]; loading: bool
             <span className="lb-step-badge" aria-hidden="true">
               {r.rank === 1 ? <Crown size={18} /> : <Medal size={16} />}
             </span>
-            <Initial id={r.userId} name={r.name} size={r.rank === 1 ? 64 : 52} />
+            <PlayerAvatar id={r.userId} name={r.name} avatar={r.avatar} size={r.rank === 1 ? 64 : 52} />
             <b className="lb-step-name" title={r.name}>
               {r.userId === you ? "You" : r.name}
             </b>
@@ -83,7 +70,7 @@ function Board({ rows, loading, error, you, unit }: { rows: Row[]; loading: bool
           {rest.map((r) => (
             <li key={r.userId} className={`lb-row${r.userId === you ? " is-you" : ""}`}>
               <span className="lb-rank">{r.rank}</span>
-              <Initial id={r.userId} name={r.name} />
+              <PlayerAvatar id={r.userId} name={r.name} avatar={r.avatar} />
               <span className="lb-name">
                 <b title={r.name}>{r.userId === you ? "You" : r.name}</b>
                 {r.sub ? <small>{r.sub}</small> : null}
@@ -107,6 +94,7 @@ function OverallBoard({ you }: { you?: string }) {
     userId: r.userId,
     name: r.displayName,
     value: formatTokens(r.points),
+    avatar: r.avatar,
     sub: `${r.firsts} first place${r.firsts === 1 ? "" : "s"} · ${r.games} game${r.games === 1 ? "" : "s"} · ${formatTokens(r.rounds)} rounds`,
   }));
   return <Board rows={mapped} loading={loading} error={error} you={you} unit="pts" />;
@@ -114,7 +102,7 @@ function OverallBoard({ you }: { you?: string }) {
 
 function GameBoard({ game, you }: { game: Game; you?: string }) {
   const { leaders, loading, error } = useLeaderboard(game.id, 25);
-  const mapped: Row[] = leaders.map((r) => ({ rank: r.rank, userId: r.userId, name: r.displayName, value: formatTokens(r.score) }));
+  const mapped: Row[] = leaders.map((r) => ({ rank: r.rank, userId: r.userId, name: r.displayName, value: formatTokens(r.score), avatar: r.avatar }));
   return <Board rows={mapped} loading={loading} error={error} you={you} unit={isLowerBetter(game.id) ? "s" : ""} />;
 }
 

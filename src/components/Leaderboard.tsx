@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Trophy } from "lucide-react";
 import type { LeaderRow } from "../lib/scores";
+import PlayerAvatar from "./PlayerAvatar";
 
 export default function Leaderboard({
   leaders,
@@ -40,6 +41,7 @@ export default function Leaderboard({
             return (
               <li key={`${row.rank}-${row.userId}`} className={isYou ? "you" : ""}>
                 <span className="rank">{row.rank}</span>
+                <PlayerAvatar id={row.userId} name={row.displayName} avatar={row.avatar} size={24} className="lb-initial lb-mini" />
                 <span className="name">{isYou ? "You" : row.displayName}</span>
                 <span className="value">{row.score}</span>
               </li>

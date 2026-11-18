@@ -1,7 +1,11 @@
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
+import { Smartphone, Trophy } from "lucide-react";
 import { useAuthContext } from "../context/AuthContext";
 import AuthForm from "../components/AuthForm";
+import TokenIcon from "../components/TokenIcon";
+import "./account.css";
+import "./login.css";
 
 export default function Login() {
   const auth = useAuthContext();
@@ -10,20 +14,60 @@ export default function Login() {
   const next = params.get("next") ?? "/";
 
   useEffect(() => {
+    document.title = "Sign in — Senevon Game Studio";
+  }, []);
+
+  useEffect(() => {
     if (auth.user) navigate(next, { replace: true });
   }, [auth.user, next, navigate]);
 
   return (
-    <div className="page narrow login-page">
-      <p className="eyebrow">Senevon account</p>
-      <h1>Sign in once. Play everywhere.</h1>
-      <p className="hero-sub">
-        Your scores and leaderboard ranks follow your account to every device.
-      </p>
-      <AuthForm auth={auth} redirectTo={next} />
-      <p className="auth-message muted">
-        Just browsing? <Link to="/">Continue as guest</Link> — you can still play every game.
-      </p>
+    <div className="acct lg">
+      <section className="ac-card lg-intro">
+        <span className="lg-eyebrow">Senevon account</span>
+        <h1 className="lg-title">
+          Sign in once.
+          <br />
+          Play everywhere.
+        </h1>
+        <p className="ac-sub">Your scores, tokens and leaderboard ranks follow you to every device.</p>
+        <ul className="lg-perks">
+          <li>
+            <span className="lg-perk-icon" aria-hidden="true">
+              <TokenIcon size={18} />
+            </span>
+            <span>
+              <b>1,000 free tokens</b>
+              <small>for premium games, on your first sign-in</small>
+            </span>
+          </li>
+          <li>
+            <span className="lg-perk-icon" aria-hidden="true">
+              <Smartphone size={18} />
+            </span>
+            <span>
+              <b>Progress on every device</b>
+              <small>scores, levels and unlocks are saved to your account</small>
+            </span>
+          </li>
+          <li>
+            <span className="lg-perk-icon" aria-hidden="true">
+              <Trophy size={18} />
+            </span>
+            <span>
+              <b>Your name on the leaderboards</b>
+              <small>compete with players everywhere</small>
+            </span>
+          </li>
+        </ul>
+      </section>
+
+      <section className="ac-card lg-card" aria-label="Sign in">
+        <AuthForm auth={auth} redirectTo={next} />
+        <p className="lg-guest">
+          Just browsing? <Link to="/">Continue as guest</Link>. You can still play every game.
+        </p>
+      </section>
     </div>
   );
 }

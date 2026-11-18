@@ -29,7 +29,7 @@ export default function NavAccount() {
   return (
     <Link className="h3-account" to="/profile" aria-label={`Your profile (${name})`}>
       <span className="h3-account-icon">
-        {uri ? <img src={uri} alt="" width={40} height={40} /> : <RiUser3Line size={18} aria-hidden="true" />}
+        {uri ? <img src={uri} alt="" width={40} height={40} referrerPolicy="no-referrer" /> : <RiUser3Line size={18} aria-hidden="true" />}
       </span>
       <span className="h3-account-label" aria-hidden="true">
         Profile

@@ -41,7 +41,7 @@ export default function DynamicAvatar({
     (meta.full_name as string | undefined) || (meta.name as string | undefined) || user?.email?.split("@")[0] || "Guest";
   const initial = displayName.charAt(0).toUpperCase();
   // Generated avatar (falls back to the initial while the style loads for the first time).
-  const face = uri ? <img src={uri} alt={displayName} className="avatar-img" /> : <span className="avatar-img avatar-initial">{initial}</span>;
+  const face = uri ? <img src={uri} alt={displayName} className="avatar-img" referrerPolicy="no-referrer" /> : <span className="avatar-img avatar-initial">{initial}</span>;
 
   return (
     <div className="dynamic-avatar-wrapper" ref={menuRef}>

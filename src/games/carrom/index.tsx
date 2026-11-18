@@ -91,7 +91,8 @@ export default function CarromGame({ onFinish }: GameProps) {
   const worldRef = useRef<World | null>(null);
   const phaseRef = useRef<Phase>("menu");
   // valid = the aim points into the board (you can't shoot back towards your own edge)
-  const aimRef = useRef<{ dir: { x: number; y: number }; power: number; valid: boolean }>({
+  // flipped = you dragged TOWARDS the target (pointing), so the pull band isn't drawn
+  const aimRef = useRef<{ dir: { x: number; y: number }; power: number; valid: boolean; flipped?: boolean }>({
     dir: { x: 0, y: -1 },
     power: 0.65,
     valid: true,
@@ -706,10 +707,27 @@ export default function CarromGame({ onFinish }: GameProps) {
     const dy = drag.ay - p.y;
     const pull = Math.hypot(dx, dy);
     if (pull > 20) {
-      const dir = { x: dx / pull, y: dy / pull };
+      // Two ways to aim, both work: pull BACK away from the target (slingshot), or drag
+      // TOWARDS it (point). A shot can never go backwards, so a pull that would aim back into
+      // your own edge is read as pointing and flipped.
+      let dir = { x: dx / pull, y: dy / pull };
       const inward = inwardOf(world);
+      let flipped = false;
+      if (dir.x * inward.x + dir.y * inward.y < 0.05 && -(dir.x * inward.x + dir.y * inward.y) > 0.05) {
+        dir = { x: -dir.x, y: -dir.y };
+        flipped = true;
+      }
+      // almost exactly sideways: tilt it just enough into the board
+      const dot = dir.x * inward.x + dir.y * inward.y;
+      if (dot < 0.08) {
+        const nx = dir.x + inward.x * (0.08 - dot);
+        const ny = dir.y + inward.y * (0.08 - dot);
+        const nl = Math.hypot(nx, ny) || 1;
+        dir = { x: nx / nl, y: ny / nl };
+      }
       aimRef.current.dir = dir;
-      aimRef.current.valid = dir.x * inward.x + dir.y * inward.y > 0.05;
+      aimRef.current.valid = true;
+      aimRef.current.flipped = flipped;
       aimRef.current.power = clamp((pull - 30) / 380, 0.05, 1);
       setPowerN(aimRef.current.power);
     }
@@ -721,7 +739,7 @@ export default function CarromGame({ onFinish }: GameProps) {
     if (!drag || phaseRef.current !== "place") return;
     const { dir, power, valid } = aimRef.current;
     if (power < 0.05) {
-      setMessage("Pull back from the target, release.");
+      setMessage("Drag to aim, then release.");
       return;
     }
     if (!valid) {
@@ -865,7 +883,7 @@ export default function CarromGame({ onFinish }: GameProps) {
     const aim = aimRef.current;
     if (ph === "place" && canControl() && aim.power > 0.03) {
       drawAimPreview(ctx, world, aim.dir, aim.power, turnStats?.aim ?? 1, aim.valid);
-      if (dragRef.current) drawPullBand(ctx, world.striker, aim.dir, aim.power, aim.valid);
+      if (dragRef.current && !aim.flipped) drawPullBand(ctx, world.striker, aim.dir, aim.power, aim.valid);
     }
     if (ph === "cpu-aim" && cpuPlanRef.current) {
       drawAim(ctx, world.striker, cpuPlanRef.current.dir, cpuPlanRef.current.power, "rgba(180,50,40,0.85)");
@@ -1228,8 +1246,8 @@ export default function CarromGame({ onFinish }: GameProps) {
       )}
 
       <p className="carrom-hint">
-        Slide to place the striker (or A / D) · pull back anywhere on the board to aim · release to
-        shoot · {TURN_SECONDS}s per turn · arrow keys fine-tune, space shoots
+        Slide to place the striker (or A / D) · drag on the board to aim (pull back like a slingshot, or point
+        where you want it to go) · release to shoot · {TURN_SECONDS}s per turn · arrow keys fine-tune, space shoots
       </p>
     </div>
   );

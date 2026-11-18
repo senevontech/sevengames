@@ -1,9 +1,27 @@
 import { useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Check, Shuffle } from "lucide-react";
-import { AVATAR_STYLES, seedsFor, useAvatar, useAvatarUri, type AvatarChoice, type AvatarStyleId } from "../lib/avatar";
+import {
+  AVATAR_STYLES,
+  googlePhoto,
+  seedsFor,
+  useAvatar,
+  useAvatarUri,
+  type AvatarChoice,
+  type AvatarStyleId,
+} from "../lib/avatar";
 
-function Tile({ choice, selected, onPick }: { choice: AvatarChoice; selected: boolean; onPick: () => void }) {
+function Tile({
+  choice,
+  selected,
+  onPick,
+  label,
+}: {
+  choice: AvatarChoice;
+  selected: boolean;
+  onPick: () => void;
+  label?: string;
+}) {
   const uri = useAvatarUri(choice);
   return (
     <button
@@ -11,9 +29,15 @@ function Tile({ choice, selected, onPick }: { choice: AvatarChoice; selected: bo
       className={`avl-tile${selected ? " selected" : ""}`}
       onClick={onPick}
       aria-pressed={selected}
-      aria-label={`Use this ${choice.style} avatar`}
+      aria-label={label ?? `Use this ${choice.style} avatar`}
+      title={label}
     >
-      {uri ? <img src={uri} alt="" width={128} height={128} /> : <span className="avl-skeleton" />}
+      {uri ? (
+        // no-referrer: Google's image host can refuse hotlinked requests that send a referrer
+        <img src={uri} alt="" width={128} height={128} referrerPolicy="no-referrer" />
+      ) : (
+        <span className="avl-skeleton" />
+      )}
       {selected ? (
         <span className="avl-check" aria-hidden="true">
           <Check size={13} strokeWidth={3} />
@@ -29,7 +53,8 @@ function Tile({ choice, selected, onPick }: { choice: AvatarChoice; selected: bo
  */
 export default function AvatarLibrary({ user, compact = false }: { user: User | null; compact?: boolean }) {
   const { choice, choose } = useAvatar(user);
-  const [style, setStyle] = useState<AvatarStyleId>(choice.style);
+  const [style, setStyle] = useState<AvatarStyleId>(choice.style === "google" ? "pixel-art" : choice.style);
+  const photo = googlePhoto(user);
   const [page, setPage] = useState(0);
   const count = compact ? 8 : 18;
   const base = user?.id?.slice(0, 8) ?? "guest";
@@ -59,6 +84,14 @@ export default function AvatarLibrary({ user, compact = false }: { user: User | 
       </div>
 
       <div className="avl-grid">
+        {photo ? (
+          <Tile
+            choice={{ style: "google", seed: photo }}
+            selected={choice.style === "google"}
+            onPick={() => void choose({ style: "google", seed: photo })}
+            label="Use your Google photo"
+          />
+        ) : null}
         {/* Keep the current avatar first so it is always visible to compare against */}
         {style === choice.style && !seeds.includes(choice.seed) ? (
           <Tile choice={choice} selected onPick={() => void choose(choice)} />

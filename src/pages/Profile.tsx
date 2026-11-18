@@ -72,7 +72,7 @@ export default function Profile() {
       <section className="ac-card pf-hero">
         <a href="#avatars" className="pf-avatar" aria-label="Change avatar">
           {avatarUri ? (
-            <img src={avatarUri} alt="" width={128} height={128} />
+            <img src={avatarUri} alt="" width={128} height={128} referrerPolicy="no-referrer" />
           ) : (
             <span className="pf-avatar-initial">{(displayName ?? "?").charAt(0).toUpperCase()}</span>
           )}

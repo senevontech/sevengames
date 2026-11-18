@@ -70,11 +70,12 @@ select
   sum(greatest(0, 11 - r.place))::integer as points,
   (count(*) filter (where r.place = 1))::integer as firsts,
   max(pl.rounds)::integer as rounds,
-  max(pl.games)::integer as games
+  max(pl.games)::integer as games,
+  p.avatar
 from ranked r
 join plays pl on pl.user_id = r.user_id
 left join profiles p on p.id = r.user_id
-group by r.user_id, p.display_name;
+group by r.user_id, p.display_name, p.avatar;
 
 grant select on public.leaderboard_overall to anon, authenticated;
 

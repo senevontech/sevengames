@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import type { AuthState } from "../lib/auth";
 
 export default function AuthForm({
@@ -11,6 +12,7 @@ export default function AuthForm({
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -45,63 +47,91 @@ export default function AuthForm({
   }
 
   return (
-    <div className="auth-panel">
-      <div className="auth-toggle" role="tablist" aria-label="Authentication mode">
+    <div className="lg-form">
+      <div className="lg-toggle" role="tablist" aria-label="Sign in or create an account">
+        <span className={`lg-toggle-thumb${mode === "signup" ? " is-right" : ""}`} aria-hidden="true" />
         <button
           type="button"
-          className={mode === "signin" ? "active" : ""}
-          onClick={() => setMode("signin")}
+          role="tab"
+          aria-selected={mode === "signin"}
+          className={mode === "signin" ? "on" : ""}
+          onClick={() => {
+            setMode("signin");
+            setMessage("");
+          }}
         >
           Sign in
         </button>
         <button
           type="button"
-          className={mode === "signup" ? "active" : ""}
-          onClick={() => setMode("signup")}
+          role="tab"
+          aria-selected={mode === "signup"}
+          className={mode === "signup" ? "on" : ""}
+          onClick={() => {
+            setMode("signup");
+            setMessage("");
+          }}
         >
           Create account
         </button>
       </div>
 
-      <button type="button" className="google-btn" onClick={google} disabled={busy}>
+      <button type="button" className="lg-google" onClick={google} disabled={busy}>
         <GoogleMark />
         Continue with Google
       </button>
 
-      <div className="auth-divider">
+      <div className="lg-divider">
         <span>or with email</span>
       </div>
 
-      <form onSubmit={submit} className="auth-form">
-        <input
-          type="email"
-          required
-          placeholder="you@example.com"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          autoComplete="email"
-          aria-label="Email"
-        />
-        <input
-          type="password"
-          required
-          minLength={6}
-          placeholder="Password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          autoComplete={mode === "signin" ? "current-password" : "new-password"}
-          aria-label="Password"
-        />
-        <button className="primary-btn full" type="submit" disabled={busy}>
-          {mode === "signin" ? "Sign in" : "Create account"}
+      <form onSubmit={submit} className="lg-fields">
+        <label className="lg-field">
+          <Mail size={17} aria-hidden="true" />
+          <input
+            type="email"
+            required
+            placeholder="you@example.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+            aria-label="Email"
+          />
+        </label>
+        <label className="lg-field">
+          <Lock size={17} aria-hidden="true" />
+          <input
+            type={showPw ? "text" : "password"}
+            required
+            minLength={6}
+            placeholder={mode === "signup" ? "Password (6+ characters)" : "Password"}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete={mode === "signin" ? "current-password" : "new-password"}
+            aria-label="Password"
+          />
+          <button
+            type="button"
+            className="lg-eye"
+            onClick={() => setShowPw((v) => !v)}
+            aria-label={showPw ? "Hide password" : "Show password"}
+            title={showPw ? "Hide password" : "Show password"}
+          >
+            {showPw ? <EyeOff size={17} /> : <Eye size={17} />}
+          </button>
+        </label>
+        <button className="ac-btn ac-btn-primary lg-submit" type="submit" disabled={busy}>
+          {busy ? "One moment…" : mode === "signin" ? "Sign in" : "Create account"}
         </button>
       </form>
 
-      {message ? <p className="auth-message">{message}</p> : null}
-      {!auth.configured ? (
-        <p className="auth-message muted">
-          Supabase isn’t configured yet — add your keys to `.env.local` (see README).
+      {message ? (
+        <p className="lg-message" role="status">
+          {message}
         </p>
+      ) : null}
+      {!auth.configured ? (
+        <p className="lg-message is-muted">Supabase isn’t configured yet — add your keys to `.env.local` (see README).</p>
       ) : null}
     </div>
   );
@@ -109,7 +139,7 @@ export default function AuthForm({
 
 function GoogleMark() {
   return (
-    <svg width="17" height="17" viewBox="0 0 48 48" aria-hidden="true">
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
       <path
         fill="#FFC107"
         d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.7-.4-3.9z"
