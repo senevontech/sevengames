@@ -577,8 +577,23 @@
 
 .arw-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
+}
+
+.arw-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.arw-card .arw-danger {
+  background: #e5484d;
+  border-color: #e5484d;
+  color: #fff;
 }
 
 @media (max-width: 420px) {

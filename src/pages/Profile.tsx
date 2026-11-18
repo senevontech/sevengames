@@ -9,9 +9,56 @@ import { GamePoster } from "../components/GamePoster";
 import { games, scoreLabel } from "../catalog";
 import { isLowerBetter, usePersonalScores } from "../lib/scores";
 import { useTokens } from "../lib/tokens";
+import { PROGRESS_GAMES, useGameProgress } from "../lib/progress";
 import { formatTokens } from "../lib/currency";
 import "./account.css";
 import "./profile.css";
+
+/** One game's saved level, with a two-step reset. */
+function ProgressRow({ gameId }: { gameId: string }) {
+  const game = games.find((g) => g.id === gameId);
+  const progress = useGameProgress(gameId);
+  const [confirming, setConfirming] = useState(false);
+  if (!game) return null;
+  return (
+    <li className="pf-progress-row">
+      <Link to={`/game/${game.id}`} className="pf-progress-game">
+        <GamePoster game={game} size="thumb" />
+        <span className="pf-best-title">{game.title}</span>
+      </Link>
+      <span className="pf-best-score">
+        <small>Level</small>
+        <b>{progress.level}</b>
+      </span>
+      {confirming ? (
+        <span className="pf-progress-confirm">
+          <button type="button" className="ac-btn ac-btn-sm ac-btn-ghost" onClick={() => setConfirming(false)}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="ac-btn ac-btn-sm pf-progress-danger"
+            onClick={() => {
+              progress.reset();
+              setConfirming(false);
+            }}
+          >
+            Reset to 1
+          </button>
+        </span>
+      ) : (
+        <button
+          type="button"
+          className="ac-btn ac-btn-sm ac-btn-ghost"
+          disabled={progress.level <= 1}
+          onClick={() => setConfirming(true)}
+        >
+          Reset
+        </button>
+      )}
+    </li>
+  );
+}
 
 export default function Profile() {
   const auth = useAuthContext();
@@ -197,6 +244,20 @@ export default function Profile() {
               })}
             </ul>
           )}
+        </section>
+
+        <section className="ac-card pf-progress">
+          <div className="ac-section-head">
+            <div>
+              <h2 className="ac-h2">Saved progress</h2>
+              <p className="ac-sub">Levels you've reached. Resetting sends that game back to level 1.</p>
+            </div>
+          </div>
+          <ul className="pf-best-list">
+            {PROGRESS_GAMES.map((id) => (
+              <ProgressRow key={id} gameId={id} />
+            ))}
+          </ul>
         </section>
       </div>
     </div>

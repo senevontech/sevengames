@@ -334,10 +334,42 @@ export default function Home3({ videoHero = false }: { videoHero?: boolean }) {
 
       {/* Compact text hero */}
       <header className="h3-hero" ref={heroRef}>
-        <span className="h3-chip">Senevon Game Studio</span>
-        <h1>
-          <span className="h3-line">
-            <span>A Universe of Games</span>
+        <h1 className="h3-title-fx" aria-label="A Universe of Games">
+          {["A", "Universe", "of"].map((w, i) => (
+            <span key={w} className="h3-tw" style={{ "--i": i } as React.CSSProperties} aria-hidden="true">
+              {w}
+            </span>
+          ))}
+          <span className="h3-tw h3-games" style={{ "--i": 3 } as React.CSSProperties} aria-hidden="true">
+            <span className="h3-games-text">Games</span>
+            {/* Orbit swooping round "Games": draws in, then a comet keeps riding it to the sparkle */}
+            <svg className="h3-orbit" viewBox="0 0 400 160" aria-hidden="true">
+              <defs>
+                <linearGradient id="h3-orbit-grad" x1="0" y1="0" x2="400" y2="0" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stopColor="#ff7a1a" stopOpacity="0" />
+                  <stop offset="0.45" stopColor="#ff7a1a" stopOpacity="0.85" />
+                  <stop offset="1" stopColor="#ffb25a" />
+                </linearGradient>
+              </defs>
+              <g transform="rotate(-7 200 85)">
+                <path
+                  id="h3-orbit-path"
+                  className="h3-orbit-line"
+                  d="M10 85 A190 60 0 1 0 390 85 A190 60 0 1 0 10 85"
+                  pathLength={1}
+                />
+                <circle className="h3-orbit-comet" r="3.2">
+                  <animateMotion dur="3.4s" begin="2.2s" repeatCount="indefinite" keyPoints="0;0.561" keyTimes="0;1" calcMode="linear">
+                    <mpath href="#h3-orbit-path" />
+                  </animateMotion>
+                  <animate attributeName="opacity" dur="3.4s" begin="2.2s" repeatCount="indefinite" values="0;1;1;0" keyTimes="0;0.15;0.85;1" />
+                </circle>
+                <path
+                  className="h3-orbit-star"
+                  d="M355.6 36.6 Q357.2 49 369.6 50.6 Q357.2 52.2 355.6 64.6 Q354 52.2 341.6 50.6 Q354 49 355.6 36.6Z"
+                />
+              </g>
+            </svg>
           </span>
         </h1>
         <p className="h3-subtitle">

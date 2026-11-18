@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LayoutGrid, Play } from "lucide-react";
+import { LayoutGrid, Play, Pointer } from "lucide-react";
 import { categories, games, type Game } from "../catalog";
 import { categoryIcon } from "../lib/categoryIcons";
 import NavAccount from "../components/NavAccount";
-import { RiHomeSmile, RiSearchReicon } from "../components/ReIcons";
+import { RiHomeSmile, RiSearchReicon, RiTrophyLine } from "../components/ReIcons";
 import { inkFor } from "../components/FeatureCarousel";
 import "./home3.css";
 import "./games-globe.css";
@@ -213,7 +213,8 @@ export default function GamesGlobe() {
         const z = -py * sp + z1 * cp;
         const el = cards[i];
         if (el) {
-          const o = clamp((z - 0.08) / 0.5, 0, 1);
+          // Fades in from just past the rim so edge cards read as thin tilted discs.
+          const o = clamp((z + 0.02) / 0.42, 0, 1);
           el.style.opacity = String(o * o * (3 - 2 * o));
           el.style.visibility = o > 0 ? "visible" : "hidden";
           // Size tapers with distance from the centre: 1.3× for the card facing you, ~1× for its
@@ -439,6 +440,9 @@ export default function GamesGlobe() {
               <RiSearchReicon size={21} aria-hidden="true" />
             </button>
           </div>
+          <Link className="gs-home" to="/leaderboards" aria-label="Leaderboards" title="Leaderboards">
+            <RiTrophyLine size={22} aria-hidden="true" />
+          </Link>
           <Link className="gs-home" to="/" aria-label="Home" title="Home">
             <RiHomeSmile size={22} aria-hidden="true" />
           </Link>
@@ -457,7 +461,9 @@ export default function GamesGlobe() {
           {active.category} · {active.difficulty} · ~{active.minutes} min
         </p>
         <Link className="gs-play" to={`/game/${active.id}`}>
-          <Play size={15} />
+          <span className="gs-play-icon" aria-hidden="true">
+            <Play size={16} strokeWidth={2.4} />
+          </span>
           Play now
         </Link>
       </div>
@@ -497,7 +503,10 @@ export default function GamesGlobe() {
         </div>
       </div>
 
-      <p className="gs-hint">Drag to spin · tap a game</p>
+      <p className="gs-hint">
+        <Pointer size={16} strokeWidth={1.8} aria-hidden="true" />
+        Drag to spin · tap a game
+      </p>
     </div>
   );
 }

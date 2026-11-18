@@ -5,10 +5,14 @@
    Quick successive clears build a combo multiplier.
 
    Levels are generated so they are always solvable: arrows are placed one by one, each only where
-   its exit line is clear of the arrows already placed — so removing them in reverse order works. */
+   its exit line is clear of the arrows already placed — so removing them in reverse order works.
+
+   The level reached is saved (src/lib/progress.ts), so players pick up where they left off. Running
+   out of lives retries the same level; "Reset progress" goes back to level 1. */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GameProps } from "./index";
 import { reducedMotion } from "./fx";
+import { useGameProgress } from "../lib/progress";
 import "./arrows.css";
 
 type Dir = 0 | 1 | 2 | 3; // up, right, down, left
@@ -253,6 +257,7 @@ type Popup = { id: number; x: number; y: number; text: string; color: string; bi
 const COMBO_MS = 1700;
 
 export default function ArrowsGame({ onFinish }: GameProps) {
+  const saved = useGameProgress("arrows");
   const [level, setLevel] = useState(1);
   const [seed, setSeed] = useState(() => (Math.random() * 2 ** 31) | 0);
   const board = useMemo(() => generate(level, seed), [level, seed]);
@@ -274,6 +279,7 @@ export default function ArrowsGame({ onFinish }: GameProps) {
   const [shakeKey, setShakeKey] = useState(0);
   const [brokenHeart, setBrokenHeart] = useState<number | null>(null);
   const [popups, setPopups] = useState<Popup[]>([]);
+  const [confirmReset, setConfirmReset] = useState(false);
   const [, setTick] = useState(0);
 
   const finished = useRef(false);
@@ -282,6 +288,15 @@ export default function ArrowsGame({ onFinish }: GameProps) {
   const lastClear = useRef(0);
   const popupId = useRef(0);
   const calm = useMemo(() => reducedMotion(), []);
+  const touched = useRef(false); // the player has tapped: a late-arriving save mustn't swap the board
+
+  /* ----- start from the saved level once it's known ----- */
+  useEffect(() => {
+    if (!saved.ready || touched.current || saved.level === level) return;
+    setLevel(saved.level);
+    setSeed((Math.random() * 2 ** 31) | 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the saved level arrives
+  }, [saved.ready, saved.level]);
 
   /* ----- per level ----- */
   useEffect(() => {
@@ -420,14 +435,16 @@ export default function ArrowsGame({ onFinish }: GameProps) {
     const bonus = 50 * level + lives * 20;
     setScore((s) => s + bonus);
     setState("cleared");
+    saved.save(level + 1); // closing the site now resumes on the next level
     sfx.clear();
     // confetti from the top of the board
     for (let i = 0; i < 6; i++) burst(px(Math.random() * cols), px(-0.5), PALETTE[i * 2 % PALETTE.length], 14, 220);
     setParticlesAlive(true);
-  }, [removed, arrows.length, state, level, lives, burst, cols]);
+  }, [removed, arrows.length, state, level, lives, burst, cols, saved]);
 
   function tap(a: Arrow) {
     if (state !== "play" || intro || gone.current.has(a.id) || anims.has(a.id)) return;
+    touched.current = true;
     setHinted(null);
     const block = blockOf(a, occupancy());
     const head = a.cells[a.cells.length - 1];
@@ -499,15 +516,23 @@ export default function ArrowsGame({ onFinish }: GameProps) {
     setSeed((Math.random() * 2 ** 31) | 0);
   }
 
+  /** New run on the current level (a fresh board, full lives, score from 0). */
   function restart() {
+    touched.current = true;
     finished.current = false;
     setLives(LIVES);
     setScore(0);
     setShownScore(0);
     setCleared(0);
     setBestCombo(0);
-    setLevel(1);
     setSeed((Math.random() * 2 ** 31) | 0);
+  }
+
+  function resetProgress() {
+    saved.reset();
+    setConfirmReset(false);
+    restart();
+    setLevel(1);
   }
 
   /* ----- render ----- */
@@ -701,8 +726,24 @@ export default function ArrowsGame({ onFinish }: GameProps) {
                 </span>
               </div>
               <button type="button" className="primary-btn" onClick={restart} autoFocus>
-                Play again
+                Retry level {level}
               </button>
+            </div>
+          </div>
+        ) : null}
+        {confirmReset ? (
+          <div className="arw-overlay" role="dialog" aria-modal="true" aria-labelledby="arw-reset-title">
+            <div className="arw-card">
+              <h3 id="arw-reset-title">Reset progress?</h3>
+              <p>You'll go back to level 1. Your saved level can't be restored.</p>
+              <div className="arw-confirm-actions">
+                <button type="button" className="ghost-btn" onClick={() => setConfirmReset(false)} autoFocus>
+                  Cancel
+                </button>
+                <button type="button" className="primary-btn arw-danger" onClick={resetProgress}>
+                  Reset to level 1
+                </button>
+              </div>
             </div>
           </div>
         ) : null}
@@ -713,7 +754,15 @@ export default function ArrowsGame({ onFinish }: GameProps) {
           💡 Hint ({hints})
         </button>
         <button type="button" className="ghost-btn" onClick={restart}>
-          ↻ Restart
+          ↻ Restart level
+        </button>
+        <button
+          type="button"
+          className="ghost-btn"
+          disabled={level === 1 && saved.level === 1}
+          onClick={() => setConfirmReset(true)}
+        >
+          ⟲ Reset progress
         </button>
       </div>
       <p className="game-hint">
