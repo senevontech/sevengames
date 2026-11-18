@@ -99,3 +99,20 @@
     animation: none;
   }
 }
+
+/* Nav account button: it clips its contents (it slides open to show "Profile"), so the ring is
+   drawn just inside the avatar's edge instead of outside, and the glow sits inside too. */
+.h3-account .av-frame::after {
+  inset: 0;
+  padding: 3px;
+}
+
+.h3-account .av-frame::before {
+  inset: 3px;
+  z-index: 1;
+  box-shadow: inset 0 0 6px 1px rgba(255, 255, 255, 0.35);
+}
+
+.h3-account:has(.av-frame) {
+  box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.55);
+}
