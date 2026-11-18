@@ -95,7 +95,10 @@ begin
 end;
 $$;
 
--- Top players with their names and avatars.
+-- Top players with their names and avatars. (The avatar column comes from schema.sql; add it
+-- here too in case this database was set up before it existed.)
+alter table public.profiles add column if not exists avatar jsonb;
+
 create or replace view public.chess_leaderboard as
 select r.user_id, coalesce(p.display_name, 'Player') as display_name, p.avatar, r.rating, r.wins, r.losses, r.draws
 from chess_ratings r
