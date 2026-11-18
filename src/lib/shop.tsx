@@ -47,8 +47,15 @@ let frameTimer = 0;
 
 const notifyFrames = () => frameListeners.forEach((l) => l());
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function queueFrame(id: string) {
   if (!supabase || frameCache.has(id) || framePending.has(id)) return;
+  // only account ids (a bad id would make the whole batched query fail)
+  if (!UUID.test(id)) {
+    frameCache.set(id, null);
+    return;
+  }
   framePending.add(id);
   if (frameTimer) return;
   frameTimer = window.setTimeout(() => {

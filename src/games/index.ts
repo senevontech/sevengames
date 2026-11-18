@@ -20,7 +20,7 @@ import StackGame from "./stack";
 import DodgeGame from "./dodge";
 import ConnectFour from "./connect-four";
 import LightsOut from "./lights-out";
-import ArrowsGame from "./arrows";
+import ArrowsGame from "./arrowsGame";
 
 export type GameProps = {
   /** Call once when the round ends with the final score (or time in seconds for timed games). */

@@ -813,3 +813,505 @@
     animation: none;
   }
 }
+
+/* ============================================================
+   Compact layout + online play
+   ============================================================ */
+.arw-shell {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 540px;
+}
+
+.arw-surface {
+  gap: 10px !important;
+}
+
+/* HUD: one tight row */
+.arw-hud {
+  gap: 10px;
+}
+
+.arw-level,
+.arw-score {
+  min-width: 54px;
+  padding: 4px 10px 5px;
+  border-radius: 13px;
+}
+
+.arw-level small,
+.arw-score small {
+  font-size: 9px;
+}
+
+.arw-level b,
+.arw-score b {
+  font-size: 18px;
+}
+
+.arw-hud-mid {
+  gap: 6px;
+}
+
+.arw-heart {
+  width: 15px;
+  height: 14px;
+}
+
+.arw-progress {
+  height: 6px;
+}
+
+.arw-mini-stat {
+  font-size: 11.5px;
+  font-weight: 700;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.arw-combo {
+  min-height: 28px;
+  padding: 4px 14px;
+  font-size: 12.5px;
+}
+
+/* actions: round icon buttons with a count */
+.arw-actions {
+  gap: 8px;
+}
+
+.arw-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 40px;
+  height: 36px;
+  padding: 0 11px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--arw-ink);
+  background: var(--arw-chip);
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.2s ease;
+}
+
+.arw-act b {
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.arw-act:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.arw-act:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.arw-act.is-on {
+  border-color: currentColor;
+}
+
+.arw-actions .arw-act.arw-undo-ready {
+  border-color: #ff8a3d;
+  color: #ff8a3d;
+}
+
+.arw-help {
+  max-width: 420px;
+  margin: 0;
+  font-size: 12.5px;
+  text-align: center;
+}
+
+/* segmented switch (Solo / Online, Race / Infinite) */
+.arw-seg {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--arw-chip, rgba(255, 255, 255, 0.06));
+}
+
+.arw-seg button {
+  min-width: 84px;
+  padding: 7px 16px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: inherit;
+  background: none;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.arw-seg button.active {
+  opacity: 1;
+  color: #1f0c00;
+  background: linear-gradient(135deg, #ffb05c, #ff6b3d);
+  box-shadow: 0 6px 16px -8px rgba(255, 107, 61, 0.9);
+}
+
+/* infinite: new arrows pop in */
+.arw-arrow.is-spawn {
+  animation: arw-spawn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes arw-spawn {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+/* match countdown */
+.arw-countdown {
+  pointer-events: none;
+}
+
+.arw-countdown b {
+  font-size: 88px;
+  font-weight: 900;
+  line-height: 1;
+  color: #ff8a3d;
+  text-shadow: 0 6px 30px rgba(255, 107, 61, 0.55);
+  animation: arw-count 1s ease-out both;
+}
+
+@keyframes arw-count {
+  from {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0.2;
+    transform: scale(0.9);
+  }
+}
+
+/* opponent bar */
+.arw-opp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 10px 5px 6px;
+  border-radius: 999px;
+  background: var(--arw-chip);
+  font-size: 12.5px;
+}
+
+.arw-opp.is-gone {
+  opacity: 0.55;
+}
+
+.arw-opp-av {
+  flex: none;
+}
+
+.arw-opp-name {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.arw-opp-hearts {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+
+.arw-opp-hearts i {
+  width: 10px;
+  height: 9px;
+  border-radius: 50% 50% 2px 2px;
+  background: currentColor;
+  opacity: 0.2;
+}
+
+.arw-opp-hearts i.on {
+  color: #ff4d5e;
+  opacity: 1;
+}
+
+.arw-opp-bar {
+  flex: 0 1 110px;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(127, 127, 127, 0.22);
+}
+
+.arw-opp-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff6b3d, #ffb05c);
+  transition: width 0.4s ease;
+}
+
+.arw-opp-stat {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+/* result */
+.arw-result.is-win h3 {
+  color: #40c057;
+}
+
+.arw-result.is-loss h3 {
+  color: #ff5a4a;
+}
+
+.arw-card .arw-result-note {
+  font-size: 12.5px;
+}
+
+/* ---------- online menu / room ---------- */
+.arw-online {
+  gap: 10px !important;
+}
+
+.arw-online-card {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 20px;
+  text-align: center;
+  background: var(--arw-chip);
+}
+
+.arw-online-card h3,
+.arw-online-card h4,
+.arw-online-card p {
+  margin: 0;
+}
+
+.arw-online-sub {
+  margin: 0;
+  font-size: 12.5px;
+  opacity: 0.75;
+  text-align: center;
+}
+
+.arw-online-note {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ff8a3d;
+}
+
+.arw-online-mode {
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #1f0c00;
+  background: linear-gradient(135deg, #ffb05c, #ff6b3d);
+}
+
+.arw-find {
+  width: 100%;
+  max-width: 280px;
+}
+
+.arw-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+}
+
+.arw-room-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.arw-join {
+  display: flex;
+  gap: 6px;
+}
+
+.arw-join input {
+  width: 84px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid rgba(127, 127, 127, 0.35);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-align: center;
+  color: inherit;
+  background: transparent;
+}
+
+.arw-code {
+  padding: 6px 18px;
+  border: 2px dashed rgba(255, 138, 61, 0.6);
+  border-radius: 14px;
+  font: inherit;
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: 0.24em;
+  color: #ff8a3d;
+  background: none;
+  cursor: pointer;
+}
+
+.arw-peers,
+.arw-players ul {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.arw-peers li,
+.arw-players li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  text-align: left;
+  background: rgba(127, 127, 127, 0.08);
+}
+
+.arw-peers li small {
+  margin-left: auto;
+  font-size: 10.5px;
+  opacity: 0.6;
+}
+
+.arw-peers li.is-empty {
+  justify-content: center;
+  opacity: 0.6;
+}
+
+.arw-players {
+  justify-items: stretch;
+  text-align: left;
+}
+
+.arw-players h4 {
+  font-size: 13px;
+}
+
+.arw-players h4 small {
+  margin-left: 4px;
+  opacity: 0.6;
+}
+
+.arw-players ul {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.arw-player-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.arw-players li .ghost-btn,
+.arw-invite .ghost-btn,
+.arw-invite .primary-btn {
+  padding: 5px 12px;
+  font-size: 12.5px;
+}
+
+.arw-tag {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #1f9d55;
+  background: rgba(64, 192, 87, 0.15);
+}
+
+.arw-invite {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 14px;
+  font-size: 13px;
+  border: 1px solid rgba(255, 138, 61, 0.5);
+  background: rgba(255, 138, 61, 0.1);
+  animation: arw-pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.arw-invite span {
+  flex: 1;
+  min-width: 0;
+}
+
+.arw-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 138, 61, 0.3);
+  border-top-color: #ff8a3d;
+  border-radius: 50%;
+  vertical-align: middle;
+  animation: arw-spin 0.8s linear infinite;
+}
+
+@keyframes arw-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* game pages (neumorphic) */
+.site[data-gtheme] .gp-stage .arw-act,
+.site[data-gtheme] .gp-stage .arw-seg,
+.site[data-gtheme] .gp-stage .arw-opp,
+.site[data-gtheme] .gp-stage .arw-online-card {
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise-sm);
+}
+
+@media (max-width: 420px) {
+  .arw-act {
+    min-width: 36px;
+    height: 34px;
+    padding: 0 9px;
+  }
+
+  .arw-countdown b {
+    font-size: 68px;
+  }
+}

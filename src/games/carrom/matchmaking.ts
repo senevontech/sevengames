@@ -74,6 +74,8 @@ export type LobbyApi = {
  */
 export function useCarromLobby(opts: {
   enabled: boolean;
+  /** Realtime channel for this lobby (default "carrom-lobby"). Other games reuse the hook with their own. */
+  channel?: string;
   userId: string | null;
   name: string;
   avatar: AvatarChoice | null;
@@ -83,6 +85,7 @@ export function useCarromLobby(opts: {
   onGo: (m: Matched, code: string) => void;
 }): LobbyApi {
   const { enabled, userId, name, avatar, available } = opts;
+  const channelName = opts.channel ?? CHANNEL;
   const keyRef = useRef(rid());
   const chRef = useRef<RealtimeChannel | null>(null);
   const [connected, setConnected] = useState(false);
@@ -170,7 +173,7 @@ export function useCarromLobby(opts: {
 
     // channel() hands back an existing channel with the same name, and removing one is async:
     // wait for a previous lobby channel (an earlier mount, or another account) to be gone first.
-    const stale = client.getChannels().filter((c) => c.topic === `realtime:${CHANNEL}`);
+    const stale = client.getChannels().filter((c) => c.topic === `realtime:${channelName}`);
     void Promise.all(stale.map((c) => client.removeChannel(c))).then(() => {
       if (!cancelled) ch = open(client);
     });
@@ -184,11 +187,11 @@ export function useCarromLobby(opts: {
       if (ch) void client.removeChannel(ch);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, userId]);
+  }, [enabled, userId, channelName]);
 
   function open(client: NonNullable<typeof supabase>): RealtimeChannel {
     const me = keyRef.current;
-    const ch = client.channel(CHANNEL, { config: { broadcast: { self: false }, presence: { key: me } } });
+    const ch = client.channel(channelName, { config: { broadcast: { self: false }, presence: { key: me } } });
     chRef.current = ch;
 
     ch.on("presence", { event: "sync" }, () => {

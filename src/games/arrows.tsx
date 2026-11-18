@@ -13,11 +13,12 @@
    Shop extras (src/lib/shop.tsx): arrow skins, exit effects, and hint / undo packs used once the
    free per-level hints run out. Board effects are drawn on canvases (./arrowsFx.ts) so they don't
    re-render the board. */
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { GameProps } from "./index";
 import { reducedMotion } from "./fx";
 import { ArrowsFx, type FxStyle } from "./arrowsFx";
+import type { MatchMode, Progress } from "./arrowsNet";
 import { useGameProgress } from "../lib/progress";
 import { useShop } from "../lib/shop";
 import { useTokens } from "../lib/tokens";
@@ -35,6 +36,20 @@ type Level = { cols: number; rows: number; arrows: Arrow[] };
 
 const CELL = 40;
 const LIVES = 3;
+/* Online matches (see arrowsOnline.tsx) */
+const RACE_LEVEL = 6; // race board: the same mid-size board for both players
+const RACE_LIVES = 3;
+const INF_SIZE_LEVEL = 3; // infinite board size (10 × 14)
+const INF_LIVES = 2;
+const INF_START_ARROWS = 10;
+/** Lives per match mode (also shown on the opponent's bar). */
+export const MATCH_LIVES = { race: RACE_LIVES, infinite: INF_LIVES } as const;
+const MATCH_HINTS = 2; // free hints per match, same for both (bought boosters are off online)
+/** Infinite: ms between spawns, faster over time (3.2 s → 0.9 s over ~65 s). */
+const spawnDelay = (elapsedMs: number) => Math.max(900, 3200 - (elapsedMs / 1000) * 35);
+/** Infinite: longer arrows as the match goes on. */
+const spawnMaxLen = (elapsedMs: number) => Math.min(7, 3 + Math.floor(elapsedMs / 20000));
+
 /** Hints per level: generous early, scarce later. */
 const hintsFor = (level: number) => (level <= 3 ? 3 : level <= 7 ? 2 : 1);
 
@@ -92,6 +107,63 @@ function solveOrder(arrows: Arrow[], cols: number, rows: number): number[] | nul
 }
 
 /**
+ * Grows one arrow from `start` over free cells of `occ` (-1 = free), straight runs more often than
+ * turns (clean, maze-like lines). Returns its cells (tail → head) and head direction, or null when
+ * no valid arrow fits there.
+ */
+function growArrow(
+  occ: Int16Array,
+  cols: number,
+  rows: number,
+  rnd: () => number,
+  start: number,
+  want: number,
+  firstDir: Dir,
+): { cells: number[]; dir: Dir } | null {
+  if (occ[start] !== -1) return null;
+  const cells = [start];
+  let dir = firstDir;
+  while (cells.length < want) {
+    const cur = cells[cells.length - 1];
+    const cx = cur % cols;
+    const cy = Math.floor(cur / cols);
+    const order: Dir[] =
+      rnd() < 0.55
+        ? [dir, ((dir + 1) % 4) as Dir, ((dir + 3) % 4) as Dir]
+        : rnd() < 0.5
+          ? [((dir + 1) % 4) as Dir, dir, ((dir + 3) % 4) as Dir]
+          : [((dir + 3) % 4) as Dir, dir, ((dir + 1) % 4) as Dir];
+    let moved = false;
+    for (const d of order) {
+      const nx = cx + DX[d];
+      const ny = cy + DY[d];
+      if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+      const n = ny * cols + nx;
+      if (occ[n] !== -1 || cells.includes(n)) continue;
+      cells.push(n);
+      dir = d;
+      moved = true;
+      break;
+    }
+    if (!moved) break;
+  }
+  if (cells.length < 2) return null;
+  const a = cells[cells.length - 2];
+  const b = cells[cells.length - 1];
+  const hd = (b - a === 1 ? 1 : b - a === -1 ? 3 : b - a === cols ? 2 : 0) as Dir;
+  // an arrow pointing back into its own body could never leave
+  let x = b % cols;
+  let y = Math.floor(b / cols);
+  for (;;) {
+    x += DX[hd];
+    y += DY[hd];
+    if (x < 0 || y < 0 || x >= cols || y >= rows) break;
+    if (cells.includes(y * cols + x)) return null;
+  }
+  return { cells, dir: hd };
+}
+
+/**
  * Packs the board with arrows. Any arrow may be placed — even one that's blocked — as long as the
  * whole board can still be cleared (checked by actually solving it). Higher levels pack tighter,
  * which means more arrows stuck behind others and longer chains to untangle.
@@ -107,55 +179,16 @@ function generate(level: number, seed: number): Level {
   let filled = 0;
 
   const place = (start: number, want: number, firstDir: Dir) => {
-    if (occ[start] !== -1) return false;
-    const cells = [start];
-    let dir = firstDir;
-    while (cells.length < want) {
-      const cur = cells[cells.length - 1];
-      const cx = cur % cols;
-      const cy = Math.floor(cur / cols);
-      // straight runs more often than turns (clean, maze-like lines)
-      const order: Dir[] =
-        rnd() < 0.55
-          ? [dir, ((dir + 1) % 4) as Dir, ((dir + 3) % 4) as Dir]
-          : rnd() < 0.5
-            ? [((dir + 1) % 4) as Dir, dir, ((dir + 3) % 4) as Dir]
-            : [((dir + 3) % 4) as Dir, dir, ((dir + 1) % 4) as Dir];
-      let moved = false;
-      for (const d of order) {
-        const nx = cx + DX[d];
-        const ny = cy + DY[d];
-        if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
-        const n = ny * cols + nx;
-        if (occ[n] !== -1 || cells.includes(n)) continue;
-        cells.push(n);
-        dir = d;
-        moved = true;
-        break;
-      }
-      if (!moved) break;
-    }
-    if (cells.length < 2) return false;
-    const a = cells[cells.length - 2];
-    const b = cells[cells.length - 1];
-    const hd = (b - a === 1 ? 1 : b - a === -1 ? 3 : b - a === cols ? 2 : 0) as Dir;
-    // an arrow pointing back into its own body could never leave
-    let x = b % cols;
-    let y = Math.floor(b / cols);
-    for (;;) {
-      x += DX[hd];
-      y += DY[hd];
-      if (x < 0 || y < 0 || x >= cols || y >= rows) break;
-      if (cells.includes(y * cols + x)) return false;
-    }
-    const arrow: Arrow = { id: arrows.length, cells, dir: hd };
+    const g = growArrow(occ, cols, rows, rnd, start, want, firstDir);
+    if (!g) return false;
+    const arrow: Arrow = { id: arrows.length, cells: g.cells, dir: g.dir };
     arrows.push(arrow);
     if (!solveOrder(arrows, cols, rows)) {
       arrows.pop();
       return false;
     }
-    for (const c of cells) occ[c] = arrow.id;
-    filled += cells.length;
+    for (const c of g.cells) occ[c] = arrow.id;
+    filled += g.cells.length;
     return true;
   };
 
@@ -175,6 +208,40 @@ function generate(level: number, seed: number): Level {
     if (filled >= total * targetFill) break;
     const dirs = ([0, 1, 2, 3] as Dir[]).sort(() => rnd() - 0.5);
     for (const d of dirs) if (place(start, 2 + Math.floor(rnd() * 3), d)) break;
+  }
+  return { cols, rows, arrows };
+}
+
+/**
+ * Infinite mode: one new arrow in a free spot of a live board, placed so the board can still be
+ * cleared. `alive` = arrows still on the board; `moving` = arrows sliding out right now (their
+ * cells aren't free yet, but they no longer block). Null when there's no room.
+ */
+function spawnArrow(alive: Arrow[], moving: Arrow[], nextId: number, cols: number, rows: number, rnd: () => number, maxLen: number): Arrow | null {
+  const occ = new Int16Array(cols * rows).fill(-1);
+  for (const a of alive) for (const c of a.cells) occ[c] = a.id;
+  for (const a of moving) for (const c of a.cells) occ[c] = a.id;
+  const free: number[] = [];
+  for (let i = 0; i < occ.length; i++) if (occ[i] === -1) free.push(i);
+  if (free.length < 2) return null;
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const start = free[Math.floor(rnd() * free.length)];
+    const g = growArrow(occ, cols, rows, rnd, start, 2 + Math.floor(rnd() * (maxLen - 1)), Math.floor(rnd() * 4) as Dir);
+    if (!g) continue;
+    const arrow: Arrow = { id: nextId, cells: g.cells, dir: g.dir };
+    if (solveOrder([...alive, arrow], cols, rows)) return arrow;
+  }
+  return null;
+}
+
+/** Infinite mode's opening board: the same few arrows for both players (same seed). */
+function infiniteStart(seed: number): Level {
+  const { cols, rows } = sizeFor(INF_SIZE_LEVEL);
+  const rnd = rngFrom(seed);
+  const arrows: Arrow[] = [];
+  for (let i = 0; i < 60 && arrows.length < INF_START_ARROWS; i++) {
+    const a = spawnArrow(arrows, [], arrows.length, cols, rows, rnd, 5);
+    if (a) arrows.push(a);
   }
   return { cols, rows, arrows };
 }
@@ -272,6 +339,7 @@ type ArrowViewProps = {
   pts: Pt[];
   color: string;
   tint: boolean;
+  spawned: boolean;
   anim: Anim | undefined;
   now: number;
   blocker: boolean;
@@ -281,7 +349,7 @@ type ArrowViewProps = {
 
 /** One arrow. Memoised: arrows at rest don't re-render while others move. */
 const ArrowView = memo(
-  function ArrowView({ a, idx, pts, color, tint, anim: an, now, blocker, hinted, onTap }: ArrowViewProps) {
+  function ArrowView({ a, idx, pts, color, tint, spawned, anim: an, now, blocker, hinted, onTap }: ArrowViewProps) {
     const len = a.cells.length - 1;
     let off = 0;
     let fade = 1;
@@ -309,6 +377,7 @@ const ArrowView = memo(
     const trail = an?.kind === "exit" && off > 0.2 ? pathD(slice(pts, Math.max(0, off - 2.4), off + 0.2)) : null;
     const cls = [
       "arw-arrow",
+      spawned ? "is-spawn" : "",
       an?.kind === "exit" ? "is-out" : "",
       an?.kind === "bump" ? "is-bump" : "",
       blocker ? "is-blocker" : "",
@@ -338,6 +407,7 @@ const ArrowView = memo(
     p.idx === n.idx &&
     p.color === n.color &&
     p.tint === n.tint &&
+    p.spawned === n.spawned &&
     p.anim === n.anim &&
     p.blocker === n.blocker &&
     p.hinted === n.hinted &&
@@ -417,32 +487,83 @@ function BoosterPanel({ item, onClose }: { item: BoosterItem; onClose: () => voi
   );
 }
 
-export default function ArrowsGame({ onFinish }: GameProps) {
+/** Match timer: ticks on its own so the board doesn't re-render ten times a second. */
+function MatchClock({ startedAt, stopped }: { startedAt: number | null; stopped: number | null }) {
+  const [, setT] = useState(0);
+  useEffect(() => {
+    if (startedAt === null || stopped !== null) return;
+    const id = window.setInterval(() => setT((t) => t + 1), 100);
+    return () => window.clearInterval(id);
+  }, [startedAt, stopped]);
+  const ms = startedAt === null ? 0 : (stopped ?? performance.now()) - startedAt;
+  return <>{(ms / 1000).toFixed(1)}s</>;
+}
+
+/** An online match (from arrowsOnline.tsx). The component is remounted for each round. */
+export type MatchSetup = { mode: MatchMode; seed: number };
+
+export type ArrowsPlayProps = GameProps & {
+  match?: MatchSetup;
+  /** Match: this player's progress changed. */
+  onMatchProgress?: (p: Progress) => void;
+  /** Match: this player's run ended (cleared the race board, or out of lives). */
+  onMatchEnd?: (type: "finish" | "out", ms: number) => void;
+  /** Match: the result is in (maybe the opponent finished first) — stop playing. */
+  matchOver?: boolean;
+  /** Shown above the HUD (the opponent's bar in a match). */
+  top?: ReactNode;
+  /** Shown over the board (the match result). */
+  overlay?: ReactNode;
+};
+
+export function ArrowsPlay({ onFinish, match, onMatchProgress, onMatchEnd, matchOver, top, overlay }: ArrowsPlayProps) {
+  const online = Boolean(match);
+  const infinite = match?.mode === "infinite";
+  const maxLives = !match ? LIVES : infinite ? INF_LIVES : RACE_LIVES;
   const saved = useGameProgress("arrows");
   const shop = useShop();
   const skin = skinOf(shop.arrowSkin);
   const fxStyle = fxIdOf(shop.arrowFx) as FxStyle;
   const colorOf = useCallback((a: Arrow, lv: number) => skin.palette[(a.id * 7 + lv * 3) % skin.palette.length], [skin]);
 
-  const [level, setLevel] = useState(1);
-  const [seed, setSeed] = useState(() => (Math.random() * 2 ** 31) | 0);
-  const board = useMemo(() => generate(level, seed), [level, seed]);
-  const { cols, rows, arrows } = board;
-  const paths = useMemo(() => arrows.map((a) => travelPath(a, cols, rows)), [arrows, cols, rows]);
+  const [level, setLevel] = useState(() => (!match ? 1 : infinite ? INF_SIZE_LEVEL : RACE_LEVEL));
+  const [seed, setSeed] = useState(() => match?.seed ?? (Math.random() * 2 ** 31) | 0);
+  const board = useMemo(() => (infinite ? infiniteStart(seed) : generate(level, seed)), [infinite, level, seed]);
+  const { cols, rows } = board;
+  // infinite mode: arrows spawned during play (ids continue after the opening board's)
+  const [spawned, setSpawned] = useState<Arrow[]>([]);
+  const arrows = useMemo(() => (spawned.length ? board.arrows.concat(spawned) : board.arrows), [board, spawned]);
+  const pathCache = useRef(new WeakMap<Arrow, Pt[]>());
+  const paths = useMemo(
+    () =>
+      arrows.map((a) => {
+        let p = pathCache.current.get(a);
+        if (!p) {
+          p = travelPath(a, cols, rows);
+          pathCache.current.set(a, p);
+        }
+        return p;
+      }),
+    [arrows, cols, rows],
+  );
 
   const [removed, setRemoved] = useState<Set<number>>(() => new Set());
   const [anims, setAnims] = useState<Map<number, Anim>>(() => new Map());
-  const [lives, setLives] = useState(LIVES);
-  const [livesAtStart, setLivesAtStart] = useState(LIVES);
+  const [lives, setLives] = useState(maxLives);
+  const [livesAtStart, setLivesAtStart] = useState(maxLives);
   const [score, setScore] = useState(0);
   const [shownScore, setShownScore] = useState(0);
-  const [hints, setHints] = useState(hintsFor(1));
+  const [hints, setHints] = useState(() => (match ? MATCH_HINTS : hintsFor(1)));
   const [hinted, setHinted] = useState<number | null>(null);
-  const [state, setState] = useState<"play" | "cleared" | "chance" | "over">("play");
+  // "done": a match run that has ended (the result shows on top)
+  const [state, setState] = useState<"play" | "cleared" | "chance" | "over" | "done">("play");
   const [combo, setCombo] = useState(0);
   const [bestCombo, setBestCombo] = useState(0);
   const [cleared, setCleared] = useState(0);
   const [intro, setIntro] = useState(true);
+  const [countdown, setCountdown] = useState(match ? 3 : 0);
+  const [startedAt, setStartedAt] = useState<number | null>(null);
+  const [stoppedAt, setStoppedAt] = useState<number | null>(null);
   const [shakeKey, setShakeKey] = useState(0);
   const [brokenHeart, setBrokenHeart] = useState<number | null>(null);
   const [popups, setPopups] = useState<Popup[]>([]);
@@ -451,6 +572,8 @@ export default function ArrowsGame({ onFinish }: GameProps) {
   const [undoable, setUndoable] = useState(false); // the last tap was a bump that can be taken back
   const [boostBusy, setBoostBusy] = useState(false);
   const [chanceLeft, setChanceLeft] = useState(0);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [spawnTick, setSpawnTick] = useState(0);
   const [, setTick] = useState(0);
 
   const finished = useRef(false);
@@ -462,9 +585,11 @@ export default function ArrowsGame({ onFinish }: GameProps) {
   scoreRef.current = score;
   const calm = useMemo(() => reducedMotion(), []);
   const touched = useRef(false); // the player has tapped: a late-arriving save mustn't swap the board
+  const spawnCount = useRef(0);
 
-  const ownedHints = shop.state?.inventory.arrows_hint ?? 0;
-  const ownedUndos = shop.state?.inventory.arrows_undo ?? 0;
+  const ownedHints = online ? 0 : shop.state?.inventory.arrows_hint ?? 0;
+  const ownedUndos = online ? 0 : shop.state?.inventory.arrows_undo ?? 0;
+  const elapsed = () => (startedAt === null ? 0 : performance.now() - startedAt);
 
   /* ----- canvas effects (dots, waves, sparks): their own loop, outside React ----- */
   const stackRef = useRef<HTMLDivElement>(null);
@@ -501,29 +626,41 @@ export default function ArrowsGame({ onFinish }: GameProps) {
     el.classList.add("go");
   }, [shakeKey]);
 
-  /* ----- start from the saved level once it's known ----- */
+  /* ----- solo: start from the saved level once it's known ----- */
   useEffect(() => {
-    if (!saved.ready || touched.current || saved.level === level) return;
+    if (online || !saved.ready || touched.current || saved.level === level) return;
     setLevel(saved.level);
     setSeed((Math.random() * 2 ** 31) | 0);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the saved level arrives
   }, [saved.ready, saved.level]);
 
-  /* ----- per level ----- */
+  /* ----- match: 3-2-1, then the clock starts ----- */
+  useEffect(() => {
+    if (!online) return;
+    if (countdown <= 0) {
+      setStartedAt(performance.now());
+      return;
+    }
+    const id = window.setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => window.clearTimeout(id);
+  }, [online, countdown]);
+
+  /* ----- per board ----- */
   useEffect(() => {
     setRemoved(new Set());
     setAnims(new Map());
+    setSpawned([]);
     gone.current = new Set();
     undoUsed.current = false;
     setUndoable(false);
-    setHints(hintsFor(level));
+    if (!online) setHints(hintsFor(level));
     setHinted(null);
     setState("play");
     setCombo(0);
     setIntro(!calm);
-    const t = window.setTimeout(() => setIntro(false), 650 + Math.min(arrows.length, 40) * 22);
+    const t = window.setTimeout(() => setIntro(false), 650 + Math.min(board.arrows.length, 40) * 22);
     return () => window.clearTimeout(t);
-  }, [board, calm, arrows.length, level]);
+  }, [board, calm, level, online]);
 
   useEffect(() => {
     setLivesAtStart(lives);
@@ -620,20 +757,38 @@ export default function ArrowsGame({ onFinish }: GameProps) {
     return () => cancelAnimationFrame(raf);
   }, [busy, anims, arrows, cols, rows, level, colorOf, fxStyle]);
 
-  /* ----- level cleared ----- */
+  /** A match run ended on this side: freeze the clock and tell the room. */
+  const endMatchRun = useCallback(
+    (type: "finish" | "out") => {
+      const ms = startedAt === null ? 0 : performance.now() - startedAt;
+      setStoppedAt(performance.now());
+      setState("done");
+      if (!finished.current) {
+        finished.current = true;
+        onMatchEnd?.(type, ms);
+      }
+    },
+    [startedAt, onMatchEnd],
+  );
+
+  /* ----- board cleared ----- */
   useEffect(() => {
-    if (state !== "play" || !arrows.length || removed.size !== arrows.length) return;
+    if (infinite || state !== "play" || !arrows.length || removed.size !== arrows.length) return;
+    sfx.clear();
+    // confetti from the top of the board
+    for (let i = 0; i < 6; i++) fx.current?.burst(px(Math.random() * cols), px(-0.5), skin.palette[(i * 2) % skin.palette.length], 14, 220);
+    if (online) {
+      endMatchRun("finish");
+      return;
+    }
     const bonus = 50 * level + lives * 20;
     setScore((s) => s + bonus);
     setState("cleared");
     setUndoable(false);
     saved.save(level + 1); // closing the site now resumes on the next level
-    sfx.clear();
-    // confetti from the top of the board
-    for (let i = 0; i < 6; i++) fx.current?.burst(px(Math.random() * cols), px(-0.5), skin.palette[(i * 2) % skin.palette.length], 14, 220);
-  }, [removed, arrows.length, state, level, lives, cols, saved, skin]);
+  }, [removed, arrows.length, state, level, lives, cols, saved, skin, infinite, online, endMatchRun]);
 
-  /** The run is over: show the result and report the score (once). */
+  /** Solo: the run is over: show the result and report the score (once). */
   const endRun = useCallback(() => {
     setState("over");
     sfx.lose();
@@ -642,6 +797,30 @@ export default function ArrowsGame({ onFinish }: GameProps) {
       onFinish(scoreRef.current);
     }
   }, [onFinish]);
+
+  /** Out of lives (after the last heart breaks). */
+  const outOfLives = useCallback(() => {
+    if (online) {
+      sfx.lose();
+      endMatchRun("out");
+    } else endRun();
+  }, [online, endMatchRun, endRun]);
+
+  /* ----- match: the result came in (maybe the opponent finished first) ----- */
+  useEffect(() => {
+    if (!matchOver || state === "done") return;
+    setStoppedAt((s) => s ?? performance.now());
+    setState("done");
+    finished.current = true;
+  }, [matchOver, state]);
+
+  /* ----- match: stream progress ----- */
+  const reportRef = useRef(onMatchProgress);
+  reportRef.current = onMatchProgress;
+  useEffect(() => {
+    if (!online || startedAt === null) return;
+    reportRef.current?.({ cleared: removed.size, left: arrows.length - removed.size, lives, ms: (stoppedAt ?? performance.now()) - startedAt });
+  }, [online, startedAt, stoppedAt, removed.size, arrows.length, lives]);
 
   /* ----- last chance: undo the bump that cost the last life, or the run ends ----- */
   useEffect(() => {
@@ -654,8 +833,58 @@ export default function ArrowsGame({ onFinish }: GameProps) {
     return () => window.clearTimeout(id);
   }, [state, chanceLeft, boostBusy, endRun]);
 
+  /** Lose a life (bump, or infinite board overflow). Reads lives from a ref: timers call it too. */
+  const livesRef = useRef(lives);
+  livesRef.current = lives;
+  const loseLife = useCallback(
+    (x: number, y: number, label: string) => {
+      if (livesRef.current <= 0) return;
+      sfx.bump();
+      setShakeKey((k) => k + 1);
+      setCombo(0);
+      const left = livesRef.current - 1;
+      livesRef.current = left;
+      setBrokenHeart(left);
+      window.setTimeout(() => setBrokenHeart(null), 700);
+      setLives(left);
+      popup(x, y, label, "#ff5a4a");
+      if (!online && !undoUsed.current) setUndoable(true);
+      if (left <= 0) {
+        const canUndo = !online && !undoUsed.current && ownedUndos > 0;
+        window.setTimeout(() => {
+          if (canUndo) {
+            setChanceLeft(CHANCE_S);
+            setState("chance");
+          } else outOfLives();
+        }, 450);
+      }
+    },
+    [online, ownedUndos, popup, outOfLives],
+  );
+
+  /* ----- infinite: arrows keep coming, faster and longer over time ----- */
+  const playing = state === "play" && !intro && countdown === 0 && startedAt !== null;
+  // the latest board / lives each time the timer fires (it's armed once per spawn)
+  const spawnNow = useRef(() => {});
+  spawnNow.current = () => {
+    const ms = elapsed();
+    const rnd = rngFrom((seed ^ Math.imul(++spawnCount.current, 0x9e3779b1)) >>> 0);
+    const alive = arrows.filter((a) => !gone.current.has(a.id));
+    const moving = arrows.filter((a) => gone.current.has(a.id) && !removed.has(a.id));
+    const a = spawnArrow(alive, moving, arrows.length, cols, rows, rnd, spawnMaxLen(ms));
+    if (a) setSpawned((s) => [...s, a]);
+    else loseLife(px((cols - 1) / 2), px((rows - 1) / 2), "board full!");
+    setSpawnTick((t) => t + 1);
+  };
+  useEffect(() => {
+    if (!infinite || !playing) return;
+    const id = window.setTimeout(() => spawnNow.current(), spawnDelay(elapsed()));
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-armed after each spawn
+  }, [infinite, playing, spawnTick]);
+
   function tap(a: Arrow) {
-    if (state !== "play" || intro || gone.current.has(a.id) || anims.has(a.id)) return;
+    if (state !== "play" || intro || countdown > 0 || gone.current.has(a.id) || anims.has(a.id)) return;
     touched.current = true;
     setHinted(null);
     setUndoable(false);
@@ -692,24 +921,7 @@ export default function ArrowsGame({ onFinish }: GameProps) {
     setAnims((m) =>
       new Map(m).set(a.id, { kind: "bump", t0: performance.now(), dur: calm ? 200 : 440, dist: block.steps + 0.32, blocker: block.blocker }),
     );
-    sfx.bump();
-    setShakeKey((k) => k + 1);
-    setCombo(0);
-    const left = lives - 1;
-    setBrokenHeart(left);
-    window.setTimeout(() => setBrokenHeart(null), 700);
-    setLives(left);
-    popup(hx, hy - 6, "blocked!", "#ff5a4a");
-    if (!undoUsed.current) setUndoable(true);
-    if (left <= 0) {
-      const canUndo = !undoUsed.current && ownedUndos > 0;
-      window.setTimeout(() => {
-        if (canUndo) {
-          setChanceLeft(CHANCE_S);
-          setState("chance");
-        } else endRun();
-      }, 450);
-    }
+    loseLife(hx, hy - 6, "blocked!");
   }
   // stable tap handler for the memoised arrows
   const tapRef = useRef(tap);
@@ -717,8 +929,9 @@ export default function ArrowsGame({ onFinish }: GameProps) {
   const onTap = useCallback((a: Arrow) => tapRef.current(a), []);
 
   async function giveHint() {
-    if (state !== "play" || intro || boostBusy) return;
+    if (state !== "play" || intro || countdown > 0 || boostBusy) return;
     if (hints <= 0) {
+      if (online) return;
       if (ownedHints <= 0) {
         setPanel("arrows_hint");
         return;
@@ -738,7 +951,7 @@ export default function ArrowsGame({ onFinish }: GameProps) {
 
   /** Take back the last bump: the life comes back. One per level, uses an owned undo. */
   async function undo() {
-    if (boostBusy || undoUsed.current || (!undoable && state !== "chance")) return;
+    if (online || boostBusy || undoUsed.current || (!undoable && state !== "chance")) return;
     if (ownedUndos <= 0) {
       setPanel("arrows_undo");
       return;
@@ -752,7 +965,7 @@ export default function ArrowsGame({ onFinish }: GameProps) {
     }
     undoUsed.current = true;
     setUndoable(false);
-    setLives((l) => Math.min(LIVES, l + 1));
+    setLives((l) => Math.min(maxLives, l + 1));
     setBrokenHeart(null);
     if (state === "chance") setState("play");
     sfx.hint();
@@ -767,7 +980,7 @@ export default function ArrowsGame({ onFinish }: GameProps) {
   function restart() {
     touched.current = true;
     finished.current = false;
-    setLives(LIVES);
+    setLives(maxLives);
     setScore(0);
     setShownScore(0);
     setCleared(0);
@@ -789,33 +1002,49 @@ export default function ArrowsGame({ onFinish }: GameProps) {
   const blockers = new Set<number>();
   for (const an of anims.values()) if (an.kind === "bump" && an.blocker !== undefined) blockers.add(an.blocker);
   const left = arrows.length - removed.size;
-  const progress = arrows.length ? removed.size / arrows.length : 0;
+  const progress = infinite ? 0 : arrows.length ? removed.size / arrows.length : 0;
   const lost = livesAtStart - lives;
   const stars = lost <= 0 ? 3 : lost === 1 ? 2 : 1;
-  const hintLabel = hints > 0 ? `💡 Hint (${hints})` : ownedHints > 0 ? `💡 Hint · ${ownedHints} owned` : "💡 Get hints";
-  const undoReady = undoable && !undoUsed.current && state === "play";
+  const undoReady = !online && undoable && !undoUsed.current && state === "play";
+  const hintCount = hints > 0 ? hints : ownedHints;
+  const firstSpawn = board.arrows.length;
 
   return (
     <div className="game-surface arw-surface">
-      {/* HUD */}
+      {top}
+
+      {/* HUD: one compact row */}
       <div className="arw-hud">
         <div className="arw-level" key={`lv-${level}`}>
-          <small>Level</small>
-          <b>{level}</b>
+          <small>{!match ? "Level" : infinite ? "Infinite" : "Race"}</small>
+          <b>{!match ? level : infinite ? "∞" : "1"}</b>
         </div>
         <div className="arw-hud-mid">
           <div className="arw-hearts" aria-label={`${lives} lives`}>
-            {Array.from({ length: LIVES }, (_, i) => (
+            {Array.from({ length: maxLives }, (_, i) => (
               <i key={i} className={`arw-heart${i < lives ? " on" : ""}${brokenHeart === i ? " break" : ""}`} aria-hidden="true" />
             ))}
           </div>
-          <div className="arw-progress" aria-label={`${removed.size} of ${arrows.length} arrows cleared`}>
-            <i style={{ width: `${progress * 100}%` }} />
-          </div>
+          {infinite ? (
+            <span className="arw-mini-stat">{left} on board</span>
+          ) : (
+            <div className="arw-progress" aria-label={`${removed.size} of ${arrows.length} arrows cleared`}>
+              <i style={{ width: `${progress * 100}%` }} />
+            </div>
+          )}
         </div>
         <div className="arw-score">
-          <small>Score</small>
-          <b>{shownScore}</b>
+          {match ? (
+            <>
+              <small>{infinite ? "Cleared" : "Time"}</small>
+              <b>{infinite ? removed.size : <MatchClock startedAt={startedAt} stopped={stoppedAt} />}</b>
+            </>
+          ) : (
+            <>
+              <small>Score</small>
+              <b>{shownScore}</b>
+            </>
+          )}
         </div>
       </div>
 
@@ -826,7 +1055,9 @@ export default function ArrowsGame({ onFinish }: GameProps) {
             <span className="arw-combo-bar" style={{ animationDuration: `${COMBO_MS}ms` }} />
           </>
         ) : (
-          <span className="arw-status">{intro ? "Get ready…" : `Tap an arrow to send it out · ${left} left`}</span>
+          <span className="arw-status">
+            {countdown > 0 ? "Get ready…" : intro ? "Get ready…" : infinite ? "Keep the board clear!" : `Tap an arrow to send it out · ${left} left`}
+          </span>
         )}
       </div>
 
@@ -870,6 +1101,7 @@ export default function ArrowsGame({ onFinish }: GameProps) {
                       pts={paths[idx]}
                       color={colorOf(a, level)}
                       tint={skin.tinted}
+                      spawned={a.id >= firstSpawn}
                       anim={anims.get(a.id)}
                       now={now}
                       blocker={blockers.has(a.id)}
@@ -892,6 +1124,11 @@ export default function ArrowsGame({ onFinish }: GameProps) {
         </div>
 
         {/* overlays */}
+        {countdown > 0 ? (
+          <div className="arw-overlay arw-countdown" aria-live="assertive">
+            <b key={countdown}>{countdown}</b>
+          </div>
+        ) : null}
         {state === "cleared" ? (
           <div className="arw-overlay">
             <div className="arw-card">
@@ -957,6 +1194,15 @@ export default function ArrowsGame({ onFinish }: GameProps) {
             </div>
           </div>
         ) : null}
+        {state === "done" && !overlay ? (
+          <div className="arw-overlay">
+            <div className="arw-card">
+              <h3>{lives <= 0 ? "Out of lives" : "Board cleared!"}</h3>
+              <p>Waiting for the result…</p>
+            </div>
+          </div>
+        ) : null}
+        {overlay}
         {confirmReset ? (
           <div className="arw-overlay" role="dialog" aria-modal="true" aria-labelledby="arw-reset-title">
             <div className="arw-card">
@@ -976,35 +1222,67 @@ export default function ArrowsGame({ onFinish }: GameProps) {
         {panel ? <BoosterPanel item={panel} onClose={() => setPanel(null)} /> : null}
       </div>
 
+      {/* actions: one compact row of icon buttons */}
       <div className="arw-actions">
-        <button type="button" className="ghost-btn" disabled={state !== "play" || intro || boostBusy} onClick={() => void giveHint()}>
-          {hintLabel}
-        </button>
         <button
           type="button"
-          className={`ghost-btn${undoReady ? " arw-undo-ready" : ""}`}
-          disabled={!undoReady || boostBusy}
-          onClick={() => void undo()}
-          title="Takes back your last bump and gives the life back (1 per level)"
+          className="arw-act"
+          disabled={state !== "play" || intro || countdown > 0 || boostBusy || (online && hints <= 0)}
+          onClick={() => void giveHint()}
+          title={hints > 0 ? "Hint" : ownedHints > 0 ? "Hint (uses an owned hint)" : online ? "No hints left" : "Get hints"}
+          aria-label={`Hint, ${hintCount} left`}
         >
-          {undoReady && ownedUndos <= 0 ? "↶ Get undos" : `↶ Undo (${ownedUndos})`}
+          <span aria-hidden="true">💡</span>
+          <b>{hints > 0 || online ? hints : ownedHints > 0 ? ownedHints : "+"}</b>
         </button>
-        <button type="button" className="ghost-btn" onClick={restart}>
-          ↻ Restart level
-        </button>
+        {!online ? (
+          <>
+            <button
+              type="button"
+              className={`arw-act${undoReady ? " arw-undo-ready" : ""}`}
+              disabled={!undoReady || boostBusy}
+              onClick={() => void undo()}
+              title="Undo your last bump and get the life back (1 per level)"
+              aria-label={`Undo last bump, ${ownedUndos} left`}
+            >
+              <span aria-hidden="true">↶</span>
+              <b>{undoReady && ownedUndos <= 0 ? "+" : ownedUndos}</b>
+            </button>
+            <button type="button" className="arw-act" onClick={restart} title="Restart level" aria-label="Restart level">
+              <span aria-hidden="true">↻</span>
+            </button>
+            <button
+              type="button"
+              className="arw-act"
+              disabled={level === 1 && saved.level === 1}
+              onClick={() => setConfirmReset(true)}
+              title="Reset progress"
+              aria-label="Reset progress"
+            >
+              <span aria-hidden="true">⟲</span>
+            </button>
+          </>
+        ) : null}
         <button
           type="button"
-          className="ghost-btn"
-          disabled={level === 1 && saved.level === 1}
-          onClick={() => setConfirmReset(true)}
+          className={`arw-act${helpOpen ? " is-on" : ""}`}
+          onClick={() => setHelpOpen((o) => !o)}
+          title="How to play"
+          aria-label="How to play"
+          aria-expanded={helpOpen}
         >
-          ⟲ Reset progress
+          <span aria-hidden="true">?</span>
         </button>
       </div>
-      <p className="game-hint">
-        An arrow leaves only if nothing is in the straight line ahead of its head. Clear arrows quickly for combos — bump
-        one and you lose a life.
-      </p>
+      {helpOpen ? (
+        <p className="game-hint arw-help">
+          {infinite
+            ? "Arrows keep dropping in, faster and faster. Send them out before the board fills up — a full board or a bump costs a life. Lose both lives and you lose."
+            : match
+              ? "Same board for both of you. Clear it first to win. A bump costs a life; lose all three and you lose the race."
+              : "An arrow leaves only if nothing is in the straight line ahead of its head. Clear arrows quickly for combos — bump one and you lose a life."}
+        </p>
+      ) : null}
     </div>
   );
 }
