@@ -28,6 +28,12 @@ import { BOARDS, coinSprite, lightingSprite, strikerSprite, type BoardTheme, typ
 import { AIM_FULL_PREVIEW, AIM_TARGET_LINE, aimReachFor } from "./stats";
 import { carromAudio } from "./audio";
 
+/** Current screen rotation (set by the game each frame) so text can stay upright. */
+let viewAngle = 0;
+export function setViewAngle(a: number) {
+  viewAngle = a;
+}
+
 const reduced = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 function rr(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
@@ -867,6 +873,7 @@ export class CarromFx {
       ctx.save();
       ctx.globalAlpha = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
       ctx.translate(x, y);
+      ctx.rotate(-viewAngle); // upright for whoever is looking
       ctx.scale(pop, pop);
       ctx.font = "900 34px Inter, -apple-system, 'Segoe UI', sans-serif";
       ctx.textAlign = "center";
@@ -948,7 +955,8 @@ export function drawSeatLabels(ctx: CanvasRenderingContext2D, world: World, mySe
     }
     ctx.save();
     ctx.translate(lx, ly);
-    ctx.rotate(rot);
+    // online (rotated view): names read upright for you; on one shared device they face each seat
+    ctx.rotate(viewAngle ? -viewAngle : rot);
     ctx.fillStyle = world.turn === p.seat ? seatRingColor(p.seat) : "rgba(60,35,10,0.42)";
     ctx.fillText(`${p.name}${p.seat === mySeat ? " (you)" : ""}`, 0, 0);
     ctx.restore();

@@ -174,6 +174,26 @@ export function baselineFor(seat: number, seats: Seats): Baseline {
   }
 }
 
+/**
+ * Screen rotation (radians, clockwise) that brings this seat's baseline to the BOTTOM of the
+ * screen. Online, every player views the board from their own side; the world itself (physics,
+ * rules, sync) never rotates.
+ */
+export function viewAngleFor(seat: number, seats: Seats): number {
+  if (seats === 2) return seat === 0 ? 0 : Math.PI;
+  return [0, -Math.PI / 2, Math.PI, Math.PI / 2][seat % 4];
+}
+
+/** Rotate a point around the board centre. */
+export function rotateAboutCentre(p: Vec, angle: number): Vec {
+  if (!angle) return p;
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  const x = p.x - SIZE / 2;
+  const y = p.y - SIZE / 2;
+  return { x: SIZE / 2 + x * c - y * s, y: SIZE / 2 + x * s + y * c };
+}
+
 /** Direction must point into the board from this seat's baseline. */
 export function minDirFor(seat: number, seats: Seats): Vec {
   if (seats === 2) return seat === 0 ? { x: 0, y: -0.05 } : { x: 0, y: 0.05 };

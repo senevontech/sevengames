@@ -15,6 +15,8 @@ import {
   minDirFor,
   placeStriker,
   resetStriker,
+  rotateAboutCentre,
+  viewAngleFor,
   resolveShot,
   scoreForSeat,
   settled,
@@ -44,6 +46,7 @@ import {
   drawStriker,
   drawTurnTimer,
   seatRingColor,
+  setViewAngle,
 } from "./render";
 import { CarromNet, type NetStatus, type RosterEntry } from "./online";
 import { useCarromLobby, type LobbyApi, type Matched } from "./matchmaking";
@@ -758,13 +761,35 @@ export default function CarromGame({ onFinish }: GameProps) {
     return true;
   }, []);
 
+  /** Online: each player sees the board from their own seat (their baseline at the bottom). */
+  const viewAngle = useCallback(() => {
+    const world = worldRef.current;
+    const online = modeRef.current === "join" || modeRef.current.startsWith("host");
+    return world && online ? viewAngleFor(mySeatRef.current, world.seats) : 0;
+  }, []);
+
+  /** Screen point → board point (undoing the view rotation). */
   const toWorld = (e: ReactPointerEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    return {
+    const screen = {
       x: ((e.clientX - rect.left) / rect.width) * SIZE,
       y: ((e.clientY - rect.top) / rect.height) * SIZE,
     };
+    return rotateAboutCentre(screen, -viewAngle());
   };
+
+  /** Does moving the striker "right on screen" lower its baseline coordinate? (rotated views) */
+  const placeFlipped = useCallback(() => {
+    const world = worldRef.current;
+    if (!world) return false;
+    const bl = baselineFor(world.turn, world.seats);
+    const along = bl.axis === "h" ? { x: 1, y: 0 } : { x: 0, y: 1 };
+    const a = viewAngle();
+    // on-screen direction of increasing t
+    const sx = along.x * Math.cos(a) - along.y * Math.sin(a);
+    const sy = along.x * Math.sin(a) + along.y * Math.cos(a);
+    return bl.axis === "h" || a ? (Math.abs(sx) >= Math.abs(sy) ? sx < 0 : sy < 0) : false;
+  }, [viewAngle]);
 
   /** Unit vector pointing into the board from the current seat. */
   const inwardOf = (world: World) => {
@@ -889,7 +914,8 @@ export default function CarromGame({ onFinish }: GameProps) {
         const world = worldRef.current;
         if (!world) return;
         e.preventDefault();
-        moveStriker((world.strikerT[world.turn] ?? 500) + (e.key.toLowerCase() === "a" ? -12 : 12));
+        const step = (e.key.toLowerCase() === "a" ? -12 : 12) * (placeFlipped() ? -1 : 1);
+        moveStriker((world.strikerT[world.turn] ?? 500) + step);
         return;
       }
       if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
@@ -914,7 +940,7 @@ export default function CarromGame({ onFinish }: GameProps) {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [canControl, moveStriker]);
+  }, [canControl, moveStriker, placeFlipped]);
 
   /* flip aim inward whenever the turn changes to a controllable seat */
   useEffect(() => {
@@ -938,6 +964,14 @@ export default function CarromGame({ onFinish }: GameProps) {
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.fillStyle = "#120a05";
     ctx.fillRect(0, 0, SIZE, SIZE);
+    // online: turn the whole board so your own baseline is at the bottom
+    const view = viewAngle();
+    setViewAngle(view);
+    if (view) {
+      ctx.translate(SIZE / 2, SIZE / 2);
+      ctx.rotate(view);
+      ctx.translate(-SIZE / 2, -SIZE / 2);
+    }
     ctx.save();
     fxRef.current.applyShake(ctx, frameDtRef.current);
 
@@ -1002,7 +1036,7 @@ export default function CarromGame({ onFinish }: GameProps) {
     const mySeat =
       modeRef.current === "join" || modeRef.current.startsWith("host") ? mySeatRef.current : null;
     drawSeatLabels(ctx, world, mySeat);
-  }, [canControl]);
+  }, [canControl, viewAngle]);
 
   useEffect(() => {
     drawRef.current = draw;
@@ -1376,20 +1410,24 @@ export default function CarromGame({ onFinish }: GameProps) {
       {(() => {
         const bl = baselineFor(world.turn, world.seats);
         const controllable = screen === "place" && canControl();
+        // rotated (online) view: your baseline is horizontal on screen; keep the slider matching it
+        const horizontal = bl.axis === "h" || viewAngle() !== 0;
+        const flip = placeFlipped();
+        const toSlider = (t: number) => (flip ? bl.min + bl.max - t : t);
         return (
           <label className={`carrom-place${controllable ? "" : " is-off"}`}>
             <span className="carrom-place-end" aria-hidden="true">
-              {bl.axis === "h" ? "◀" : "▲"}
+              {horizontal ? "◀" : "▲"}
             </span>
             <input
               type="range"
               min={bl.min}
               max={bl.max}
               step={1}
-              value={placeT}
+              value={toSlider(placeT)}
               disabled={!controllable}
               aria-label="Striker position on your baseline"
-              onChange={(e) => moveStriker(Number(e.target.value))}
+              onChange={(e) => moveStriker(toSlider(Number(e.target.value)))}
               onPointerDown={() => carromAudio.unlock()}
               onPointerUp={(e) => {
                 commitPlace();
@@ -1399,7 +1437,7 @@ export default function CarromGame({ onFinish }: GameProps) {
               onKeyUp={commitPlace}
             />
             <span className="carrom-place-end" aria-hidden="true">
-              {bl.axis === "h" ? "▶" : "▼"}
+              {horizontal ? "▶" : "▼"}
             </span>
           </label>
         );
