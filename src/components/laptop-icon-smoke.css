@@ -4,7 +4,6 @@
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  mix-blend-mode: screen;
 }
 
 /* Soft orange light pooled over the laptop screen, breathing slowly */
@@ -30,7 +29,7 @@
   margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
   color: #ffd3a8;
   opacity: 0;
-  will-change: transform, opacity, filter;
+  will-change: transform, opacity;
   animation: lis-smoke var(--life) cubic-bezier(0.22, 0.6, 0.35, 1) forwards;
 }
 
@@ -39,37 +38,29 @@
   width: 100%;
   height: 100%;
   display: block;
-  filter:
-    drop-shadow(0 0 2px #fff1e0)
-    drop-shadow(0 0 6px #ff9a3c)
-    drop-shadow(0 0 14px #fc6e1b)
-    drop-shadow(0 0 28px rgba(252, 110, 27, 0.75));
+  /* drawn once per icon; the puff then only moves and fades (cheap, on the GPU) */
+  filter: drop-shadow(0 0 3px #fff1e0) drop-shadow(0 0 12px rgba(252, 110, 27, 0.85));
 }
 
 @keyframes lis-smoke {
   0% {
     transform: translate(0, 0) scale(0.2) rotate(0deg);
     opacity: 0;
-    filter: blur(3px);
   }
   10% {
     opacity: 1;
-    filter: blur(0);
   }
   45% {
     transform: translate(calc(var(--dx) * 0.4 + var(--sway)), calc(var(--dy) * 0.45)) scale(var(--s))
       rotate(calc(var(--r) * 0.5));
     opacity: 0.85;
-    filter: blur(0.5px);
   }
   75% {
     opacity: 0.4;
-    filter: blur(3px);
   }
   100% {
     transform: translate(var(--dx), var(--dy)) scale(calc(var(--s) * 1.7)) rotate(var(--r));
     opacity: 0;
-    filter: blur(9px);
   }
 }
 

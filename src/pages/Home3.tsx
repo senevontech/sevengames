@@ -8,6 +8,7 @@ import NavAccount from "../components/NavAccount";
 import TokenPill from "../components/TokenPill";
 import FeatureCarousel from "../components/FeatureCarousel";
 import LaptopIconSmoke from "../components/LaptopIconSmoke";
+import HeroLeaderboard from "../components/HeroLeaderboard";
 import "../components/feature-carousel.css";
 import AdSlot from "../components/AdSlot";
 import "./home3.css";
@@ -143,14 +144,12 @@ export default function Home3({ videoHero = false }: { videoHero?: boolean }) {
     const shade = shadeRef.current!;
     let raf = 0;
     let cur = 0;
+    let applied = -1; // the progress last written to the page (skip identical writes)
     let lastSet = -1;
-    const frame = () => {
-      raf = requestAnimationFrame(frame);
-      const heroH = heroRef.current?.offsetHeight ?? window.innerHeight;
-      const target = clamp(window.scrollY / (heroH * 0.95));
-      cur += (target - cur) * 0.18;
-      if (Math.abs(target - cur) < 0.0005) cur = target;
+    // read layout once (and on resize), not every frame
+    let heroH = heroRef.current?.offsetHeight ?? window.innerHeight;
 
+    const apply = () => {
       // Hand-over: the loop fades out over the first few % of the dive (same opening shot).
       const handOver = clamp(cur / 0.06);
       loop.style.opacity = `${1 - handOver}`;
@@ -171,7 +170,6 @@ export default function Home3({ videoHero = false }: { videoHero?: boolean }) {
         // Nav text follows the carousel's text colour once it's on screen
         rootRef.current?.classList.toggle("h3-at-fc", show > 0.5);
       }
-
       if (dive.readyState >= 1 && dive.duration) {
         const t = cur * (dive.duration - 0.05);
         if (Math.abs(t - lastSet) > 1 / 60 && !dive.seeking) {
@@ -180,8 +178,43 @@ export default function Home3({ videoHero = false }: { videoHero?: boolean }) {
         }
       }
     };
-    raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
+
+    // Runs only while the dive is catching up with the scroll position, then stops.
+    const frame = () => {
+      const target = clamp(window.scrollY / (heroH * 0.95));
+      cur += (target - cur) * 0.18;
+      const settled = Math.abs(target - cur) < 0.0005;
+      if (settled) cur = target;
+      if (cur !== applied) {
+        applied = cur;
+        apply();
+      }
+      // a seek still in progress at the end: check again next frame so the last frame lands
+      raf = settled && !dive.seeking ? 0 : requestAnimationFrame(frame);
+    };
+    const kick = () => {
+      if (!raf) raf = requestAnimationFrame(frame);
+    };
+    const onResize = () => {
+      heroH = heroRef.current?.offsetHeight ?? window.innerHeight;
+      kick();
+    };
+    // once the dive video knows its length, put it on the right frame
+    const onMeta = () => {
+      lastSet = -1;
+      applied = -1;
+      kick();
+    };
+    window.addEventListener("scroll", kick, { passive: true });
+    window.addEventListener("resize", onResize);
+    dive.addEventListener("loadedmetadata", onMeta);
+    kick();
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", kick);
+      window.removeEventListener("resize", onResize);
+      dive.removeEventListener("loadedmetadata", onMeta);
+    };
   }, [videoHero]);
   const location = useLocation();
   // Links from the rest of the site use "/?category=X#games", "/#games" and "/#studio".
@@ -383,6 +416,8 @@ export default function Home3({ videoHero = false }: { videoHero?: boolean }) {
           <br />
           and be part of a global gaming universe.
         </p>
+        {/* live top 7, bottom-right of the hero */}
+        <HeroLeaderboard />
       </header>
 
       {/* /home3: featured games carousel where the dive lands on orange */}

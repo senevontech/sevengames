@@ -218,6 +218,7 @@
 /* Phones hide the centre menu, so pin the account / toggle slot to the right column */
 @media (max-width: 820px) {
   .h3-nav > .h3-account,
+  .h3-nav > .h3-account-wrap,
   .h3-nav > .h3-nav-end {
     grid-column: 3;
   }
@@ -751,5 +752,39 @@
   .h3 .h3-nav .tk-pill.tk-pill-solid .tk-pill-coin svg {
     width: 24px;
     height: 24px;
+  }
+}
+
+/* Nav avatar + friend-request badge (the avatar button clips, so the badge sits on a wrapper) */
+.h3-account-wrap {
+  position: relative;
+  display: inline-flex;
+  justify-self: end;
+}
+
+.h3-req-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
+  background: #e5484d;
+  pointer-events: none;
+  animation: h3-badge-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes h3-badge-in {
+  from {
+    transform: scale(0);
   }
 }

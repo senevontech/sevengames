@@ -3,6 +3,7 @@ import { useAuthContext } from "../context/AuthContext";
 import { useAvatar } from "../lib/avatar";
 import { RiUser3Line } from "./ReIcons";
 import AvatarFrame from "./AvatarFrame";
+import { useFriendInbox } from "../lib/social";
 
 /*
  * Right-hand nav slot of the new UI: a round button. Signed out it shows the account icon and
@@ -11,6 +12,7 @@ import AvatarFrame from "./AvatarFrame";
 export default function NavAccount() {
   const { user } = useAuthContext();
   const { uri } = useAvatar(user);
+  const { requests } = useFriendInbox();
 
   if (!user) {
     return (
@@ -27,8 +29,10 @@ export default function NavAccount() {
 
   const meta = user.user_metadata ?? {};
   const name = (meta.full_name as string | undefined) || (meta.name as string | undefined) || user.email || "Player";
+  const n = requests.length;
   return (
-    <Link className="h3-account" to="/profile" aria-label={`Your profile (${name})`}>
+    <span className="h3-account-wrap">
+    <Link className="h3-account" to={n ? "/profile#friends" : "/profile"} aria-label={`Your profile (${name})${n ? `, ${n} friend request${n === 1 ? "" : "s"}` : ""}`}>
       <AvatarFrame userId={user.id}>
         <span className="h3-account-icon">
           {uri ? <img src={uri} alt="" width={40} height={40} referrerPolicy="no-referrer" /> : <RiUser3Line size={18} aria-hidden="true" />}
@@ -38,5 +42,11 @@ export default function NavAccount() {
         Profile
       </span>
     </Link>
+      {n ? (
+        <span className="h3-req-badge" aria-hidden="true">
+          {n > 9 ? "9+" : n}
+        </span>
+      ) : null}
+    </span>
   );
 }

@@ -115,9 +115,11 @@ export default function LaptopIconSmoke({
             "--life": `${Math.round(life)}ms`,
           } as React.CSSProperties,
         };
-        setPuffs((ps) => [...ps.slice(-40), puff]);
+        setPuffs((ps) => [...ps.slice(small ? -6 : -10), puff]);
       }
-      timer = window.setTimeout(spawn, rand(220, 520));
+      // fewer at a time on small screens (phones have less GPU to spare)
+      const small = window.innerWidth < 820;
+      timer = window.setTimeout(spawn, small ? rand(900, 1400) : rand(480, 820));
     };
     timer = window.setTimeout(spawn, 600);
 

@@ -14,6 +14,7 @@ import { formatTokens } from "../lib/currency";
 import "./account.css";
 import "./profile.css";
 import AvatarFrame from "../components/AvatarFrame";
+import FriendsSection from "../components/FriendsSection";
 
 /** One game's saved level, with a two-step reset. */
 function ProgressRow({ gameId }: { gameId: string }) {
@@ -77,9 +78,10 @@ export default function Profile() {
 
   // "/profile#avatars" (from the nav avatar menu) jumps straight to the library.
   useEffect(() => {
-    if (location.hash !== "#avatars") return;
+    if (location.hash !== "#avatars" && location.hash !== "#friends") return;
+    const target = location.hash.slice(1);
     const id = requestAnimationFrame(() =>
-      document.getElementById("avatars")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" }),
     );
     return () => cancelAnimationFrame(id);
   }, [location.hash, location.key]);
@@ -248,6 +250,8 @@ export default function Profile() {
             </ul>
           )}
         </section>
+
+        <FriendsSection />
 
         <section className="ac-card pf-progress">
           <div className="ac-section-head">
