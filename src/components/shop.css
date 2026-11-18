@@ -306,3 +306,58 @@
     animation: none !important;
   }
 }
+
+/* chess + ludo previews */
+.shop-cboard {
+  display: grid;
+  grid-template-columns: repeat(4, 22px);
+  border: 4px solid var(--f);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.shop-cboard i {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.shop-cboard i.l {
+  background: var(--l);
+}
+
+.shop-cboard i.d {
+  background: var(--d);
+}
+
+.shop-cboard svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.shop-cpieces {
+  display: flex;
+  gap: 2px;
+}
+
+.shop-cpieces svg {
+  width: 44px;
+  height: 44px;
+}
+
+.shop-lboard {
+  width: 86px;
+  height: 86px;
+}
+
+.shop-ldice {
+  width: 120px;
+  height: 72px;
+}
+
+.shop-lock {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ac-muted);
+}

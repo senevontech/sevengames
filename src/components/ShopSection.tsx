@@ -7,16 +7,105 @@ import { useAvatar } from "../lib/avatar";
 import { formatTokens } from "../lib/currency";
 import { useShop } from "../lib/shop";
 import { useTokens } from "../lib/tokens";
-import { ARROW_FX, ARROW_SKINS, BOOSTERS, FRAMES, frameClass, type ShopSlot } from "../lib/shopCatalog";
+import {
+  ARROW_FX,
+  ARROW_SKINS,
+  BOOSTERS,
+  CHESS_BOARDS,
+  CHESS_PIECES,
+  FRAMES,
+  LUDO_BOARDS,
+  LUDO_DICE,
+  chessPiecesOf,
+  frameClass,
+  type ShopSlot,
+} from "../lib/shopCatalog";
+import { PieceSvg } from "../games/chess/pieces";
 import "./shop.css";
 
-type Tab = "skins" | "fx" | "frames" | "boosters";
+type Tab = "skins" | "fx" | "frames" | "boosters" | "chess" | "ludo";
 const TABS: { id: Tab; label: string }[] = [
   { id: "skins", label: "Arrow styles" },
   { id: "fx", label: "Arrow effects" },
+  { id: "chess", label: "Chess" },
+  { id: "ludo", label: "Ludo" },
   { id: "frames", label: "Avatar frames" },
   { id: "boosters", label: "Boosters" },
 ];
+
+/* defaults when nothing is equipped in a slot */
+const SLOT_DEFAULT: Partial<Record<ShopSlot, string>> = {
+  chess_board: "cboard:classic",
+  chess_pieces: "cpieces:classic",
+  ludo_board: "lboard:classic",
+  ludo_dice: "ldice:classic",
+};
+
+/** A corner of a chess board with a few pieces. */
+function ChessBoardPreview({ id }: { id: string }) {
+  const t = CHESS_BOARDS[id];
+  const set = chessPiecesOf("cpieces:classic");
+  return (
+    <span className="shop-cboard" style={{ "--l": t.light, "--d": t.dark, "--f": t.frame } as React.CSSProperties} aria-hidden="true">
+      {Array.from({ length: 16 }, (_, i) => (
+        <i key={i} className={((i >> 2) + i) % 2 ? "d" : "l"}>
+          {i === 5 ? <PieceSvg type={2} white set={set} /> : i === 10 ? <PieceSvg type={5} white={false} set={set} /> : null}
+        </i>
+      ))}
+    </span>
+  );
+}
+
+function ChessPiecesPreview({ id }: { id: string }) {
+  const set = CHESS_PIECES[id];
+  return (
+    <span className="shop-cpieces" aria-hidden="true">
+      <PieceSvg type={6} white set={set} />
+      <PieceSvg type={5} white={false} set={set} />
+      <PieceSvg type={2} white set={set} />
+    </span>
+  );
+}
+
+function LudoBoardPreview({ id }: { id: string }) {
+  const t = LUDO_BOARDS[id];
+  return (
+    <svg className="shop-lboard" viewBox="0 0 30 30" aria-hidden="true">
+      <rect width={30} height={30} rx={3} fill={t.bg} />
+      <rect x={1} y={1} width={12} height={12} rx={2} fill={t.red} />
+      <rect x={17} y={1} width={12} height={12} rx={2} fill={t.green} />
+      <rect x={17} y={17} width={12} height={12} rx={2} fill={t.yellow} />
+      <rect x={1} y={17} width={12} height={12} rx={2} fill={t.blue} />
+      <rect x={13} y={1} width={4} height={28} fill={t.track} stroke={t.line} strokeWidth={0.3} />
+      <rect x={1} y={13} width={28} height={4} fill={t.track} stroke={t.line} strokeWidth={0.3} />
+      <polygon points="13,13 17,13 15,15" fill={t.green} />
+      <polygon points="17,13 17,17 15,15" fill={t.yellow} />
+      <polygon points="13,17 17,17 15,15" fill={t.blue} />
+      <polygon points="13,13 13,17 15,15" fill={t.red} />
+    </svg>
+  );
+}
+
+function LudoDicePreview({ id }: { id: string }) {
+  const d = LUDO_DICE[id];
+  return (
+    <svg className="shop-ldice" viewBox="0 0 100 60" aria-hidden="true">
+      <rect x={8} y={6} width={48} height={48} rx={11} fill={d.face} stroke={d.edge} strokeWidth={3} />
+      {[
+        [20, 18],
+        [44, 18],
+        [32, 30],
+        [20, 42],
+        [44, 42],
+      ].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={4.6} fill={d.pip} />
+      ))}
+      <circle cx={78} cy={34} r={14} fill="#e53935" stroke="#fff" strokeWidth={3.5} />
+      <circle cx={78} cy={34} r={6} fill="#fff" opacity={0.85} />
+      {d.tokenShine ? <ellipse cx={73} cy={28} rx={5} ry={2.6} fill="#fff" opacity={0.75} /> : null}
+    </svg>
+  );
+}
 
 /** Three bent arrows in a skin's colours. */
 function SkinPreview({ id }: { id: string }) {
@@ -90,7 +179,13 @@ export default function ShopSection() {
     const price = shop.priceOf(id);
     const owned = shop.owns(id);
     const equipped =
-      slot === "frame" ? shop.state?.equipped.frame === id : slot === "arrow_skin" ? shop.arrowSkin === id : shop.arrowFx === id;
+      slot === "arrow_skin"
+        ? shop.arrowSkin === id
+        : slot === "arrow_fx"
+          ? shop.arrowFx === id
+          : (shop.equippedIn(slot) ?? SLOT_DEFAULT[slot] ?? null) === id;
+    const need = shop.levelNeeded(id);
+    const locked = need.game !== null && need.level > 1 && shop.levelOf(need.game) < need.level;
     if (!shop.signedIn) {
       return (
         <div className="shop-foot">
@@ -112,6 +207,16 @@ export default function ShopSection() {
               Take off
             </button>
           ) : null}
+        </div>
+      );
+    }
+    if (locked && !owned) {
+      return (
+        <div className="shop-foot">
+          <span className="shop-price">
+            <TokenIcon size={14} /> {price === null ? "—" : formatTokens(price)}
+          </span>
+          <span className="shop-lock">🔒 {need.game === "chess" ? "Chess" : "Ludo"} Lv {need.level}</span>
         </div>
       );
     }
@@ -225,6 +330,54 @@ export default function ShopSection() {
                     {cosmetic(id, "arrow_fx", f.name)}
                   </li>
                 ))
+              : null}
+            {tab === "chess"
+              ? [
+                  ...Object.entries(CHESS_BOARDS).map(([id, t]) => (
+                    <li key={id} className="ac-card shop-card">
+                      <div className="shop-preview">
+                        <ChessBoardPreview id={id} />
+                      </div>
+                      <h3>{t.name} board</h3>
+                      <p>{t.blurb}</p>
+                      {cosmetic(id, "chess_board", `${t.name} board`)}
+                    </li>
+                  )),
+                  ...Object.entries(CHESS_PIECES).map(([id, t]) => (
+                    <li key={id} className="ac-card shop-card">
+                      <div className="shop-preview shop-preview-dark">
+                        <ChessPiecesPreview id={id} />
+                      </div>
+                      <h3>{t.name} pieces</h3>
+                      <p>{t.blurb}</p>
+                      {cosmetic(id, "chess_pieces", `${t.name} pieces`)}
+                    </li>
+                  )),
+                ]
+              : null}
+            {tab === "ludo"
+              ? [
+                  ...Object.entries(LUDO_BOARDS).map(([id, t]) => (
+                    <li key={id} className="ac-card shop-card">
+                      <div className="shop-preview">
+                        <LudoBoardPreview id={id} />
+                      </div>
+                      <h3>{t.name} board</h3>
+                      <p>{t.blurb}</p>
+                      {cosmetic(id, "ludo_board", `${t.name} board`)}
+                    </li>
+                  )),
+                  ...Object.entries(LUDO_DICE).map(([id, t]) => (
+                    <li key={id} className="ac-card shop-card">
+                      <div className="shop-preview">
+                        <LudoDicePreview id={id} />
+                      </div>
+                      <h3>{t.name} dice</h3>
+                      <p>{t.blurb}</p>
+                      {cosmetic(id, "ludo_dice", `${t.name} dice`)}
+                    </li>
+                  )),
+                ]
               : null}
             {tab === "frames"
               ? Object.entries(FRAMES).map(([id, f]) => (

@@ -3,7 +3,7 @@ import { adminCall } from "../../lib/adminApi";
 import { games } from "../../catalog";
 import { loadGamePrices } from "../../lib/tokens";
 import { loadShopPrices } from "../../lib/shop";
-import { ARROW_FX, ARROW_SKINS, BOOSTERS, FRAMES } from "../../lib/shopCatalog";
+import { ARROW_FX, ARROW_SKINS, BOOSTERS, CHESS_BOARDS, CHESS_PIECES, FRAMES, LUDO_BOARDS, LUDO_DICE } from "../../lib/shopCatalog";
 
 type Config = {
   game_prices: { game_id: string; cost: number }[];
@@ -540,10 +540,22 @@ const SHOP_KIND_LABEL: Record<string, string> = {
   arrow_fx: "Arrows · effect",
   frame: "Avatar frame",
   booster: "Booster pack",
+  chess_board: "Chess · board",
+  chess_pieces: "Chess · pieces",
+  ludo_board: "Ludo · board",
+  ludo_dice: "Ludo · dice",
 };
 
 const shopItemName = (id: string) =>
-  ARROW_SKINS[id]?.name ?? ARROW_FX[id]?.name ?? FRAMES[id]?.name ?? BOOSTERS[id]?.name ?? id;
+  ARROW_SKINS[id]?.name ??
+  ARROW_FX[id]?.name ??
+  FRAMES[id]?.name ??
+  BOOSTERS[id]?.name ??
+  CHESS_BOARDS[id]?.name ??
+  CHESS_PIECES[id]?.name ??
+  LUDO_BOARDS[id]?.name ??
+  LUDO_DICE[id]?.name ??
+  id;
 
 /** Admin → Tokens → Shop: price and on/off per shop item (supabase/shop.sql). */
 function ShopPrices() {

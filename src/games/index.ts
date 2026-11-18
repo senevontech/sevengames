@@ -21,6 +21,8 @@ import DodgeGame from "./dodge";
 import ConnectFour from "./connect-four";
 import LightsOut from "./lights-out";
 import ArrowsGame from "./arrowsGame";
+import ChessGame from "./chess/index";
+import LudoGame from "./ludo/index";
 
 export type GameProps = {
   /** Call once when the round ends with the final score (or time in seconds for timed games). */
@@ -49,6 +51,8 @@ export const engines: Record<GameEngine, (props: GameProps) => React.JSX.Element
   "connect-four": ConnectFour,
   "lights-out": LightsOut,
   arrows: ArrowsGame,
+  chess: ChessGame,
+  ludo: LudoGame,
 };
 
 /** What to show behind the premium "Start game" bar (default: the game's own start screen, inert). */

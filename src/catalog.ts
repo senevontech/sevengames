@@ -32,7 +32,9 @@ export type GameEngine =
   | "dodge"
   | "connect-four"
   | "lights-out"
-  | "arrows";
+  | "arrows"
+  | "chess"
+  | "ludo";
 
 export type Game = {
   id: string;
@@ -399,6 +401,28 @@ export const games: Game[] = [
     minutes: 5,
     accent: "#ff8a3d",
     description: "Tap an arrow to send it off the board — but only if its way out is clear. Clear the maze, three lives.",
+  },
+  {
+    id: "chess",
+    title: "Chess",
+    category: "Strategy",
+    kind: "builtin",
+    engine: "chess",
+    difficulty: "Hard",
+    minutes: 15,
+    accent: "#769656",
+    description: "The classic. Play the CPU on three levels, a friend on one device, or rated games online with a clock.",
+  },
+  {
+    id: "ludo",
+    title: "Ludo",
+    category: "Classic",
+    kind: "builtin",
+    engine: "ludo",
+    difficulty: "Easy",
+    minutes: 15,
+    accent: "#e53935",
+    description: "Roll, race your four tokens home and knock rivals back to base. 2–4 players: CPU, friends or online.",
   },
 ];
 

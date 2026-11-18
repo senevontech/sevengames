@@ -8,17 +8,30 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, u
 import { useAuthContext } from "../context/AuthContext";
 import { supabase } from "../supabase";
 import { tokenErrorText, useTokens } from "./tokens";
-import { DEFAULT_FX, DEFAULT_SKIN, type BoosterItem, type ShopSlot } from "./shopCatalog";
+import { DEFAULT_FX, DEFAULT_SKIN, levelForXp, type BoardGame, type BoosterItem, type ShopSlot } from "./shopCatalog";
 
 export type ShopState = {
   owned: string[];
   inventory: Record<BoosterItem, number>;
-  equipped: { frame: string | null; arrow_skin: string | null; arrow_fx: string | null };
+  equipped: Partial<Record<ShopSlot, string | null>>;
+  /** XP per board game (chess, ludo). */
+  xp?: Partial<Record<BoardGame, number>>;
   free: boolean;
   tokens: number;
 };
 
-export type PriceRow = { item_id: string; kind: string; price: number; grants: string | null; qty: number; active: boolean; sort: number };
+export type PriceRow = {
+  item_id: string;
+  kind: string;
+  price: number;
+  grants: string | null;
+  qty: number;
+  active: boolean;
+  sort: number;
+  /** Cosmetics unlocked by a level in this game (null = no level needed). */
+  game?: BoardGame | null;
+  min_level?: number;
+};
 
 type Ctx = {
   /** null: guest, loading, or the shop isn't set up on the server. */
@@ -35,6 +48,15 @@ type Ctx = {
   use: (item: BoosterItem) => Promise<boolean>;
   arrowSkin: string;
   arrowFx: string;
+  /** The item equipped in a slot (null = none / the default). */
+  equippedIn: (slot: ShopSlot) => string | null;
+  /** Level in a board game (1 for guests). */
+  levelOf: (game: BoardGame) => number;
+  xpOf: (game: BoardGame) => number;
+  /** Level needed to buy this item (1 = none). */
+  levelNeeded: (id: string) => { game: BoardGame | null; level: number };
+  /** Report XP for a finished game (server caps it). Guests: nothing. */
+  awardXp: (game: BoardGame, amount: number) => Promise<void>;
 };
 
 const ShopContext = createContext<Ctx | null>(null);
@@ -104,7 +126,7 @@ export function loadShopPrices(force = false): Promise<PriceRow[] | null> {
   }
   if (priceCache) return Promise.resolve(priceCache);
   priceInflight ??= Promise.resolve(
-    supabase.from("shop_items").select("item_id, kind, price, grants, qty, active, sort").order("sort"),
+    supabase.from("shop_items").select("item_id, kind, price, grants, qty, active, sort, game, min_level").order("sort"),
   ).then(({ data, error }) => {
     if (error) {
       priceInflight = null;
@@ -140,7 +162,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const apply = useCallback(
     (s: ShopState) => {
       setState(s);
-      if (user) setCachedFrame(user.id, s.equipped.frame);
+      if (user) setCachedFrame(user.id, s.equipped.frame ?? null);
     },
     [user],
   );
@@ -209,6 +231,28 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     [rpc, apply, state],
   );
 
+  const xpOf = useCallback((game: BoardGame) => state?.xp?.[game] ?? 0, [state]);
+  const levelOf = useCallback((game: BoardGame) => levelForXp(xpOf(game)), [xpOf]);
+  const levelNeeded = useCallback(
+    (id: string) => {
+      const row = prices.find((p) => p.item_id === id);
+      return { game: row?.game ?? null, level: row?.min_level ?? 1 };
+    },
+    [prices],
+  );
+  const equippedIn = useCallback((slot: ShopSlot) => state?.equipped[slot] ?? null, [state]);
+  const awardXp = useCallback(
+    async (game: BoardGame, amount: number) => {
+      if (!user || amount <= 0) return;
+      try {
+        apply(await rpc("award_game_xp", { p_game: game, p_amount: Math.round(amount) }));
+      } catch {
+        /* not set up yet / rate-limited: no XP this time */
+      }
+    },
+    [user, rpc, apply],
+  );
+
   const value = useMemo<Ctx>(
     () => ({
       state,
@@ -222,8 +266,13 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       use,
       arrowSkin: state?.equipped.arrow_skin ?? DEFAULT_SKIN,
       arrowFx: state?.equipped.arrow_fx ?? DEFAULT_FX,
+      equippedIn,
+      levelOf,
+      xpOf,
+      levelNeeded,
+      awardXp,
     }),
-    [state, prices, available, user, priceOf, owns, buy, equip, use],
+    [state, prices, available, user, priceOf, owns, buy, equip, use, equippedIn, levelOf, xpOf, levelNeeded, awardXp],
   );
 
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;
