@@ -11,10 +11,10 @@
 --     afford it, the pass lapses and renewal switches OFF (so it never surprises them later).
 -- ============================================================
 
--- token ledger: allow 'adfree' (keep this list in sync with tokens.sql and carrom.sql)
+-- token ledger: allow 'adfree' (keep this list in sync with tokens.sql, carrom.sql and shop.sql)
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
-  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree'));
+  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop'));
 
 create table if not exists public.ad_free_passes (
   user_id uuid primary key references auth.users(id) on delete cascade,

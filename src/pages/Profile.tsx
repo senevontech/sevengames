@@ -13,6 +13,7 @@ import { PROGRESS_GAMES, useGameProgress } from "../lib/progress";
 import { formatTokens } from "../lib/currency";
 import "./account.css";
 import "./profile.css";
+import AvatarFrame from "../components/AvatarFrame";
 
 /** One game's saved level, with a two-step reset. */
 function ProgressRow({ gameId }: { gameId: string }) {
@@ -117,6 +118,7 @@ export default function Profile() {
     <div className="acct pf">
       {/* ---------- identity ---------- */}
       <section className="ac-card pf-hero">
+        <AvatarFrame userId={user.id}>
         <a href="#avatars" className="pf-avatar" aria-label="Change avatar">
           {avatarUri ? (
             <img src={avatarUri} alt="" width={128} height={128} referrerPolicy="no-referrer" />
@@ -127,6 +129,7 @@ export default function Profile() {
             <Pencil size={13} />
           </span>
         </a>
+        </AvatarFrame>
         <div className="pf-id">
           <span className="pf-eyebrow">Player profile</span>
           <h1 className="pf-name">{displayName}</h1>

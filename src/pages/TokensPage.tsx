@@ -22,6 +22,7 @@ import { tokenErrorText, usePlanPrices, useTokenPacks, useTokens, type LedgerRow
 import { formatMoney, formatTokens, pickCurrency } from "../lib/currency";
 import { getGame } from "../catalog";
 import AdRewardModal from "../components/AdRewardModal";
+import ShopSection from "../components/ShopSection";
 import "./tokens.css";
 import "./account.css";
 import "./tokens-page.css";
@@ -100,6 +101,13 @@ export default function TokensPage() {
     const id = requestAnimationFrame(() => document.getElementById("buy")?.scrollIntoView({ behavior: "smooth", block: "start" }));
     return () => cancelAnimationFrame(id);
   }, [location.hash, packs]);
+
+  // "/tokens#shop" (from the in-game booster panel) scrolls to the shop
+  useEffect(() => {
+    if (location.hash !== "#shop") return;
+    const id = requestAnimationFrame(() => document.getElementById("shop")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    return () => cancelAnimationFrame(id);
+  }, [location.hash]);
 
   // reload history whenever the balance changes
   const balance = wallet?.balance;
@@ -184,6 +192,7 @@ export default function TokensPage() {
             </Link>
           </div>
         </section>
+        <ShopSection />
       </div>
     );
   }
@@ -452,6 +461,9 @@ export default function TokensPage() {
           ) : null}
         </div>
       </section>
+
+      {/* ---------- shop: arrow styles + effects, avatar frames, boosters ---------- */}
+      <ShopSection />
 
       {/* ---------- earn + code ---------- */}
       <div className="tw-row">

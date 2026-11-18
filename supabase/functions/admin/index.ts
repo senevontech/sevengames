@@ -507,6 +507,24 @@ Deno.serve(async (req) => {
         return json({ ok: true, saved: rows.length });
       }
 
+      /* ---- Shop (supabase/shop.sql): item prices + on/off ---- */
+      case "shop_items_list": {
+        const { data, error } = await db.from("shop_items").select("item_id, kind, price, grants, qty, active, sort").order("kind").order("sort");
+        if (error) throw error;
+        return json({ items: data ?? [] });
+      }
+
+      case "shop_item_set": {
+        const itemId = text(body.item_id, 80);
+        if (!itemId) return json({ error: "Missing item" }, 400);
+        const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+        if (body.price !== undefined) patch.price = Math.max(0, Math.min(1_000_000, Math.round(Number(body.price) || 0)));
+        if (body.active !== undefined) patch.active = body.active === true;
+        const { error } = await db.from("shop_items").update(patch).eq("item_id", itemId);
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
       case "plan_price_set": {
         const currency = text(body.currency, 3).toUpperCase();
         const plan = body.plan === "yearly" ? "yearly" : "monthly";

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { adminCall } from "../../lib/adminApi";
 import { games } from "../../catalog";
 import { loadGamePrices } from "../../lib/tokens";
+import { loadShopPrices } from "../../lib/shop";
+import { ARROW_FX, ARROW_SKINS, BOOSTERS, FRAMES } from "../../lib/shopCatalog";
 
 type Config = {
   game_prices: { game_id: string; cost: number }[];
@@ -109,6 +111,9 @@ export default function TokensTab() {
         }}
         onDiscard={() => cfg && setCosts(savedCosts(cfg))}
       />
+
+      {/* ---------- Shop item prices ---------- */}
+      <ShopPrices />
 
       {/* ---------- Subscription prices ---------- */}
       <div className="card adm-card adm-settings">
@@ -524,6 +529,122 @@ function GamePrices({
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+type ShopItemRow = { item_id: string; kind: string; price: number; grants: string | null; qty: number; active: boolean; sort: number };
+
+const SHOP_KIND_LABEL: Record<string, string> = {
+  arrow_skin: "Arrows · style",
+  arrow_fx: "Arrows · effect",
+  frame: "Avatar frame",
+  booster: "Booster pack",
+};
+
+const shopItemName = (id: string) =>
+  ARROW_SKINS[id]?.name ?? ARROW_FX[id]?.name ?? FRAMES[id]?.name ?? BOOSTERS[id]?.name ?? id;
+
+/** Admin → Tokens → Shop: price and on/off per shop item (supabase/shop.sql). */
+function ShopPrices() {
+  const [items, setItems] = useState<ShopItemRow[] | null>(null);
+  const [edits, setEdits] = useState<Record<string, string>>({});
+  const [msg, setMsg] = useState("");
+
+  const load = () =>
+    adminCall<{ items: ShopItemRow[] }>("shop_items_list").then(
+      (r) => setItems(r.items),
+      (e) => setMsg(errText(e, "Failed to load the shop (run supabase/shop.sql and redeploy the admin function).")),
+    );
+  useEffect(() => {
+    void load();
+  }, []);
+
+  async function save(row: ShopItemRow, patch: { price?: number; active?: boolean }, done: string) {
+    setMsg("");
+    try {
+      await adminCall("shop_item_set", { item_id: row.item_id, ...patch });
+      setEdits((e) => {
+        const next = { ...e };
+        delete next[row.item_id];
+        return next;
+      });
+      setMsg(done);
+      await load();
+      void loadShopPrices(true);
+    } catch (e) {
+      setMsg(errText(e, "Failed to save"));
+    }
+  }
+
+  return (
+    <div className="card adm-card adm-settings">
+      <h3>Shop</h3>
+      <p className="adm-note">
+        Token prices for shop items. Price 0 on a style or effect makes it free for everyone. Turning an item off hides it
+        from sale; players who bought it keep it.
+      </p>
+      {msg ? <p className="adm-note adm-msg">{msg}</p> : null}
+      {items ? (
+        <div className="adm-table-wrap">
+          <table className="adm-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Tokens</th>
+                <th>On sale</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((row) => {
+                const val = edits[row.item_id] ?? String(row.price);
+                const isDirty = cleanCost(val) !== String(row.price);
+                const name = shopItemName(row.item_id);
+                return (
+                  <tr key={row.item_id} className={isDirty ? "adm-row-dirty" : undefined}>
+                    <td>
+                      {name} <span className="adm-note">· {SHOP_KIND_LABEL[row.kind] ?? row.kind}</span>
+                    </td>
+                    <td>
+                      <input
+                        type="number"
+                        min={0}
+                        step={50}
+                        value={val}
+                        style={{ width: 110 }}
+                        aria-label={`${name} price in tokens`}
+                        onChange={(e) => setEdits((x) => ({ ...x, [row.item_id]: e.target.value }))}
+                      />
+                      {isDirty ? <span className="adm-note"> was {row.price}</span> : null}
+                    </td>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={row.active}
+                        aria-label={`${name} on sale`}
+                        onChange={(e) => void save(row, { active: e.target.checked }, `${name} ${e.target.checked ? "is on sale" : "is off sale"}.`)}
+                      />
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className="ghost-btn"
+                        disabled={!isDirty}
+                        onClick={() => void save(row, { price: Number(cleanCost(val)) }, `${name}: ${cleanCost(val)} tokens.`)}
+                      >
+                        Save
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : !msg ? (
+        <p className="adm-note">Loading…</p>
+      ) : null}
     </div>
   );
 }

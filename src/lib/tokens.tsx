@@ -110,6 +110,10 @@ export function tokenErrorText(err: unknown) {
   if (msg.includes("mock_payments_disabled")) return "Payments aren't available yet.";
   if (msg.includes("not_signed_in")) return "Sign in first.";
   if (msg.includes("insufficient_tokens")) return "Not enough tokens.";
+  if (msg.includes("none_left")) return "You don't have any left.";
+  if (msg.includes("not_owned")) return "Buy this item first.";
+  if (msg.includes("bad_item") || msg.includes("bad_slot")) return "That item isn't available.";
+  if (msg.includes("Could not find the function") && msg.includes("shop_")) return "The shop isn't set up on the server yet (run supabase/shop.sql).";
   if (msg.includes("Could not find the function")) return "Tokens aren't set up on the server yet (run supabase/tokens.sql).";
   return "Something went wrong. Please try again.";
 }

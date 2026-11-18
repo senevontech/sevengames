@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAvatarUri, type AvatarChoice } from "../lib/avatar";
+import AvatarFrame from "./AvatarFrame";
 import "./player-avatar.css";
 
 /** Stable colour per player for their initial badge. */
@@ -31,6 +32,7 @@ export default function PlayerAvatar({
   const showImage = uri && failed !== uri;
 
   return (
+    <AvatarFrame userId={id}>
     <span
       className={`${className}${showImage ? " has-img" : ""}`}
       style={{ width: size, height: size, "--h": hueOf(id) } as React.CSSProperties}
@@ -50,5 +52,6 @@ export default function PlayerAvatar({
         name.charAt(0).toUpperCase()
       )}
     </span>
+    </AvatarFrame>
   );
 }

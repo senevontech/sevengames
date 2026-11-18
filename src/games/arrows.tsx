@@ -8,11 +8,22 @@
    its exit line is clear of the arrows already placed — so removing them in reverse order works.
 
    The level reached is saved (src/lib/progress.ts), so players pick up where they left off. Running
-   out of lives retries the same level; "Reset progress" goes back to level 1. */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+   out of lives retries the same level; "Reset progress" goes back to level 1.
+
+   Shop extras (src/lib/shop.tsx): arrow skins, exit effects, and hint / undo packs used once the
+   free per-level hints run out. Board effects are drawn on canvases (./arrowsFx.ts) so they don't
+   re-render the board. */
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import type { GameProps } from "./index";
 import { reducedMotion } from "./fx";
+import { ArrowsFx, type FxStyle } from "./arrowsFx";
 import { useGameProgress } from "../lib/progress";
+import { useShop } from "../lib/shop";
+import { useTokens } from "../lib/tokens";
+import { formatTokens } from "../lib/currency";
+import { BOOSTERS, fxIdOf, skinOf, type BoosterItem } from "../lib/shopCatalog";
+import TokenIcon from "../components/TokenIcon";
 import "./arrows.css";
 
 type Dir = 0 | 1 | 2 | 3; // up, right, down, left
@@ -169,10 +180,8 @@ function generate(level: number, seed: number): Level {
 }
 
 /* ---------------- look ---------------- */
-
-/** Arrows are plain ink (black / white); each one flashes its colour only while it leaves the board. */
-const PALETTE = ["#ff5c5c", "#ff922b", "#f5b700", "#40c057", "#12b886", "#22b8cf", "#339af0", "#5c7cfa", "#9775fa", "#cc5de8", "#f06595"];
-const colorOf = (a: Arrow, level: number) => PALETTE[(a.id * 7 + level * 3) % PALETTE.length];
+/* Colours come from the equipped arrow skin (src/lib/shopCatalog.ts). Classic: plain ink arrows
+   that flash their colour only while leaving; other skins tint arrows at rest too. */
 
 /* ---------------- geometry ---------------- */
 
@@ -251,17 +260,175 @@ const sfx = {
 /* ---------------- component ---------------- */
 
 type Anim = { kind: "exit" | "bump"; t0: number; dur: number; dist: number; blocker?: number; edgeAt?: number; edgeFired?: boolean };
-type Particle = { x: number; y: number; vx: number; vy: number; life: number; max: number; r: number; color: string };
 type Popup = { id: number; x: number; y: number; text: string; color: string; big: boolean };
 
 const COMBO_MS = 1700;
+/** Seconds to decide whether to undo the bump that cost the last life. */
+const CHANCE_S = 6;
+
+type ArrowViewProps = {
+  a: Arrow;
+  idx: number;
+  pts: Pt[];
+  color: string;
+  tint: boolean;
+  anim: Anim | undefined;
+  now: number;
+  blocker: boolean;
+  hinted: boolean;
+  onTap: (a: Arrow) => void;
+};
+
+/** One arrow. Memoised: arrows at rest don't re-render while others move. */
+const ArrowView = memo(
+  function ArrowView({ a, idx, pts, color, tint, anim: an, now, blocker, hinted, onTap }: ArrowViewProps) {
+    const len = a.cells.length - 1;
+    let off = 0;
+    let fade = 1;
+    if (an) {
+      const t = Math.min(1, (now - an.t0) / an.dur);
+      if (an.kind === "exit") {
+        const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; // ease in-out
+        off = an.dist * (e * 0.55 + t * 0.45);
+        fade = t > 0.8 ? 1 - (t - 0.8) / 0.2 : 1;
+      } else {
+        const k = t < 0.42 ? t / 0.42 : 1 - (t - 0.42) / 0.58;
+        off = an.dist * Math.sin((Math.max(0, k) * Math.PI) / 2);
+      }
+    }
+    const seg = slice(pts, off, off + len);
+    const d = pathD(seg);
+    const end = { x: px(seg[seg.length - 1].x), y: px(seg[seg.length - 1].y) };
+    const prev = { x: px(seg[seg.length - 2].x), y: px(seg[seg.length - 2].y) };
+    const ang = Math.atan2(end.y - prev.y, end.x - prev.x);
+    const tip = { x: end.x + Math.cos(ang) * 3, y: end.y + Math.sin(ang) * 3 };
+    const hs = 9.5;
+    const l = { x: tip.x - Math.cos(ang - 0.5) * hs, y: tip.y - Math.sin(ang - 0.5) * hs };
+    const r = { x: tip.x - Math.cos(ang + 0.5) * hs, y: tip.y - Math.sin(ang + 0.5) * hs };
+    // motion trail while leaving
+    const trail = an?.kind === "exit" && off > 0.2 ? pathD(slice(pts, Math.max(0, off - 2.4), off + 0.2)) : null;
+    const cls = [
+      "arw-arrow",
+      an?.kind === "exit" ? "is-out" : "",
+      an?.kind === "bump" ? "is-bump" : "",
+      blocker ? "is-blocker" : "",
+      hinted ? "is-hint" : "",
+    ].join(" ");
+    return (
+      <g
+        className={cls}
+        style={{ opacity: fade, color: an?.kind === "exit" || tint ? color : undefined, "--i": idx } as React.CSSProperties}
+        onClick={() => onTap(a)}
+        role="button"
+        tabIndex={0}
+        aria-label={`Arrow pointing ${["up", "right", "down", "left"][a.dir]}`}
+        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onTap(a))}
+      >
+        {trail ? <path className="arw-trail" d={trail} /> : null}
+        <path className="arw-hit" d={d} />
+        <path className="arw-halo" d={d} />
+        <path className="arw-line" d={d} pathLength={1} />
+        <polygon className="arw-head" points={`${tip.x},${tip.y} ${l.x},${l.y} ${r.x},${r.y}`} />
+      </g>
+    );
+  },
+  (p, n) =>
+    p.a === n.a &&
+    p.pts === n.pts &&
+    p.idx === n.idx &&
+    p.color === n.color &&
+    p.tint === n.tint &&
+    p.anim === n.anim &&
+    p.blocker === n.blocker &&
+    p.hinted === n.hinted &&
+    p.onTap === n.onTap &&
+    (!n.anim || p.now === n.now),
+);
+
+/** In-game booster shop: hint or undo packs. */
+function BoosterPanel({ item, onClose }: { item: BoosterItem; onClose: () => void }) {
+  const shop = useShop();
+  const { wallet } = useTokens();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [msg, setMsg] = useState("");
+  const packs = Object.entries(BOOSTERS).filter(([, b]) => b.grants === item);
+  const owned = shop.state?.inventory[item] ?? 0;
+  const noun = item === "arrows_hint" ? "hints" : "undos";
+
+  async function buy(id: string) {
+    setBusy(id);
+    setMsg("");
+    try {
+      await shop.buy(id);
+      setMsg(`Added! You now have more ${noun}.`);
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="arw-overlay" role="dialog" aria-modal="true" aria-labelledby="arw-shop-title">
+      <div className="arw-card arw-shop">
+        <h3 id="arw-shop-title">Get {noun}</h3>
+        {!shop.signedIn ? (
+          <>
+            <p>Sign in to buy {noun} with tokens.</p>
+            <Link className="primary-btn" to="/login">
+              Sign in
+            </Link>
+          </>
+        ) : !shop.available ? (
+          <p>The shop isn't open yet.</p>
+        ) : (
+          <>
+            <p>
+              You have <b>{owned}</b> {noun} · Balance{" "}
+              <b>{wallet?.unlimited ? "unlimited" : formatTokens(wallet?.balance ?? 0)}</b>
+            </p>
+            <ul className="arw-shop-list">
+              {packs.map(([id, b]) => {
+                const price = shop.priceOf(id);
+                return (
+                  <li key={id}>
+                    <span className="arw-shop-name">
+                      <b>{b.name}</b>
+                      <small>{b.blurb}</small>
+                    </span>
+                    <button type="button" className="primary-btn" disabled={busy !== null || price === null} onClick={() => void buy(id)}>
+                      <TokenIcon size={14} title="tokens" /> {price === null ? "—" : formatTokens(price)}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {msg ? <p className="arw-shop-msg">{msg}</p> : null}
+            <Link className="arw-shop-more" to="/tokens#shop">
+              Open the shop
+            </Link>
+          </>
+        )}
+        <button type="button" className="ghost-btn" onClick={onClose} autoFocus>
+          Back to the game
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function ArrowsGame({ onFinish }: GameProps) {
   const saved = useGameProgress("arrows");
+  const shop = useShop();
+  const skin = skinOf(shop.arrowSkin);
+  const fxStyle = fxIdOf(shop.arrowFx) as FxStyle;
+  const colorOf = useCallback((a: Arrow, lv: number) => skin.palette[(a.id * 7 + lv * 3) % skin.palette.length], [skin]);
+
   const [level, setLevel] = useState(1);
   const [seed, setSeed] = useState(() => (Math.random() * 2 ** 31) | 0);
   const board = useMemo(() => generate(level, seed), [level, seed]);
   const { cols, rows, arrows } = board;
+  const paths = useMemo(() => arrows.map((a) => travelPath(a, cols, rows)), [arrows, cols, rows]);
 
   const [removed, setRemoved] = useState<Set<number>>(() => new Set());
   const [anims, setAnims] = useState<Map<number, Anim>>(() => new Map());
@@ -271,7 +438,7 @@ export default function ArrowsGame({ onFinish }: GameProps) {
   const [shownScore, setShownScore] = useState(0);
   const [hints, setHints] = useState(hintsFor(1));
   const [hinted, setHinted] = useState<number | null>(null);
-  const [state, setState] = useState<"play" | "cleared" | "over">("play");
+  const [state, setState] = useState<"play" | "cleared" | "chance" | "over">("play");
   const [combo, setCombo] = useState(0);
   const [bestCombo, setBestCombo] = useState(0);
   const [cleared, setCleared] = useState(0);
@@ -280,15 +447,59 @@ export default function ArrowsGame({ onFinish }: GameProps) {
   const [brokenHeart, setBrokenHeart] = useState<number | null>(null);
   const [popups, setPopups] = useState<Popup[]>([]);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [panel, setPanel] = useState<BoosterItem | null>(null);
+  const [undoable, setUndoable] = useState(false); // the last tap was a bump that can be taken back
+  const [boostBusy, setBoostBusy] = useState(false);
+  const [chanceLeft, setChanceLeft] = useState(0);
   const [, setTick] = useState(0);
 
   const finished = useRef(false);
   const gone = useRef(new Set<number>()); // arrows leaving right now block nothing
-  const particles = useRef<Particle[]>([]);
   const lastClear = useRef(0);
   const popupId = useRef(0);
+  const undoUsed = useRef(false); // one undo per level
+  const scoreRef = useRef(0);
+  scoreRef.current = score;
   const calm = useMemo(() => reducedMotion(), []);
   const touched = useRef(false); // the player has tapped: a late-arriving save mustn't swap the board
+
+  const ownedHints = shop.state?.inventory.arrows_hint ?? 0;
+  const ownedUndos = shop.state?.inventory.arrows_undo ?? 0;
+
+  /* ----- canvas effects (dots, waves, sparks): their own loop, outside React ----- */
+  const stackRef = useRef<HTMLDivElement>(null);
+  const underRef = useRef<HTMLCanvasElement>(null);
+  const overRef = useRef<HTMLCanvasElement>(null);
+  const shakeRef = useRef<HTMLDivElement>(null);
+  const fx = useRef<ArrowsFx | null>(null);
+  useEffect(() => {
+    const stack = stackRef.current!;
+    const f = new ArrowsFx(underRef.current!, overRef.current!, CELL, calm, () => getComputedStyle(stack).color);
+    fx.current = f;
+    const ro = new ResizeObserver(([e]) => f.resize(e.contentRect.width, e.contentRect.height));
+    ro.observe(stack);
+    // light / dark theme switches change the dot colour
+    const mo = new MutationObserver(() => f.refresh());
+    mo.observe(document.documentElement, { attributes: true, subtree: true, attributeFilter: ["data-gtheme", "data-theme"] });
+    return () => {
+      ro.disconnect();
+      mo.disconnect();
+      f.destroy();
+      fx.current = null;
+    };
+  }, [calm]);
+  useEffect(() => {
+    fx.current?.setBoard(cols, rows);
+  }, [board, cols, rows]);
+
+  /* ----- board shake (restarted in place: the board must not remount) ----- */
+  useEffect(() => {
+    const el = shakeRef.current;
+    if (!shakeKey || !el) return;
+    el.classList.remove("go");
+    void el.offsetWidth;
+    el.classList.add("go");
+  }, [shakeKey]);
 
   /* ----- start from the saved level once it's known ----- */
   useEffect(() => {
@@ -303,7 +514,8 @@ export default function ArrowsGame({ onFinish }: GameProps) {
     setRemoved(new Set());
     setAnims(new Map());
     gone.current = new Set();
-    particles.current = [];
+    undoUsed.current = false;
+    setUndoable(false);
     setHints(hintsFor(level));
     setHinted(null);
     setState("play");
@@ -359,47 +571,18 @@ export default function ArrowsGame({ onFinish }: GameProps) {
     [cols, rows],
   );
 
-  const burst = useCallback(
-    (x: number, y: number, color: string, n: number, speed: number) => {
-      if (calm) return;
-      for (let i = 0; i < n; i++) {
-        const ang = Math.random() * Math.PI * 2;
-        const v = speed * (0.35 + Math.random() * 0.65);
-        const life = 0.45 + Math.random() * 0.45;
-        particles.current.push({ x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, life, max: life, r: 1.2 + Math.random() * 2.2, color });
-      }
-      if (particles.current.length > 260) particles.current.splice(0, particles.current.length - 260);
-    },
-    [calm],
-  );
-
   const popup = useCallback((x: number, y: number, text: string, color: string, big = false) => {
     const id = ++popupId.current;
     setPopups((p) => [...p, { id, x, y, text, color, big }]);
     window.setTimeout(() => setPopups((p) => p.filter((q) => q.id !== id)), big ? 1400 : 950);
   }, []);
 
-  /* ----- animation clock: moving arrows + particles ----- */
+  /* ----- animation clock: only while arrows are moving ----- */
   const busy = anims.size > 0;
-  const [particlesAlive, setParticlesAlive] = useState(false);
   useEffect(() => {
-    if (!busy && !particlesAlive) return;
+    if (!busy) return;
     let raf = 0;
-    let last = performance.now();
     const loop = (now: number) => {
-      const dt = Math.min(0.05, (now - last) / 1000);
-      last = now;
-      // particles
-      const ps = particles.current;
-      for (const p of ps) {
-        p.life -= dt;
-        p.vx *= 0.9;
-        p.vy = p.vy * 0.9 + 60 * dt;
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-      }
-      particles.current = ps.filter((p) => p.life > 0);
-      // arrows
       let changed = false;
       const next = new Map(anims);
       for (const [id, an] of anims) {
@@ -411,23 +594,31 @@ export default function ArrowsGame({ onFinish }: GameProps) {
           const ray = rayLength(a, cols, rows);
           const ex = px((head % cols) + DX[a.dir] * (ray + 0.6));
           const ey = px(Math.floor(head / cols) + DY[a.dir] * (ray + 0.6));
-          burst(ex, ey, colorOf(a, level), 14, 150);
+          fx.current?.burst(ex, ey, colorOf(a, level), 14, 150);
           sfx.edge();
         }
         if (t >= 1) {
           next.delete(id);
           changed = true;
-          if (an.kind === "exit") setRemoved((r) => new Set(r).add(id));
+          if (an.kind === "exit") {
+            setRemoved((r) => new Set(r).add(id));
+            // the exit effect starts where the arrow crossed the board edge
+            const a = arrows[id];
+            const head = a.cells[a.cells.length - 1];
+            const ray = rayLength(a, cols, rows);
+            const x = px((head % cols) + DX[a.dir] * (ray + 0.5));
+            const y = px(Math.floor(head / cols) + DY[a.dir] * (ray + 0.5));
+            fx.current?.exit(fxStyle, x, y, DX[a.dir], DY[a.dir], colorOf(a, level));
+          }
         }
       }
       if (changed) setAnims(next);
-      setParticlesAlive(particles.current.length > 0);
       setTick((k) => k + 1);
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [busy, particlesAlive, anims, arrows, cols, rows, level, burst]);
+  }, [busy, anims, arrows, cols, rows, level, colorOf, fxStyle]);
 
   /* ----- level cleared ----- */
   useEffect(() => {
@@ -435,17 +626,39 @@ export default function ArrowsGame({ onFinish }: GameProps) {
     const bonus = 50 * level + lives * 20;
     setScore((s) => s + bonus);
     setState("cleared");
+    setUndoable(false);
     saved.save(level + 1); // closing the site now resumes on the next level
     sfx.clear();
     // confetti from the top of the board
-    for (let i = 0; i < 6; i++) burst(px(Math.random() * cols), px(-0.5), PALETTE[i * 2 % PALETTE.length], 14, 220);
-    setParticlesAlive(true);
-  }, [removed, arrows.length, state, level, lives, burst, cols, saved]);
+    for (let i = 0; i < 6; i++) fx.current?.burst(px(Math.random() * cols), px(-0.5), skin.palette[(i * 2) % skin.palette.length], 14, 220);
+  }, [removed, arrows.length, state, level, lives, cols, saved, skin]);
+
+  /** The run is over: show the result and report the score (once). */
+  const endRun = useCallback(() => {
+    setState("over");
+    sfx.lose();
+    if (!finished.current) {
+      finished.current = true;
+      onFinish(scoreRef.current);
+    }
+  }, [onFinish]);
+
+  /* ----- last chance: undo the bump that cost the last life, or the run ends ----- */
+  useEffect(() => {
+    if (state !== "chance" || boostBusy) return;
+    if (chanceLeft <= 0) {
+      endRun();
+      return;
+    }
+    const id = window.setTimeout(() => setChanceLeft((s) => s - 1), 1000);
+    return () => window.clearTimeout(id);
+  }, [state, chanceLeft, boostBusy, endRun]);
 
   function tap(a: Arrow) {
     if (state !== "play" || intro || gone.current.has(a.id) || anims.has(a.id)) return;
     touched.current = true;
     setHinted(null);
+    setUndoable(false);
     const block = blockOf(a, occupancy());
     const head = a.cells[a.cells.length - 1];
     const hx = px(head % cols);
@@ -470,8 +683,7 @@ export default function ArrowsGame({ onFinish }: GameProps) {
       const pts = (10 + a.cells.length * 2) * c;
       setScore((s) => s + pts);
       popup(hx, hy - 6, c > 1 ? `+${pts} ×${c}` : `+${pts}`, color, c >= 3);
-      burst(hx, hy, color, 6, 70);
-      setParticlesAlive(true);
+      fx.current?.burst(hx, hy, color, 6, 70);
       sfx.out(c);
       return;
     }
@@ -488,27 +700,62 @@ export default function ArrowsGame({ onFinish }: GameProps) {
     window.setTimeout(() => setBrokenHeart(null), 700);
     setLives(left);
     popup(hx, hy - 6, "blocked!", "#ff5a4a");
+    if (!undoUsed.current) setUndoable(true);
     if (left <= 0) {
+      const canUndo = !undoUsed.current && ownedUndos > 0;
       window.setTimeout(() => {
-        setState("over");
-        sfx.lose();
+        if (canUndo) {
+          setChanceLeft(CHANCE_S);
+          setState("chance");
+        } else endRun();
       }, 450);
-      if (!finished.current) {
-        finished.current = true;
-        onFinish(score);
-      }
     }
   }
+  // stable tap handler for the memoised arrows
+  const tapRef = useRef(tap);
+  tapRef.current = tap;
+  const onTap = useCallback((a: Arrow) => tapRef.current(a), []);
 
-  function giveHint() {
-    if (hints <= 0 || state !== "play" || intro) return;
+  async function giveHint() {
+    if (state !== "play" || intro || boostBusy) return;
+    if (hints <= 0) {
+      if (ownedHints <= 0) {
+        setPanel("arrows_hint");
+        return;
+      }
+      setBoostBusy(true);
+      const ok = await shop.use("arrows_hint");
+      setBoostBusy(false);
+      if (!ok) return;
+    } else setHints((h) => h - 1);
     const occ = occupancy();
     const free = arrows.find((a) => !gone.current.has(a.id) && !blockOf(a, occ));
     if (free) {
       setHinted(free.id);
-      setHints((h) => h - 1);
       sfx.hint();
     }
+  }
+
+  /** Take back the last bump: the life comes back. One per level, uses an owned undo. */
+  async function undo() {
+    if (boostBusy || undoUsed.current || (!undoable && state !== "chance")) return;
+    if (ownedUndos <= 0) {
+      setPanel("arrows_undo");
+      return;
+    }
+    setBoostBusy(true);
+    const ok = await shop.use("arrows_undo");
+    setBoostBusy(false);
+    if (!ok) {
+      if (state === "chance") endRun();
+      return;
+    }
+    undoUsed.current = true;
+    setUndoable(false);
+    setLives((l) => Math.min(LIVES, l + 1));
+    setBrokenHeart(null);
+    if (state === "chance") setState("play");
+    sfx.hint();
   }
 
   function nextLevel() {
@@ -545,6 +792,8 @@ export default function ArrowsGame({ onFinish }: GameProps) {
   const progress = arrows.length ? removed.size / arrows.length : 0;
   const lost = livesAtStart - lives;
   const stars = lost <= 0 ? 3 : lost === 1 ? 2 : 1;
+  const hintLabel = hints > 0 ? `💡 Hint (${hints})` : ownedHints > 0 ? `💡 Hint · ${ownedHints} owned` : "💡 Get hints";
+  const undoReady = undoable && !undoUsed.current && state === "play";
 
   return (
     <div className="game-surface arw-surface">
@@ -582,106 +831,64 @@ export default function ArrowsGame({ onFinish }: GameProps) {
       </div>
 
       {/* Board */}
-      <div className={`arw-board-wrap${state !== "play" ? " is-dim" : ""}`}>
-        <div className={`arw-shake${shakeKey ? " go" : ""}`} key={`s-${shakeKey}`}>
-          <svg
-            key={`b-${seed}`}
-            className={`arw-board${intro ? " is-intro" : ""}`}
-            viewBox={`${-CELL * 0.5} ${-CELL * 0.5} ${W + CELL} ${H + CELL}`}
-            role="img"
-            aria-label={`Arrow board, ${left} arrows left`}
-          >
-            <defs>
-              <clipPath id="arw-clip">
-                <rect x={-CELL * 0.4} y={-CELL * 0.4} width={W + CELL * 0.8} height={H + CELL * 0.8} rx={16} />
-              </clipPath>
-              <radialGradient id="arw-bg-glow" cx="50%" cy="40%" r="75%">
-                <stop offset="0%" stopColor="#ff8a3d" stopOpacity="0.14" />
-                <stop offset="60%" stopColor="#7c5cff" stopOpacity="0.05" />
-                <stop offset="100%" stopColor="#000" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            <rect className="arw-bg" x={-CELL * 0.4} y={-CELL * 0.4} width={W + CELL * 0.8} height={H + CELL * 0.8} rx={16} />
-            <rect className="arw-bg-glow" x={-CELL * 0.4} y={-CELL * 0.4} width={W + CELL * 0.8} height={H + CELL * 0.8} rx={16} fill="url(#arw-bg-glow)" />
-            <g className="arw-dots">
-              {Array.from({ length: cols * rows }, (_, i) => (
-                <circle key={i} cx={px(i % cols)} cy={px(Math.floor(i / cols))} r={1.3} />
+      <div className={`arw-board-wrap${state !== "play" ? " is-dim" : ""}${skin.tinted ? " arw-tinted" : ""} ${skin.className}`}>
+        <div className="arw-shake" ref={shakeRef}>
+          <div className="arw-stack" ref={stackRef}>
+            {/* background panel + glow, behind the canvas effects */}
+            <svg className="arw-bgsvg" viewBox={`${-CELL * 0.5} ${-CELL * 0.5} ${W + CELL} ${H + CELL}`} aria-hidden="true">
+              <defs>
+                <radialGradient id="arw-bg-glow" cx="50%" cy="40%" r="75%">
+                  <stop offset="0%" stopColor="#ff8a3d" stopOpacity="0.14" />
+                  <stop offset="60%" stopColor="#7c5cff" stopOpacity="0.05" />
+                  <stop offset="100%" stopColor="#000" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+              <rect className="arw-bg" x={-CELL * 0.4} y={-CELL * 0.4} width={W + CELL * 0.8} height={H + CELL * 0.8} rx={16} />
+              <rect className="arw-bg-glow" x={-CELL * 0.4} y={-CELL * 0.4} width={W + CELL * 0.8} height={H + CELL * 0.8} rx={16} fill="url(#arw-bg-glow)" />
+            </svg>
+            <canvas className="arw-fx" ref={underRef} aria-hidden="true" />
+            <svg
+              key={`b-${seed}`}
+              className={`arw-board${intro ? " is-intro" : ""}`}
+              viewBox={`${-CELL * 0.5} ${-CELL * 0.5} ${W + CELL} ${H + CELL}`}
+              role="img"
+              aria-label={`Arrow board, ${left} arrows left`}
+            >
+              <defs>
+                <clipPath id="arw-clip">
+                  <rect x={-CELL * 0.4} y={-CELL * 0.4} width={W + CELL * 0.8} height={H + CELL * 0.8} rx={16} />
+                </clipPath>
+              </defs>
+
+              <g clipPath="url(#arw-clip)">
+                {arrows.map((a, idx) =>
+                  removed.has(a.id) ? null : (
+                    <ArrowView
+                      key={a.id}
+                      a={a}
+                      idx={idx}
+                      pts={paths[idx]}
+                      color={colorOf(a, level)}
+                      tint={skin.tinted}
+                      anim={anims.get(a.id)}
+                      now={now}
+                      blocker={blockers.has(a.id)}
+                      hinted={hinted === a.id}
+                      onTap={onTap}
+                    />
+                  ),
+                )}
+              </g>
+
+              {/* score pop-ups */}
+              {popups.map((p) => (
+                <text key={p.id} className={`arw-pop${p.big ? " big" : ""}`} x={p.x} y={p.y} fill={p.color}>
+                  {p.text}
+                </text>
               ))}
-            </g>
-
-            <g clipPath="url(#arw-clip)">
-              {arrows.map((a, idx) => {
-                if (removed.has(a.id)) return null;
-                const color = colorOf(a, level);
-                const pts = travelPath(a, cols, rows);
-                const len = a.cells.length - 1;
-                const an = anims.get(a.id);
-                let off = 0;
-                let fade = 1;
-                if (an) {
-                  const t = Math.min(1, (now - an.t0) / an.dur);
-                  if (an.kind === "exit") {
-                    const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; // ease in-out
-                    off = an.dist * (e * 0.55 + t * 0.45);
-                    fade = t > 0.8 ? 1 - (t - 0.8) / 0.2 : 1;
-                  } else {
-                    const k = t < 0.42 ? t / 0.42 : 1 - (t - 0.42) / 0.58;
-                    off = an.dist * Math.sin((Math.max(0, k) * Math.PI) / 2);
-                  }
-                }
-                const seg = slice(pts, off, off + len);
-                const d = pathD(seg);
-                const end = { x: px(seg[seg.length - 1].x), y: px(seg[seg.length - 1].y) };
-                const prev = { x: px(seg[seg.length - 2].x), y: px(seg[seg.length - 2].y) };
-                const ang = Math.atan2(end.y - prev.y, end.x - prev.x);
-                const tip = { x: end.x + Math.cos(ang) * 3, y: end.y + Math.sin(ang) * 3 };
-                const hs = 9.5;
-                const l = { x: tip.x - Math.cos(ang - 0.5) * hs, y: tip.y - Math.sin(ang - 0.5) * hs };
-                const r = { x: tip.x - Math.cos(ang + 0.5) * hs, y: tip.y - Math.sin(ang + 0.5) * hs };
-                // motion trail while leaving
-                const trail = an?.kind === "exit" && off > 0.2 ? pathD(slice(pts, Math.max(0, off - 2.4), off + 0.2)) : null;
-                const cls = [
-                  "arw-arrow",
-                  an?.kind === "exit" ? "is-out" : "",
-                  an?.kind === "bump" ? "is-bump" : "",
-                  blockers.has(a.id) ? "is-blocker" : "",
-                  hinted === a.id ? "is-hint" : "",
-                ].join(" ");
-                return (
-                  <g
-                    key={a.id}
-                    className={cls}
-                    style={{ opacity: fade, color: an?.kind === "exit" ? color : undefined, "--i": idx } as React.CSSProperties}
-                    onClick={() => tap(a)}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Arrow pointing ${["up", "right", "down", "left"][a.dir]}`}
-                    onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), tap(a))}
-                  >
-                    {trail ? <path className="arw-trail" d={trail} /> : null}
-                    <path className="arw-hit" d={d} />
-                    <path className="arw-halo" d={d} />
-                    <path className="arw-line" d={d} pathLength={1} />
-                    <polygon className="arw-head" points={`${tip.x},${tip.y} ${l.x},${l.y} ${r.x},${r.y}`} />
-                  </g>
-                );
-              })}
-            </g>
-
-            {/* sparks */}
-            <g className="arw-particles">
-              {particles.current.map((p, i) => (
-                <circle key={i} cx={p.x} cy={p.y} r={p.r * (0.4 + (p.life / p.max) * 0.6)} fill={p.color} opacity={Math.min(1, (p.life / p.max) * 1.4)} />
-              ))}
-            </g>
-
-            {/* score pop-ups */}
-            {popups.map((p) => (
-              <text key={p.id} className={`arw-pop${p.big ? " big" : ""}`} x={p.x} y={p.y} fill={p.color}>
-                {p.text}
-              </text>
-            ))}
-          </svg>
+            </svg>
+            <canvas className="arw-fx arw-fx-over" ref={overRef} aria-hidden="true" />
+          </div>
         </div>
 
         {/* overlays */}
@@ -700,6 +907,25 @@ export default function ArrowsGame({ onFinish }: GameProps) {
               <button type="button" className="primary-btn" onClick={nextLevel} autoFocus>
                 Next level
               </button>
+            </div>
+          </div>
+        ) : null}
+        {state === "chance" ? (
+          <div className="arw-overlay" role="dialog" aria-modal="true" aria-labelledby="arw-chance-title">
+            <div className="arw-card">
+              <h3 id="arw-chance-title">Out of lives</h3>
+              <p>Undo the last bump and keep going?</p>
+              <div className="arw-chance-count" aria-label={`${chanceLeft} seconds left`}>
+                {chanceLeft}
+              </div>
+              <div className="arw-confirm-actions">
+                <button type="button" className="ghost-btn" onClick={endRun} disabled={boostBusy}>
+                  Give up
+                </button>
+                <button type="button" className="primary-btn" onClick={() => void undo()} disabled={boostBusy} autoFocus>
+                  ↶ Undo ({ownedUndos} left)
+                </button>
+              </div>
             </div>
           </div>
         ) : null}
@@ -747,11 +973,21 @@ export default function ArrowsGame({ onFinish }: GameProps) {
             </div>
           </div>
         ) : null}
+        {panel ? <BoosterPanel item={panel} onClose={() => setPanel(null)} /> : null}
       </div>
 
       <div className="arw-actions">
-        <button type="button" className="ghost-btn" disabled={hints <= 0 || state !== "play" || intro} onClick={giveHint}>
-          💡 Hint ({hints})
+        <button type="button" className="ghost-btn" disabled={state !== "play" || intro || boostBusy} onClick={() => void giveHint()}>
+          {hintLabel}
+        </button>
+        <button
+          type="button"
+          className={`ghost-btn${undoReady ? " arw-undo-ready" : ""}`}
+          disabled={!undoReady || boostBusy}
+          onClick={() => void undo()}
+          title="Takes back your last bump and gives the life back (1 per level)"
+        >
+          {undoReady && ownedUndos <= 0 ? "↶ Get undos" : `↶ Undo (${ownedUndos})`}
         </button>
         <button type="button" className="ghost-btn" onClick={restart}>
           ↻ Restart level

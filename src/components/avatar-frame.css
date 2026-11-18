@@ -1,0 +1,101 @@
+/* Avatar frames (shop). A wrapper around any round avatar; the ring is drawn outside it, so the
+   avatar inside keeps its own size and styles. Rings only animate transform / opacity. */
+.av-frame {
+  position: relative;
+  display: inline-grid;
+  flex: none;
+  border-radius: 50%;
+  isolation: isolate;
+}
+
+/* the ring: a conic gradient cut to a 3px band */
+.av-frame::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset: -4px;
+  border-radius: 50%;
+  padding: 3px;
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+/* the glow: a box-shadow just outside the ring */
+.av-frame::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -4px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Ember: warm orange glow that breathes */
+.av-frame-ember::after {
+  background: conic-gradient(#ff4d00, #ff9a3c, #ffd08a, #ff7a1a, #ff4d00);
+}
+
+.av-frame-ember::before {
+  box-shadow: 0 0 14px 3px rgba(255, 110, 20, 0.6);
+  animation: av-breathe 2.4s ease-in-out infinite;
+}
+
+/* Neon: cyan and pink, always spinning */
+.av-frame-neon::after {
+  background: conic-gradient(#00f0ff, #ff2bd6, #8a5cff, #00f0ff);
+  animation: av-spin 3s linear infinite;
+}
+
+.av-frame-neon::before {
+  box-shadow:
+    0 0 10px 2px rgba(0, 240, 255, 0.45),
+    0 0 18px 4px rgba(255, 43, 214, 0.3);
+}
+
+/* Gold: polished ring with a passing shine */
+.av-frame-gold::after {
+  background: conic-gradient(#b8860b, #ffe08a, #ffd700, #fff6c8 12%, #c99a1e 30%, #ffd700 55%, #fff1b0 70%, #b8860b);
+  animation: av-spin 6s linear infinite;
+}
+
+.av-frame-gold::before {
+  box-shadow: 0 0 10px 1px rgba(255, 200, 60, 0.45);
+}
+
+/* Galaxy: swirling violet stardust */
+.av-frame-galaxy::after {
+  background: conic-gradient(#3f37c9, #b5179e, #f72585, #7209b7, #4cc9f0, #3f37c9);
+  animation: av-spin 5s linear infinite reverse;
+}
+
+.av-frame-galaxy::before {
+  box-shadow:
+    0 0 14px 3px rgba(114, 9, 183, 0.5),
+    0 0 26px 6px rgba(76, 201, 240, 0.18);
+  animation: av-breathe 3.2s ease-in-out infinite;
+}
+
+@keyframes av-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes av-breathe {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .av-frame::after,
+  .av-frame::before {
+    animation: none;
+  }
+}

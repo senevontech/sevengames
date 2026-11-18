@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuthContext } from "../context/AuthContext";
 import { useAvatar } from "../lib/avatar";
 import { RiUser3Line } from "./ReIcons";
+import AvatarFrame from "./AvatarFrame";
 
 /*
  * Right-hand nav slot of the new UI: a round button. Signed out it shows the account icon and
@@ -28,9 +29,11 @@ export default function NavAccount() {
   const name = (meta.full_name as string | undefined) || (meta.name as string | undefined) || user.email || "Player";
   return (
     <Link className="h3-account" to="/profile" aria-label={`Your profile (${name})`}>
-      <span className="h3-account-icon">
-        {uri ? <img src={uri} alt="" width={40} height={40} referrerPolicy="no-referrer" /> : <RiUser3Line size={18} aria-hidden="true" />}
-      </span>
+      <AvatarFrame userId={user.id}>
+        <span className="h3-account-icon">
+          {uri ? <img src={uri} alt="" width={40} height={40} referrerPolicy="no-referrer" /> : <RiUser3Line size={18} aria-hidden="true" />}
+        </span>
+      </AvatarFrame>
       <span className="h3-account-label" aria-hidden="true">
         Profile
       </span>

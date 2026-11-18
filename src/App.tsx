@@ -11,6 +11,7 @@ import Admin from "./pages/admin/Admin";
 import TokensPage from "./pages/TokensPage";
 import Leaderboards from "./pages/Leaderboards";
 import { TokensProvider } from "./lib/tokens";
+import { ShopProvider } from "./lib/shop";
 
 import { trackPageview } from "./lib/track";
 
@@ -63,6 +64,7 @@ export default function App() {
   return (
     <AuthProvider>
       <TokensProvider>
+      <ShopProvider>
       <RouterRoutes>
         <Route path="/admin/*" element={<Admin />} />
         <Route path="/" element={<Landing videoHero />} />
@@ -96,6 +98,7 @@ export default function App() {
         />
         <Route path="*" element={<Shell />} />
       </RouterRoutes>
+      </ShopProvider>
       </TokensProvider>
     </AuthProvider>
   );
