@@ -116,6 +116,8 @@ export default function Board({ s, moves, canMove, flipped, lastMove, onMove, th
   }
 
   const rect = drag ? boardRef.current?.getBoundingClientRect() : undefined;
+  // on-screen px per layout px: the game page may scale the whole game to fit its window
+  const zoom = rect && boardRef.current?.offsetWidth ? rect.width / boardRef.current.offsetWidth : 1;
 
   return (
     <div
@@ -160,7 +162,7 @@ export default function Board({ s, moves, canMove, flipped, lastMove, onMove, th
           const dragging = drag?.sq === sq && rect;
           const style: React.CSSProperties = dragging
             ? {
-                transform: `translate(${drag!.x - rect!.left - rect!.width / 16}px, ${drag!.y - rect!.top - rect!.height / 16}px) scale(1.12)`,
+                transform: `translate(${(drag!.x - rect!.left - rect!.width / 16) / zoom}px, ${(drag!.y - rect!.top - rect!.height / 16) / zoom}px) scale(1.12)`,
                 transition: "none",
                 zIndex: 5,
               }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { gameFinishedAd } from "../lib/admob";
 import { isNative } from "../lib/native";
 import { Link, useParams } from "react-router-dom";
-import { ChevronLeft, ExternalLink, Info, Maximize, Minimize, MonitorPlay, Store } from "lucide-react";
+import { ChevronLeft, ExternalLink, Info, Maximize, Minimize, MonitorPlay, Store, Trophy, X } from "lucide-react";
 import { GamePoster } from "../components/GamePoster";
 import { getGame, scoreLabel } from "../catalog";
 import { engines, previews } from "../games";
@@ -20,6 +20,8 @@ import TokenIcon from "../components/TokenIcon";
 import "./game-page.css";
 import "../games/game-skin.css";
 import "./game-neu.css";
+import "./game-fit.css";
+import FitBox from "../components/FitBox";
 
 /** The game as it looks before you start: a custom preview, or its own start screen made inert. */
 function GatePreview({ game }: { game: NonNullable<ReturnType<typeof getGame>> }) {
@@ -67,6 +69,8 @@ export default function GamePage() {
   const showAdsRef = useRef(showAds);
   showAdsRef.current = showAds;
   const [locked, setLocked] = useState(false);
+  // phones: the leaderboard panel over the game
+  const [sideOpen, setSideOpen] = useState(false);
   const lockTimer = useRef(0);
   useEffect(() => () => window.clearTimeout(lockTimer.current), []);
   // "full" = native Fullscreen API when available, otherwise a fixed overlay (e.g. iPhone Safari).
@@ -179,12 +183,12 @@ export default function GamePage() {
 
   return (
     <div className="page game-page gp" style={{ "--accent": game.accent } as React.CSSProperties}>
-      <Link to="/" className="back-link">
-        <ChevronLeft size={18} />
-        All games
-      </Link>
-
-      <header className="game-header">
+      {/* One slim row: back, picture, title + details (the game gets the rest of the screen) */}
+      <header className="game-header gp-top">
+        <Link to="/" className="back-link" aria-label="All games">
+          <ChevronLeft size={18} />
+          <span>All games</span>
+        </Link>
         <GamePoster game={game} size="hero" />
         <div className="game-header-text">
           <h1>{game.title}</h1>
@@ -235,6 +239,17 @@ export default function GamePage() {
                 <Store size={15} />
                 <span>Shop</span>
               </Link>
+              {/* phones: the leaderboard opens as a panel over the game */}
+              <button
+                type="button"
+                className={`gp-lb-btn${sideOpen ? " active" : ""}`}
+                aria-label="Leaderboard"
+                aria-expanded={sideOpen}
+                onClick={() => setSideOpen((o) => !o)}
+              >
+                <Trophy size={15} />
+                <span>Top 10</span>
+              </button>
               {game.kind === "iframe" ? (
                 <a href={game.embedUrl} target="_blank" rel="noopener noreferrer" aria-label="Open original site">
                   <ExternalLink size={15} />
@@ -255,11 +270,14 @@ export default function GamePage() {
               <p className="empty-note">Loading…</p>
             ) : premium && paidPlay === 0 ? (
               // preview of the game with the start bar UNDER it
-              <div className="gp-play-wrap">
-                <GatePreview game={game} />
-                <PlayGate gameId={game.id} gameTitle={game.title} cost={cost} again={false} onPaid={() => setPaidPlay(1)} />
-              </div>
+              <FitBox>
+                <div className="gp-play-wrap">
+                  <GatePreview game={game} />
+                  <PlayGate gameId={game.id} gameTitle={game.title} cost={cost} again={false} onPaid={() => setPaidPlay(1)} />
+                </div>
+              </FitBox>
             ) : game.kind === "builtin" ? (
+              <FitBox>
               <div className="gp-play-wrap">
                 <GameRunner key={paidPlay} gameId={game.engine} onScore={handleFinish} />
                 {premium && locked ? (
@@ -275,6 +293,7 @@ export default function GamePage() {
                   />
                 ) : null}
               </div>
+              </FitBox>
             ) : (
               <div className="iframe-wrap">
                 <iframe src={game.embedUrl} title={game.title} allow="gamepad; fullscreen" />
@@ -282,7 +301,13 @@ export default function GamePage() {
             )}
           </section>
         </div>
-        <div className="gp-side">
+        {sideOpen ? (
+          <button type="button" className="gp-side-scrim" aria-label="Close leaderboard" onClick={() => setSideOpen(false)} />
+        ) : null}
+        <div className={`gp-side${sideOpen ? " is-open" : ""}`}>
+        <button type="button" className="gp-side-close" aria-label="Close leaderboard" onClick={() => setSideOpen(false)}>
+          <X size={16} />
+        </button>
         <Leaderboard
           leaders={leaders}
           loading={loading}

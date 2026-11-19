@@ -1107,3 +1107,38 @@
 .g2-ad-disk.gd {
   overflow: visible;
 }
+
+/* ============================================================
+   Header dropdowns above the page content
+   ============================================================ */
+/* the carousel's disks use z-index up to 160: keep them inside their own stack */
+.dc-stage {
+  isolation: isolate;
+}
+
+.gs.g2 .h3-nav {
+  z-index: 300;
+}
+
+/* categories menu: tall enough for every category on desktop, no visible scrollbar
+   (it still scrolls by wheel / touch on short screens) */
+.gs.g2 .gs-cats-menu,
+.gs.g2 .gs-burger-panel {
+  max-height: calc(100dvh - 90px);
+  scrollbar-width: none;
+}
+
+.gs.g2 .gs-cats-menu::-webkit-scrollbar,
+.gs.g2 .gs-burger-panel::-webkit-scrollbar {
+  display: none;
+}
+
+.gs.g2 .gs-cats-menu {
+  right: -6px;
+  width: 232px;
+  padding: 8px;
+}
+
+.gs.g2 .gs-cats-menu li + li {
+  margin-top: 2px;
+}

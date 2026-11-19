@@ -25,7 +25,8 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
   const { theme, toggle } = useGameTheme();
 
   return (
-    <div className="site" data-gtheme={isGame ? theme : undefined}>
+    // game pages fit the screen exactly (no page scroll, no footer): see pages/game-fit.css
+    <div className={`site${pathname.startsWith("/game/") ? " site-game" : ""}`} data-gtheme={isGame ? theme : undefined}>
       <div className="site-backdrop" aria-hidden="true" />
 
       {/* Fixed chrome, reusing the home page's styles (scoped under .h3) */}
