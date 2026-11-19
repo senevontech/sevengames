@@ -4,6 +4,6 @@
     <string name="title_activity_main">Senevon Games</string>
     <string name="package_name">com.senevon.games</string>
     <string name="custom_url_scheme">com.senevon.games</string>
-    <!-- AdMob app id: Google's TEST id until you set yours -->
-    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+    <!-- AdMob app id (Senevon Games). Google's test id: ca-app-pub-3940256099942544~3347511713 -->
+    <string name="admob_app_id">ca-app-pub-7539762906456727~6951045325</string>
 </resources>

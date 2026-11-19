@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { gameFinishedAd } from "../lib/admob";
-import { isNative } from "../lib/native";
+import { isNative, openExternal } from "../lib/native";
 import { Link, useParams } from "react-router-dom";
 import { ChevronLeft, ExternalLink, Info, Maximize, Minimize, Minimize2, Store, Trophy, X } from "lucide-react";
 import { GamePoster } from "../components/GamePoster";
@@ -86,6 +86,11 @@ export default function GamePage() {
   }, [playing]);
   // a new game page starts out of play mode
   useEffect(() => setPlaying(false), [id]);
+
+  // Web games (they run another site in a frame) play best in their own window: ask first.
+  // "ask" → overlay; "opened" → opened elsewhere (frame not loaded); "here" → play in the frame.
+  const [extMode, setExtMode] = useState<"ask" | "opened" | "here">("ask");
+  useEffect(() => setExtMode("ask"), [id]);
 
   // Two-step start for games with modes: their Play button pays (if needed) and starts
   const selfGated = game?.kind === "builtin" && SELF_GATED.has(game.engine);
@@ -317,7 +322,9 @@ export default function GamePage() {
             className={`game-stage gp-stage${full ? " is-full" : ""}${startAd ? " has-ad" : ""}`}
             onPointerDownCapture={() => {
               // free games start on the first touch; paid ones when "Start game" is paid
-              if (!playing && cost !== null && !selfGated && !(premium && (paidPlay === 0 || locked))) setPlaying(true);
+              // (not while the "new window" question is up for a web game)
+              const asking = game.kind === "iframe" && extMode !== "here";
+              if (!playing && !asking && cost !== null && !selfGated && !(premium && (paidPlay === 0 || locked))) setPlaying(true);
             }}
           >
             {playing ? (
@@ -396,6 +403,45 @@ export default function GamePage() {
                 ) : null}
               </div>
               </FitBox>
+            ) : extMode !== "here" ? (
+              <div className="gp-ext" role="dialog" aria-labelledby="gp-ext-title">
+                <div className="gp-ext-card">
+                  <GamePoster game={game} size="thumb" />
+                  {extMode === "ask" ? (
+                    <>
+                      <h2 id="gp-ext-title">{isNative ? `Play ${game.title} on its website` : "Best in a new window"}</h2>
+                      <p>
+                        {isNative
+                          ? "This game runs best on its own website. We'll open it in your browser."
+                          : `For the best experience, play ${game.title} in its own window.`}
+                      </p>
+                      <button
+                        type="button"
+                        className="gp-ext-go"
+                        onClick={() => {
+                          openExternal(game.embedUrl);
+                          setExtMode("opened");
+                        }}
+                      >
+                        <ExternalLink size={16} />
+                        {isNative ? "Open website" : "Open in new window"}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <h2 id="gp-ext-title">Opened {isNative ? "in your browser" : "in a new window"}</h2>
+                      <p>Have fun! Come back here any time.</p>
+                      <button type="button" className="gp-ext-go" onClick={() => openExternal(game.embedUrl)}>
+                        <ExternalLink size={16} />
+                        Open again
+                      </button>
+                    </>
+                  )}
+                  <button type="button" className="gp-ext-skip" onClick={() => setExtMode("here")}>
+                    {extMode === "ask" ? "Skip, play here" : "Play here instead"}
+                  </button>
+                </div>
+              </div>
             ) : (
               <div className="iframe-wrap">
                 <iframe src={game.embedUrl} title={game.title} allow="gamepad; fullscreen" />

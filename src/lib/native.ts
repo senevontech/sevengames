@@ -65,3 +65,12 @@ export async function initNative() {
   // the first screen is up: hide the splash
   window.setTimeout(() => void SplashScreen.hide({ fadeOutDuration: 250 }), 150);
 }
+
+/** Open an outside website: the app uses the in-app browser tab, the web a new tab/window. */
+export function openExternal(url: string) {
+  if (isNative) {
+    void Browser.open({ url }).catch(() => window.open(url, "_blank"));
+    return;
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+}

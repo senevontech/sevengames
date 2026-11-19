@@ -18,6 +18,13 @@ const config: CapacitorConfig = {
       showSpinner: false,
       androidScaleType: "CENTER_INSIDE",
     },
+    // Android 15+ is always edge-to-edge: pad the WebView below the status bar / above the
+    // gesture bar (the app build has no viewport-fit=cover, see vite.config.ts)
+    SystemBars: {
+      insetsHandling: "css",
+      initialViewportFitValueHint: "contain",
+      style: "DARK",
+    },
     StatusBar: {
       style: "DARK",
       backgroundColor: "#121212",

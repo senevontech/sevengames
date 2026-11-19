@@ -6,6 +6,7 @@ import { initNative } from "./lib/native";
 import "./styles.css";
 import "./ui.css";
 import "./orbit.css";
+import "./app-perf.css";
 
 void initNative();
 

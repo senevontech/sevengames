@@ -1,0 +1,37 @@
+/* Android app only (html.is-app is set in src/lib/native.ts).
+   Phone WebViews struggle with what desktop browsers shrug off: every backdrop-filter re-blurs
+   whatever is behind it on each frame, and the looping background glows / fog / light rays
+   keep the GPU busy even when nothing changes. Drop them in the app so scrolling and the
+   games stay smooth; the web keeps the full look. */
+
+html.is-app *,
+html.is-app *::before,
+html.is-app *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* decorative looping backgrounds: show their resting frame instead of animating forever */
+html.is-app .rail-glow-bloom,
+html.is-app .hero-accent,
+html.is-app .hero h1 .text-secondary,
+html.is-app .hero-glow i,
+html.is-app .fx-bloom,
+html.is-app .ring-fx::before,
+html.is-app .fx-beam,
+html.is-app .fx-ticks,
+html.is-app .fx-inner,
+html.is-app .fx-comet,
+html.is-app .fx-orbit,
+html.is-app .fx-flare,
+html.is-app .light-ray-diagonal,
+html.is-app .light-ray-flare,
+html.is-app .rail-dock::after,
+html.is-app .ml-mist,
+html.is-app .ml-f1,
+html.is-app .ml-f2,
+html.is-app .h3-rail-glow i,
+html.is-app .h3-games-text,
+html.is-app .h3-orbit-star {
+  animation: none !important;
+}

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- behind the status bar / navigation bar strips (matches the splash + status bar colour) -->
+    <color name="appBackground">#121212</color>
+</resources>
