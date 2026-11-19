@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { gameFinishedAd } from "../lib/admob";
 import { isNative } from "../lib/native";
 import { Link, useParams } from "react-router-dom";
-import { ChevronLeft, ExternalLink, Info, Maximize, Minimize, MonitorPlay, Store, Trophy, X } from "lucide-react";
+import { ChevronLeft, ExternalLink, Info, Maximize, Minimize, Minimize2, MonitorPlay, Store, Trophy, X } from "lucide-react";
 import { GamePoster } from "../components/GamePoster";
 import { getGame, scoreLabel } from "../catalog";
 import { engines, previews } from "../games";
@@ -71,6 +71,16 @@ export default function GamePage() {
   const [locked, setLocked] = useState(false);
   // phones: the leaderboard panel over the game
   const [sideOpen, setSideOpen] = useState(false);
+  // Play mode: once a game starts, everything but the game (and a few floating buttons) hides,
+  // including the site nav and the phone bottom bar (html.gp-playing, see game-fit.css)
+  const [playing, setPlaying] = useState(false);
+  useEffect(() => {
+    document.documentElement.classList.toggle("gp-playing", playing);
+    if (!playing) setSideOpen(false);
+    return () => document.documentElement.classList.remove("gp-playing");
+  }, [playing]);
+  // a new game page starts out of play mode
+  useEffect(() => setPlaying(false), [id]);
   const lockTimer = useRef(0);
   useEffect(() => () => window.clearTimeout(lockTimer.current), []);
   // "full" = native Fullscreen API when available, otherwise a fixed overlay (e.g. iPhone Safari).
@@ -128,6 +138,19 @@ export default function GamePage() {
   useEffect(() => {
     if (user) setNudge(false);
   }, [user]);
+
+  // Web games: clicks inside the iframe never reach the page, but focus moves into it
+  useEffect(() => {
+    const onBlur = () => {
+      window.setTimeout(() => {
+        if (document.activeElement?.tagName === "IFRAME" && stageRef.current?.contains(document.activeElement)) {
+          setPlaying(true);
+        }
+      }, 0);
+    };
+    window.addEventListener("blur", onBlur);
+    return () => window.removeEventListener("blur", onBlur);
+  }, []);
 
   // "F" toggles full screen (ignored while typing or when a game input has focus).
   useEffect(() => {
@@ -259,7 +282,43 @@ export default function GamePage() {
             </div>
           </div>
 
-          <section ref={stageRef} className={`game-stage gp-stage${full ? " is-full" : ""}`}>
+          <section
+            ref={stageRef}
+            className={`game-stage gp-stage${full ? " is-full" : ""}`}
+            onPointerDownCapture={() => {
+              // free games start on the first touch; paid ones when "Start game" is paid
+              if (!playing && cost !== null && !(premium && (paidPlay === 0 || locked))) setPlaying(true);
+            }}
+          >
+            {playing ? (
+              <div className="gp-float" role="toolbar" aria-label="Game controls">
+                <button
+                  type="button"
+                  className={sideOpen ? "active" : ""}
+                  aria-label="Leaderboard"
+                  aria-expanded={sideOpen}
+                  onClick={() => setSideOpen((o) => !o)}
+                >
+                  <Trophy size={16} />
+                </button>
+                {!full ? (
+                  <button type="button" aria-label="Full screen" onClick={() => void enterFull()}>
+                    <Maximize size={16} />
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  aria-label="Show page controls"
+                  title="Show page controls"
+                  onClick={() => {
+                    if (full) exitFull();
+                    setPlaying(false);
+                  }}
+                >
+                  <Minimize2 size={16} />
+                </button>
+              </div>
+            ) : null}
             {full ? (
               <button type="button" className="exit-full" onClick={exitFull} aria-label="Exit full screen">
                 <Minimize size={16} />
@@ -270,14 +329,23 @@ export default function GamePage() {
               <p className="empty-note">Loading…</p>
             ) : premium && paidPlay === 0 ? (
               // preview of the game with the start bar UNDER it
-              <FitBox>
+              <FitBox maxScale={1.5}>
                 <div className="gp-play-wrap">
                   <GatePreview game={game} />
-                  <PlayGate gameId={game.id} gameTitle={game.title} cost={cost} again={false} onPaid={() => setPaidPlay(1)} />
+                  <PlayGate
+                    gameId={game.id}
+                    gameTitle={game.title}
+                    cost={cost}
+                    again={false}
+                    onPaid={() => {
+                      setPaidPlay(1);
+                      setPlaying(true);
+                    }}
+                  />
                 </div>
               </FitBox>
             ) : game.kind === "builtin" ? (
-              <FitBox>
+              <FitBox maxScale={1.5}>
               <div className="gp-play-wrap">
                 <GameRunner key={paidPlay} gameId={game.engine} onScore={handleFinish} />
                 {premium && locked ? (
@@ -289,6 +357,7 @@ export default function GamePage() {
                     onPaid={() => {
                       setLocked(false);
                       setPaidPlay((n) => n + 1);
+                      setPlaying(true);
                     }}
                   />
                 ) : null}

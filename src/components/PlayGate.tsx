@@ -74,11 +74,6 @@ export default function PlayGate({
   return (
     <div className={`tk-gatebar${again ? " is-again" : ""}`} role="region" aria-label="Start game">
       <div className="tk-gatebar-inner">
-        <span className="tk-balance-chip" title={user ? "Your tokens" : "Guest tokens"}>
-          <TokenIcon size={16} title={user ? "Your tokens" : "Guest tokens"} />
-          <b>{balance === null ? "…" : formatTokens(balance)}</b>
-        </span>
-
         {!short ? (
           <button type="button" className="tk-start" disabled={busy || balance === null} onClick={() => void pay()}>
             {again ? <RotateCcw size={18} aria-hidden="true" /> : <Play size={18} fill="currentColor" aria-hidden="true" />}
@@ -115,7 +110,7 @@ export default function PlayGate({
       {error ? <p className="tk-gatebar-error">{error}</p> : null}
       {!user && !short ? (
         <p className="tk-gatebar-note">
-          Guest tokens. <Link to={`/login?next=/game/${gameId}`}>Sign in</Link> for 1,000 free; leftovers come with you.
+          <Link to={`/login?next=/game/${gameId}`}>Sign in</Link> for 1,000 free tokens
         </p>
       ) : null}
       <AdRewardModal open={adOpen} onClose={() => setAdOpen(false)} />
