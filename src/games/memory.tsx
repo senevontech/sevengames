@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { GameProps } from "./index";
-import { shuffle } from "./index";
+import { shuffle } from "./util";
 
 const SYMBOLS = ["🚀", "🌙", "⭐️", "🪐", "☀️", "🛰️"];
 

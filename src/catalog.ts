@@ -76,7 +76,7 @@ export const games: Game[] = [
     difficulty: "Medium",
     minutes: 15,
     accent: "#ff7a1a",
-    poster: "/images/orbit/card_skyrealm.png",
+    poster: "/images/orbit/card_skyrealm.webp",
     description: "Venture across vast floating islands, uncover ancient sky ruins, and master celestial arts in this open world RPG.",
   },
   {
@@ -88,7 +88,7 @@ export const games: Game[] = [
     difficulty: "Hard",
     minutes: 5,
     accent: "#ff3b30",
-    poster: "/images/orbit/card_drift_nexus.png",
+    poster: "/images/orbit/card_drift_nexus.webp",
     description: "High-octane midnight drift racing. Tune your engine, slide through apexes, and dominate the city tarmac.",
   },
   {
@@ -100,7 +100,7 @@ export const games: Game[] = [
     difficulty: "Medium",
     minutes: 10,
     accent: "#30d158",
-    poster: "/images/orbit/card_pixel_craft.png",
+    poster: "/images/orbit/card_pixel_craft.webp",
     description: "Mine, craft, and survive in an infinite procedural block-based voxel universe filled with exploration.",
   },
   {
@@ -112,7 +112,7 @@ export const games: Game[] = [
     difficulty: "Hard",
     minutes: 12,
     accent: "#af52de",
-    poster: "/images/orbit/card_shadow_tactics.png",
+    poster: "/images/orbit/card_shadow_tactics.webp",
     description: "Master feudal stealth, outwit patrolling guards from the dark shadows, and execute flawless ninja strikes.",
   },
   {
@@ -124,7 +124,7 @@ export const games: Game[] = [
     difficulty: "Hard",
     minutes: 8,
     accent: "#0a84ff",
-    poster: "/images/orbit/card_void_arena.png",
+    poster: "/images/orbit/card_void_arena.webp",
     description: "Fast-paced zero-G combat arena. Outplay rival cyber-gladiators with high-tech laser weaponry.",
   },
   {

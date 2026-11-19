@@ -33,6 +33,8 @@
   width: clamp(60px, 9vw, 84px);
   height: clamp(60px, 9vw, 84px);
   animation: tw-coin-spin 6s ease-in-out infinite;
+  /* its own layer: the drop-shadow glow is drawn once and the flip just turns it */
+  will-change: transform;
 }
 
 .tw-hero-coin svg {

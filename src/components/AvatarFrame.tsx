@@ -9,5 +9,14 @@ import "./avatar-frame.css";
  */
 export default function AvatarFrame({ userId, children }: { userId: string | null | undefined; children: ReactNode }) {
   const cls = frameClass(useFrameOf(userId));
-  return cls ? <span className={cls}>{children}</span> : <>{children}</>;
+  return cls ? (
+    <span className={cls}>
+      {children}
+      <span className="av-ring" aria-hidden="true">
+        <i />
+      </span>
+    </span>
+  ) : (
+    <>{children}</>
+  );
 }

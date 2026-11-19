@@ -39,7 +39,40 @@ const STORAGE_KEY = "senevon:avatar";
 const CHANGE_EVENT = "senevon:avatar-change";
 
 const styleCache = new Map<string, Promise<StyleModule>>();
-const uriCache = new Map<string, string>();
+
+/* Rendered avatars are also kept on the device (most recent first, size-capped), so a returning
+   visitor's avatars show instantly without downloading and running the avatar library again. */
+const DISK_KEY = "senevon:avatar-cache:v1";
+const DISK_MAX_CHARS = 1_500_000;
+const uriCache = new Map<string, string>(
+  (() => {
+    try {
+      const raw = localStorage.getItem(DISK_KEY);
+      const list = raw ? (JSON.parse(raw) as [string, string][]) : [];
+      return Array.isArray(list) ? list.filter((e) => typeof e?.[0] === "string" && typeof e?.[1] === "string" && e[1].startsWith("data:image/svg+xml")) : [];
+    } catch {
+      return [];
+    }
+  })(),
+);
+let saveTimer = 0;
+function saveUriCache() {
+  window.clearTimeout(saveTimer);
+  saveTimer = window.setTimeout(() => {
+    const out: [string, string][] = [];
+    let chars = 0;
+    for (const e of [...uriCache].reverse()) {
+      chars += e[0].length + e[1].length;
+      if (chars > DISK_MAX_CHARS) break;
+      out.push(e);
+    }
+    try {
+      localStorage.setItem(DISK_KEY, JSON.stringify(out.reverse()));
+    } catch {
+      /* storage full or unavailable: memory cache only */
+    }
+  }, 1500);
+}
 
 function isStyleId(value: unknown): value is AvatarStyleId {
   return AVATAR_STYLES.some((s) => s.id === value);
@@ -84,7 +117,12 @@ export async function renderAvatar({ style, seed }: AvatarChoice): Promise<strin
   if (style === "google") return seed; // already an image URL
   const key = `${style}|${seed}`;
   const hit = uriCache.get(key);
-  if (hit) return hit;
+  if (hit) {
+    // most recently used last, so it survives the size cap
+    uriCache.delete(key);
+    uriCache.set(key, hit);
+    return hit;
+  }
   const mod = await loadStyle(style);
   const uri = createAvatar(mod, {
     seed,
@@ -93,6 +131,7 @@ export async function renderAvatar({ style, seed }: AvatarChoice): Promise<strin
     backgroundType: ["gradientLinear", "solid"],
   }).toDataUri();
   uriCache.set(key, uri);
+  saveUriCache();
   return uri;
 }
 

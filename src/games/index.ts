@@ -1,77 +1,61 @@
+/* The game registry. Every game is its own download, fetched the first time it's opened (or
+   ahead of time by preloadGame), so the home page doesn't download and parse all of them. In the
+   app the chunks ship inside the APK, so this works offline too. */
+import { lazy, type ComponentType, type LazyExoticComponent } from "react";
 import type { GameEngine } from "../catalog";
-import TicTacToe from "./tictactoe";
-import MemoryGame from "./memory";
-import ReflexGame from "./reflex";
-import SimonGame from "./simon";
-import MergeGame from "./merge";
-import Minesweeper from "./minesweeper";
-import HangmanGame from "./hangman";
-import QuizGame from "./quiz";
-import MathGame from "./math";
-import WordGame from "./word";
-import HigherLower from "./higher-lower";
-import WhackAMole from "./whack-a-mole";
-import ColorMatch from "./color-match";
-import SlidingPuzzle from "./sliding-puzzle";
-import SnakeGame from "./snake";
-import CarromGame from "./carrom/index";
-import CarromPreview from "./carrom/Preview";
-import StackGame from "./stack";
-import DodgeGame from "./dodge";
-import ConnectFour from "./connect-four";
-import LightsOut from "./lights-out";
-import ArrowsGame, { ArrowsPreview } from "./arrowsGame";
-import ChessGame from "./chess/index";
-import LudoGame from "./ludo/index";
+
+export { shuffle, formatTime } from "./util";
 
 export type GameProps = {
   /** Call once when the round ends with the final score (or time in seconds for timed games). */
   onFinish: (score: number) => void;
 };
 
-export const engines: Record<GameEngine, (props: GameProps) => React.JSX.Element> = {
-  tictactoe: TicTacToe,
-  memory: MemoryGame,
-  reflex: ReflexGame,
-  simon: SimonGame,
-  "2048": MergeGame,
-  minesweeper: Minesweeper,
-  hangman: HangmanGame,
-  quiz: QuizGame,
-  math: MathGame,
-  word: WordGame,
-  "higher-lower": HigherLower,
-  "whack-a-mole": WhackAMole,
-  "color-match": ColorMatch,
-  "sliding-puzzle": SlidingPuzzle,
-  snake: SnakeGame,
-  carrom: CarromGame,
-  stack: StackGame,
-  dodge: DodgeGame,
-  "connect-four": ConnectFour,
-  "lights-out": LightsOut,
-  arrows: ArrowsGame,
-  chess: ChessGame,
-  ludo: LudoGame,
+type Loader<P> = () => Promise<{ default: ComponentType<P> }>;
+
+const loaders: Record<GameEngine, Loader<GameProps>> = {
+  tictactoe: () => import("./tictactoe"),
+  memory: () => import("./memory"),
+  reflex: () => import("./reflex"),
+  simon: () => import("./simon"),
+  "2048": () => import("./merge"),
+  minesweeper: () => import("./minesweeper"),
+  hangman: () => import("./hangman"),
+  quiz: () => import("./quiz"),
+  math: () => import("./math"),
+  word: () => import("./word"),
+  "higher-lower": () => import("./higher-lower"),
+  "whack-a-mole": () => import("./whack-a-mole"),
+  "color-match": () => import("./color-match"),
+  "sliding-puzzle": () => import("./sliding-puzzle"),
+  snake: () => import("./snake"),
+  carrom: () => import("./carrom/index"),
+  stack: () => import("./stack"),
+  dodge: () => import("./dodge"),
+  "connect-four": () => import("./connect-four"),
+  "lights-out": () => import("./lights-out"),
+  arrows: () => import("./arrowsGame"),
+  chess: () => import("./chess/index"),
+  ludo: () => import("./ludo/index"),
 };
+
+const previewLoaders: Partial<Record<GameEngine, Loader<object>>> = {
+  carrom: () => import("./carrom/Preview"),
+  arrows: () => import("./arrowsGame").then((m) => ({ default: m.ArrowsPreview })),
+};
+
+export const engines = Object.fromEntries(
+  Object.entries(loaders).map(([k, load]) => [k, lazy(load)]),
+) as Record<GameEngine, LazyExoticComponent<ComponentType<GameProps>>>;
 
 /** What to show behind the premium "Start game" bar (default: the game's own start screen, inert). */
-export const previews: Partial<Record<GameEngine, () => React.JSX.Element>> = {
-  carrom: CarromPreview,
-  arrows: ArrowsPreview,
-};
+export const previews = Object.fromEntries(
+  Object.entries(previewLoaders).map(([k, load]) => [k, lazy(load!)]),
+) as Partial<Record<GameEngine, LazyExoticComponent<ComponentType<object>>>>;
 
-export function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}
-
-export function formatTime(totalSeconds: number) {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+/** Start downloading a game's code ahead of time (e.g. when its disk is touched). */
+export function preloadGame(engine: string | undefined) {
+  if (!engine) return;
+  void loaders[engine as GameEngine]?.().catch(() => {});
+  void previewLoaders[engine as GameEngine]?.().catch(() => {});
 }

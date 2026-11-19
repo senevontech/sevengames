@@ -656,6 +656,9 @@
   border-radius: 50%;
   transform: translate(-50%, -50%);
   visibility: hidden; /* the carousel shows only the disks near the centre */
+  /* the visible disks get will-change: transform from DiskCarousel (moved every scroll frame:
+     each gets its own GPU layer, so its large soft shadow is drawn once, not every frame) */
+  contain: layout style;
   -webkit-tap-highlight-color: transparent;
 }
 

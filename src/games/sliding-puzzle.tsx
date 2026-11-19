@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GameProps } from "./index";
-import { shuffle } from "./index";
+import { shuffle } from "./util";
 
 const SIZE = 3;
 const SOLVED = Array.from({ length: SIZE * SIZE }, (_, i) => (i + 1) % (SIZE * SIZE));

@@ -436,6 +436,29 @@ export default function CarromGame({ onFinish }: GameProps) {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  /* Draw at the size the board is shown (up to 2× pixel density, max 1080), not always 1080²:
+     a phone showing it ~360px wide draws about half the pixels every frame, with no visible
+     difference. Pointer input maps through the on-screen rectangle, so it's unaffected. */
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || typeof ResizeObserver === "undefined") return;
+    const fit = () => {
+      const w = canvas.getBoundingClientRect().width;
+      if (!w) return;
+      const px = Math.max(480, Math.min(1080, Math.round((w * Math.min(2, window.devicePixelRatio || 1)) / 60) * 60));
+      if (canvas.width !== px) {
+        canvas.width = px;
+        canvas.height = px;
+        drawRef.current();
+      }
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(canvas);
+    return () => ro.disconnect();
+    // the canvas only exists on the board screens: re-attach whenever the screen changes
+  }, [screen]);
+
   /* ============ CPU sequencing ============ */
 
   useEffect(() => {

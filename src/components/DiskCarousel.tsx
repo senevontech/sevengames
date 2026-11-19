@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Game } from "../catalog";
@@ -36,6 +36,43 @@ function reachAt(u: number) {
   const k = Math.min(u, 4.5) - 1; // scale bottoms out at u = 4.5
   return 0.75 + 0.5 * k - 0.04 * k * k + 0.22 * Math.max(0, u - 4.5);
 }
+
+/** One disk in the track. Memoised: when the centre changes only the few disks whose state
+ *  changed re-render, not all of them (the track holds every game five times over). */
+const Slot = memo(function Slot({
+  i,
+  game,
+  active,
+  focusable,
+  setRef,
+  onPick,
+}: {
+  i: number;
+  game: Game;
+  active: boolean;
+  focusable: boolean;
+  setRef: (i: number, node: HTMLAnchorElement | null) => void;
+  onPick: (i: number) => boolean;
+}) {
+  return (
+    <div className="dc-slot">
+      <Link
+        ref={(node) => setRef(i, node)}
+        className={`dc-disk${active ? " is-active" : ""}`}
+        to={`/game/${game.id}`}
+        aria-label={active ? `Play ${game.title}` : `Show ${game.title}`}
+        tabIndex={focusable ? 0 : -1}
+        draggable={false}
+        onClick={(e) => {
+          // only the centre disk opens the game; any other one slides to the centre first
+          if (onPick(i)) e.preventDefault();
+        }}
+      >
+        <GameDisk game={game} iconSize={44} />
+      </Link>
+    </div>
+  );
+});
 
 export default function DiskCarousel({
   items,
@@ -77,13 +114,19 @@ export default function DiskCarousel({
       const x = Math.sign(t) * size * (reachAt(u) + GAP * u) - t * slot;
       disk.style.transform = `translate(-50%, -50%) translateX(${x}px) scale(${scaleAt(u)})`;
       disk.style.zIndex = String(100 - Math.round(u * 10));
-      disk.style.visibility = "visible";
+      if (!shown.current.has(i)) {
+        disk.style.visibility = "visible";
+        disk.style.willChange = "transform";
+      }
       next.add(i);
     }
     shown.current.forEach((i) => {
       if (!next.has(i)) {
         const disk = diskRefs.current[i];
-        if (disk) disk.style.visibility = "";
+        if (disk) {
+          disk.style.visibility = "";
+          disk.style.willChange = "";
+        }
       }
     });
     shown.current = next;
@@ -179,43 +222,36 @@ export default function DiskCarousel({
     if (activeGame) onActiveChange?.(activeGame, active % n);
   }, [activeGame, active, n, onActiveChange]);
 
-  const reduceMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const goTo = (i: number) => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const idx = Math.min(total - 1, Math.max(0, i));
-    el.scrollTo({ left: idx * geo.current.slot, behavior: reduceMotion() ? "auto" : "smooth" });
-  };
-
-  const slots = Array.from({ length: total }, (_, i) => ({ i, g: items[i % n] }));
+  const goTo = useCallback(
+    (i: number) => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const idx = Math.min(total - 1, Math.max(0, i));
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      el.scrollTo({ left: idx * geo.current.slot, behavior: reduce ? "auto" : "smooth" });
+    },
+    [total],
+  );
+  /** A disk was clicked: true (= stay on this page) unless it's the centre one. */
+  const onPick = useCallback(
+    (i: number) => {
+      if (i === activeRef.current) return false;
+      goTo(i);
+      return true;
+    },
+    [goTo],
+  );
+  const setRef = useCallback((i: number, node: HTMLAnchorElement | null) => {
+    diskRefs.current[i] = node;
+  }, []);
 
   return (
     <section className="dc" aria-label={label}>
       <div className="dc-stage">
         <div className="dc-scroller" ref={scrollerRef}>
           <div className="dc-spacer" aria-hidden="true" />
-          {slots.map(({ i, g }) => (
-            <div className="dc-slot" key={i}>
-              <Link
-                ref={(node) => {
-                  diskRefs.current[i] = node;
-                }}
-                className={`dc-disk${i === active ? " is-active" : ""}`}
-                to={`/game/${g.id}`}
-                aria-label={i === active ? `Play ${g.title}` : `Show ${g.title}`}
-                tabIndex={Math.abs(i - active) <= 2 ? 0 : -1}
-                draggable={false}
-                onClick={(e) => {
-                  // only the centre disk opens the game; any other one slides to the centre first
-                  if (i !== active) {
-                    e.preventDefault();
-                    goTo(i);
-                  }
-                }}
-              >
-                <GameDisk game={g} iconSize={44} />
-              </Link>
-            </div>
+          {Array.from({ length: total }, (_, i) => (
+            <Slot key={i} i={i} game={items[i % n]} active={i === active} focusable={Math.abs(i - active) <= 2} setRef={setRef} onPick={onPick} />
           ))}
           <div className="dc-spacer" aria-hidden="true" />
         </div>

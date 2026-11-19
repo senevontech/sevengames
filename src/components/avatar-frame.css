@@ -1,21 +1,29 @@
 /* Avatar frames (shop). A wrapper around any round avatar; the ring is drawn outside it, so the
-   avatar inside keeps its own size and styles. Rings only animate transform / opacity. */
+   avatar inside keeps its own size and styles.
+
+   Performance: the ring is a masked band (.av-ring, never animated) with the gradient on a child
+   (.av-ring > i) that does the spinning. Animating the masked element itself made the browser
+   redo style + paint on the main thread every frame; rotating an unmasked child inside a still
+   mask runs on the GPU. Only transform / opacity are animated. */
 .av-frame {
   position: relative;
   display: inline-grid;
   flex: none;
   border-radius: 50%;
   isolation: isolate;
+  /* per-frame look (set below) */
+  --av-ring: none;
+  --av-spin: none;
 }
 
-/* the ring: a conic gradient cut to a 3px band */
-.av-frame::after {
-  content: "";
+/* the ring: a 3px band cut out by a mask */
+.av-ring {
   position: absolute;
   z-index: 2;
   inset: -4px;
   border-radius: 50%;
   padding: 3px;
+  overflow: hidden;
   pointer-events: none;
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -24,6 +32,14 @@
   mask:
     linear-gradient(#000 0 0) content-box exclude,
     linear-gradient(#000 0 0);
+}
+
+.av-ring > i {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--av-ring);
+  animation: var(--av-spin);
 }
 
 /* the glow: a box-shadow just outside the ring */
@@ -37,8 +53,8 @@
 }
 
 /* Ember: warm orange glow that breathes */
-.av-frame-ember::after {
-  background: conic-gradient(#ff4d00, #ff9a3c, #ffd08a, #ff7a1a, #ff4d00);
+.av-frame-ember {
+  --av-ring: conic-gradient(#ff4d00, #ff9a3c, #ffd08a, #ff7a1a, #ff4d00);
 }
 
 .av-frame-ember::before {
@@ -46,10 +62,10 @@
   animation: av-breathe 2.4s ease-in-out infinite;
 }
 
-/* Neon: cyan and pink, always spinning */
-.av-frame-neon::after {
-  background: conic-gradient(#00f0ff, #ff2bd6, #8a5cff, #00f0ff);
-  animation: av-spin 3s linear infinite;
+/* Neon: electric cyan / magenta, slowly turning */
+.av-frame-neon {
+  --av-ring: conic-gradient(#00f0ff, #ff2bd6, #8a5cff, #00f0ff);
+  --av-spin: av-spin 3s linear infinite;
 }
 
 .av-frame-neon::before {
@@ -59,9 +75,9 @@
 }
 
 /* Gold: polished ring with a passing shine */
-.av-frame-gold::after {
-  background: conic-gradient(#b8860b, #ffe08a, #ffd700, #fff6c8 12%, #c99a1e 30%, #ffd700 55%, #fff1b0 70%, #b8860b);
-  animation: av-spin 6s linear infinite;
+.av-frame-gold {
+  --av-ring: conic-gradient(#b8860b, #ffe08a, #ffd700, #fff6c8 12%, #c99a1e 30%, #ffd700 55%, #fff1b0 70%, #b8860b);
+  --av-spin: av-spin 6s linear infinite;
 }
 
 .av-frame-gold::before {
@@ -69,9 +85,9 @@
 }
 
 /* Galaxy: swirling violet stardust */
-.av-frame-galaxy::after {
-  background: conic-gradient(#3f37c9, #b5179e, #f72585, #7209b7, #4cc9f0, #3f37c9);
-  animation: av-spin 5s linear infinite reverse;
+.av-frame-galaxy {
+  --av-ring: conic-gradient(#3f37c9, #b5179e, #f72585, #7209b7, #4cc9f0, #3f37c9);
+  --av-spin: av-spin 5s linear infinite reverse;
 }
 
 .av-frame-galaxy::before {
@@ -94,7 +110,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .av-frame::after,
+  .av-ring > i,
   .av-frame::before {
     animation: none;
   }
@@ -102,7 +118,7 @@
 
 /* Nav account button: it clips its contents (it slides open to show "Profile"), so the ring is
    drawn just inside the avatar's edge instead of outside, and the glow sits inside too. */
-.h3-account .av-frame::after {
+.h3-account .av-ring {
   inset: 0;
   padding: 3px;
 }

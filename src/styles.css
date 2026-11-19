@@ -1665,3 +1665,24 @@ html.has-app-banner body {
 html.is-app {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Placeholders while a page or game's code is downloading (usually a blink) */
+.page-loading {
+  min-height: 60vh;
+}
+.gp-game-loading {
+  min-height: 320px;
+}
+
+/* Taps fire immediately: no waiting to see whether it's a double-tap zoom (older Android
+   WebViews still wait ~300ms otherwise). Elements that set their own touch-action keep it. */
+a,
+button,
+[role="button"],
+input,
+select,
+textarea,
+label,
+summary {
+  touch-action: manipulation;
+}

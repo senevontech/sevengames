@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { gameFinishedAd } from "../lib/admob";
 import { isNative, openExternal } from "../lib/native";
 import { Link, useParams } from "react-router-dom";
@@ -35,7 +35,12 @@ function GatePreview({ game }: { game: NonNullable<ReturnType<typeof getGame>> }
     );
   }
   const Preview = previews[game.engine as keyof typeof previews];
-  if (Preview) return <Preview />;
+  if (Preview)
+    return (
+      <Suspense fallback={<div className="gp-preview" aria-hidden="true" />}>
+        <Preview />
+      </Suspense>
+    );
   return (
     <div className="gp-preview" inert>
       <GameRunner gameId={game.engine} onScore={() => {}} />
@@ -49,7 +54,11 @@ const SELF_GATED = new Set(["carrom", "chess", "ludo", "arrows"]);
 function GameRunner({ gameId, onScore }: { gameId: string; onScore: (score: number) => void }) {
   const Engine = engines[gameId as keyof typeof engines];
   if (!Engine) return <p className="empty-note">This game is not available yet.</p>;
-  return <Engine onFinish={onScore} />;
+  return (
+    <Suspense fallback={<div className="gp-game-loading" role="status" aria-label="Loading game" />}>
+      <Engine onFinish={onScore} />
+    </Suspense>
+  );
 }
 
 export default function GamePage() {

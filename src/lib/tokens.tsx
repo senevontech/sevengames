@@ -99,6 +99,7 @@ const TokensContext = createContext<Ctx | null>(null);
 /** Friendly text for the server's error codes. */
 export function tokenErrorText(err: unknown) {
   const msg = (err as { message?: string })?.message ?? String(err);
+  if (msg.includes("ad_no_fill") || msg.includes("ads_unavailable")) return "No ad is available right now. Please try again later.";
   if (msg.includes("ad_cap_reached")) return "You've reached today's ad limit — come back tomorrow.";
   if (msg.includes("ad_not_finished")) return "Watch the whole ad to earn tokens.";
   if (msg.includes("too_many_open_ads")) return "Finish the ad you already started first.";

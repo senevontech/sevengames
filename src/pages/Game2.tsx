@@ -17,6 +17,7 @@ import { useLiveAds, type Ad } from "../lib/ads";
 import { useSiteSettings } from "../lib/siteSettings";
 import { useShowAds } from "../lib/tokens";
 import { trackAd } from "../lib/track";
+import { prefetchFromEvent, prefetchWhenIdle } from "../lib/prefetch";
 import "./home3.css";
 import "./games-globe.css";
 import "./game2.css";
@@ -213,6 +214,20 @@ function Hero({ game }: { game: Game }) {
 }
 
 // ---------- Page ----------
+/** Every game: scaling carousel + the centre game's details. Holds the centre game itself, so
+ *  scrolling the carousel only re-renders this part, not the whole page. */
+function CarouselWithHero() {
+  const startIndex = Math.floor(games.length / 2);
+  const [centre, setCentre] = useState<Game>(games[startIndex]);
+  const onActiveChange = useCallback((g: Game) => setCentre(g), []);
+  return (
+    <>
+      <DiskCarousel items={games} startIndex={startIndex} label="All games" onActiveChange={onActiveChange} />
+      <Hero game={centre} />
+    </>
+  );
+}
+
 export default function Game2() {
   const { theme, toggle } = useGameTheme();
   const dark = theme === "dark";
@@ -252,10 +267,6 @@ export default function Game2() {
     return out;
   }, [suggestions, adDisks]);
 
-  // Centre carousel → hero
-  const startIndex = Math.floor(games.length / 2);
-  const [centre, setCentre] = useState<Game>(games[startIndex]);
-  const onActiveChange = useCallback((g: Game) => setCentre(g), []);
 
   // Rotating collections row: advances on its own until the player picks one
   const [collection, setCollection] = useState(COLLECTIONS[0].key);
@@ -274,6 +285,8 @@ export default function Game2() {
   const [board, setBoard] = useState<PlayerBoard>("points");
   const players = useTopPlayers(board);
 
+  useEffect(() => prefetchWhenIdle(), []);
+
   useEffect(() => {
     const prev = document.title;
     document.title = "Senevon Game Studio — A Universe of Games";
@@ -287,6 +300,8 @@ export default function Game2() {
       className={`gs h3 gs-flat g2${dark ? " gs-on-dark" : ""}`}
       data-theme={theme}
       style={{ "--gs-bg": bg, "--gs-ink": ink } as React.CSSProperties}
+      onPointerDown={prefetchFromEvent}
+      onPointerOver={prefetchFromEvent}
     >
       <GamesNav mobileMenu>
         <TokenPill variant="solid" />
@@ -323,8 +338,7 @@ export default function Game2() {
         </section>
 
         {/* 2. Every game: scaling carousel + the centre game's details */}
-        <DiskCarousel items={games} startIndex={startIndex} label="All games" onActiveChange={onActiveChange} />
-        <Hero game={centre} />
+        <CarouselWithHero />
 
         {/* 3. Rotating collections */}
         <section className="g2-section" aria-labelledby="g2-coll">

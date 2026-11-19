@@ -938,25 +938,8 @@
   filter: drop-shadow(0 0 22px rgba(158, 255, 0, 0.6));
 }
 
-/* token bolt: a glint sweeps across now and then (staggered per icon so they don't all flash at once) */
-.token-icon .token-glint {
-  animation: token-glint 5.5s ease-in-out infinite;
-}
-
-.token-icon:nth-of-type(2n) .token-glint {
-  animation-delay: 1.4s;
-}
-
-@keyframes token-glint {
-  0%,
-  62% {
-    transform: translateX(0);
-  }
-  85%,
-  100% {
-    transform: translateX(32px);
-  }
-}
+/* token bolt: a glint sweeps across now and then — played by a shared timer in TokenIcon.tsx
+   (an endless CSS animation here kept the browser busy every frame) */
 
 /* hovering something with a token in it: the glint runs right away */
 :is(a, button):hover .token-icon .token-glint {

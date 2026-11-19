@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { GameProps } from "./index";
-import { shuffle } from "./index";
+import { shuffle } from "./util";
 
 const WORDS = [
   "arcade", "signal", "focus", "pixel", "launch", "vector", "nebula", "orbit",

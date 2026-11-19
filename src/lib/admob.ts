@@ -88,7 +88,13 @@ export async function watchRewarded(userId: string): Promise<"rewarded" | "skipp
   const { data: viewId, error } = await supabase.rpc("start_ad_view", { p_source: "network", p_ad: null });
   if (error) throw new Error(error.message);
   const before = await balance();
-  await AdMob.prepareRewardVideoAd({ adId: UNITS.rewarded, isTesting: testing, ssv: { userId, customData: String(viewId) } });
+  try {
+    await AdMob.prepareRewardVideoAd({ adId: UNITS.rewarded, isTesting: testing, ssv: { userId, customData: String(viewId) } });
+  } catch (e) {
+    // no ad to show (no fill, account not approved yet, ad unit still new, network)
+    console.warn("AdMob rewarded failed to load:", (e as { message?: string })?.message ?? e);
+    throw new Error("ad_no_fill");
+  }
   let earned = false;
   try {
     await AdMob.showRewardVideoAd();

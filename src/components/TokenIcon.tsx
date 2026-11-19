@@ -1,4 +1,30 @@
-import { useId } from "react";
+import { useEffect, useId } from "react";
+
+/* The glint: one shared timer sweeps every token icon's glint once every few seconds (alternate
+   icons a little later). An endless CSS animation did the same, but kept the browser restyling
+   and repainting the SVG on every frame even while the glint sat still between sweeps. */
+const GLINT_EVERY = 5500;
+let glintUsers = 0;
+let glintTimer = 0;
+function sweepGlints() {
+  if (document.hidden || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const glints = [...document.querySelectorAll<SVGElement>(".token-icon .token-glint")];
+  // no animation `delay` (an animation waiting out its delay still counts as running)
+  const sweep = (odd: number) =>
+    glints.forEach((el, i) => {
+      if (i % 2 === odd && el.isConnected) el.animate([{ transform: "translateX(0)" }, { transform: "translateX(32px)" }], { duration: 1260, easing: "ease-in-out" });
+    });
+  sweep(0);
+  window.setTimeout(() => sweep(1), 1400);
+}
+function useGlintTimer() {
+  useEffect(() => {
+    if (glintUsers++ === 0 && typeof Element.prototype.animate === "function") glintTimer = window.setInterval(sweepGlints, GLINT_EVERY);
+    return () => {
+      if (--glintUsers === 0) window.clearInterval(glintTimer);
+    };
+  }, []);
+}
 
 /**
  * Senevon token: a filled, rounded lightning bolt in electric lime (#9EFF00), no background,
@@ -15,6 +41,7 @@ const BOLT = "M13.4 2.6 5.6 12.4c-.3.4 0 1 .5 1h5.2l-.9 7.3c-.1.6.7.9 1 .4l7.9-9
 
 export default function TokenIcon({ size = 16, className = "", title }: { size?: number | string; className?: string; title?: string }) {
   const id = useId().replace(/:/g, "");
+  useGlintTimer();
   const px = typeof size === "number" ? Math.round(size * SCALE) : size;
   const face = `tkf-${id}`;
   const edge = `tke-${id}`;

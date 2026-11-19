@@ -6,15 +6,19 @@ import { useTokens } from "./lib/tokens";
 import { Navigate, Route, Routes as RouterRoutes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuthContext } from "./context/AuthContext";
 import SiteChrome from "./components/SiteChrome";
-import GamePage from "./pages/GamePage";
-import Login from "./pages/Login";
-import Profile from "./pages/Profile";
-import AuthCallback from "./pages/AuthCallback";
-import Privacy from "./pages/Privacy";
-import Admin from "./pages/admin/Admin";
-import TokensPage from "./pages/TokensPage";
-import Leaderboards from "./pages/Leaderboards";
-import PlayerPage from "./pages/PlayerPage";
+// the home page is part of the first download (it's where nearly everyone lands)
+import Game2 from "./pages/Game2";
+// Every page is its own download, fetched when first opened (they ship inside the app, so the
+// app still works offline). The home page's chunk is fetched first; the rest wait their turn.
+const GamePage = lazy(() => import("./pages/GamePage"));
+const Login = lazy(() => import("./pages/Login"));
+const Profile = lazy(() => import("./pages/Profile"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Admin = lazy(() => import("./pages/admin/Admin"));
+const TokensPage = lazy(() => import("./pages/TokensPage"));
+const Leaderboards = lazy(() => import("./pages/Leaderboards"));
+const PlayerPage = lazy(() => import("./pages/PlayerPage"));
 import { TokensProvider } from "./lib/tokens";
 import { ShopProvider } from "./lib/shop";
 import { startOfflineSync } from "./lib/offlineQueue";
@@ -22,10 +26,10 @@ import OfflineBanner from "./components/OfflineBanner";
 
 import { trackPageview } from "./lib/track";
 
-// Home page (disk browser) and the /home2 test page: code-split.
+// The /home2 test page and the category carousels: code-split.
 const Home2 = lazy(() => import("./pages/Home2"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
-const Game2 = lazy(() => import("./pages/Game2"));
+
 
 /** The home page lives outside the Shell (it has its own nav and background). */
 function Landing() {
@@ -34,9 +38,7 @@ function Landing() {
     trackPageview(location.pathname);
   }, [location.pathname]);
   return (
-    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#e3e5ea" }} />}>
-      <Game2 />
-    </Suspense>
+    <Game2 />
   );
 }
 
@@ -49,6 +51,7 @@ function Shell() {
 
   return (
     <SiteChrome>
+      <Suspense fallback={<div className="page-loading" role="status" aria-label="Loading" />}>
       <RouterRoutes location={location}>
         <Route path="/game/:id" element={<GamePage />} />
         <Route path="/login" element={<Login />} />
@@ -62,6 +65,7 @@ function Shell() {
         <Route path="/classic" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </RouterRoutes>
+      </Suspense>
     </SiteChrome>
   );
 }
@@ -89,7 +93,14 @@ export default function App() {
       <OfflineSync />
       <ShopProvider>
       <RouterRoutes>
-        <Route path="/admin/*" element={<Admin />} />
+        <Route
+          path="/admin/*"
+          element={
+            <Suspense fallback={<div style={{ minHeight: "100vh" }} />}>
+              <Admin />
+            </Suspense>
+          }
+        />
         <Route path="/" element={<Landing />} />
         {/* Old home page addresses land on the new one */}
         <Route path="/home3" element={<Navigate to="/" replace />} />
