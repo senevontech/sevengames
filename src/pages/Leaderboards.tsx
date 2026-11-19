@@ -33,7 +33,7 @@ function Board({ rows, loading, error, you, unit }: { rows: Row[]; loading: bool
       <div className="lb-empty">
         <Trophy size={28} aria-hidden="true" />
         <p>No scores yet. Finish a round while signed in to take the top spot.</p>
-        <Link className="ac-btn ac-btn-primary ac-btn-sm" to="/games">
+        <Link className="ac-btn ac-btn-primary ac-btn-sm" to="/">
           Play a game
         </Link>
       </div>

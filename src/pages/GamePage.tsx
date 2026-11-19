@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { gameFinishedAd } from "../lib/admob";
+import { isNative } from "../lib/native";
 import { Link, useParams } from "react-router-dom";
 import { ChevronLeft, ExternalLink, Info, Maximize, Minimize, MonitorPlay, Store } from "lucide-react";
 import { GamePoster } from "../components/GamePoster";
@@ -10,7 +12,7 @@ import { useBestForGame } from "../hooks/useBest";
 import Leaderboard from "../components/Leaderboard";
 import { trackGame } from "../lib/track";
 import { pushRecent } from "../lib/recent";
-import { useGameCost, useTokens } from "../lib/tokens";
+import { useGameCost, useShowAds, useTokens } from "../lib/tokens";
 import { formatTokens } from "../lib/currency";
 import PlayGate from "../components/PlayGate";
 import AdSlot from "../components/AdSlot";
@@ -61,6 +63,9 @@ export default function GamePage() {
   const premiumRef = useRef(premium);
   premiumRef.current = premium;
   const [paidPlay, setPaidPlay] = useState(0);
+  const showAds = useShowAds();
+  const showAdsRef = useRef(showAds);
+  showAdsRef.current = showAds;
   const [locked, setLocked] = useState(false);
   const lockTimer = useRef(0);
   useEffect(() => () => window.clearTimeout(lockTimer.current), []);
@@ -157,6 +162,8 @@ export default function GamePage() {
     async (score: number) => {
       if (game) {
         trackGame("game_finish", game.id, score);
+        // the app: an interstitial after every few finished games (never mid-game)
+        if (isNative && showAdsRef.current) void gameFinishedAd();
         if (!userRef.current && !nudgeOff.current) setNudge(true);
         // premium: let the result show for a moment, then ask to pay for the next play
         if (premiumRef.current) {
@@ -172,7 +179,7 @@ export default function GamePage() {
 
   return (
     <div className="page game-page gp" style={{ "--accent": game.accent } as React.CSSProperties}>
-      <Link to="/games" className="back-link">
+      <Link to="/" className="back-link">
         <ChevronLeft size={18} />
         All games
       </Link>

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { isNative } from "../lib/native";
+import { ADFREE_PRODUCT, PLUS_PRODUCT, buyPack, buySubscription, loadPlayPrices, manageSubscriptions, playErrorText, type PlayPrices } from "../lib/playBilling";
 import { Link, useLocation } from "react-router-dom";
 import {
   CalendarClock,
@@ -88,6 +90,11 @@ export default function TokensPage() {
   const [adOpen, setAdOpen] = useState(false);
   const [checkout, setCheckout] = useState<Checkout | null>(null);
   const [busy, setBusy] = useState(false);
+  // the Android app: everything is sold through Google Play, at Play's local prices
+  const [play, setPlay] = useState<PlayPrices | null>(null);
+  useEffect(() => {
+    if (isNative) void loadPlayPrices().then(setPlay);
+  }, []);
   const [note, setNote] = useState<{ text: string; ok: boolean } | null>(null);
   const [rows, setRows] = useState<LedgerRow[]>([]);
 
@@ -140,6 +147,20 @@ export default function TokensPage() {
     } catch (err) {
       setNote({ text: tokenErrorText(err), ok: false });
       return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function playRun(action: () => Promise<unknown>, success: string) {
+    setBusy(true);
+    setNote(null);
+    try {
+      await action();
+      await refresh();
+      setNote({ text: success, ok: true });
+    } catch (err) {
+      setNote({ text: playErrorText(err), ok: false });
     } finally {
       setBusy(false);
     }
@@ -299,10 +320,14 @@ export default function TokensPage() {
                     <button
                       type="button"
                       className={`ac-btn${meta.flag ? " ac-btn-primary" : ""} tw-pack-buy`}
-                      disabled={amount === undefined || busy}
-                      onClick={() => setCheckout({ kind: "pack", pack: p })}
+                      disabled={isNative ? !play?.packs[p.id] || busy : amount === undefined || busy}
+                      onClick={() =>
+                        isNative
+                          ? void playRun(() => buyPack(p.id, user.id), `${formatTokens(p.tokens + p.bonus)} tokens added!`)
+                          : setCheckout({ kind: "pack", pack: p })
+                      }
                     >
-                      {amount !== undefined ? formatMoney(amount, cur) : "—"}
+                      {isNative ? (play ? play.packs[p.id] ?? "Soon" : "…") : amount !== undefined ? formatMoney(amount, cur) : "—"}
                     </button>
                   </article>
                 );
@@ -368,7 +393,7 @@ export default function TokensPage() {
                   </span>
                   <h3 className="tw-pack-name">{best ? "Yearly" : "Monthly"}</h3>
                   <p className="tw-price">
-                    {amount !== undefined ? formatMoney(amount, currency) : "…"}
+                    {isNative ? (play ? play.plus[plan] ?? "Soon" : "…") : amount !== undefined ? formatMoney(amount, currency) : "…"}
                     <small>/{best ? "year" : "month"}</small>
                   </p>
                   <ul className="tw-perks">
@@ -385,8 +410,12 @@ export default function TokensPage() {
                   <button
                     type="button"
                     className={`ac-btn${best ? " ac-btn-primary" : ""}`}
-                    disabled={amount === undefined}
-                    onClick={() => setCheckout({ kind: "plan", plan })}
+                    disabled={isNative ? !play?.plus[plan] || busy : amount === undefined}
+                    onClick={() =>
+                      isNative
+                        ? void playRun(() => buySubscription(PLUS_PRODUCT, plan, user.id), `Subscribed! ${formatTokens(perMonth)} tokens have been added.`)
+                        : setCheckout({ kind: "plan", plan })
+                    }
                   >
                     Subscribe {plan}
                   </button>
@@ -395,7 +424,17 @@ export default function TokensPage() {
             })}
           </div>
         )}
-        <p className="tw-fine">Prices shown in {currency}. Unused tokens never expire.</p>
+        <p className="tw-fine">
+          {isNative ? "Billed through Google Play. " : `Prices shown in ${currency}. `}Unused tokens never expire.
+          {isNative ? (
+            <>
+              {" "}
+              <button type="button" className="tw-link" onClick={() => void manageSubscriptions()}>
+                Manage subscriptions
+              </button>
+            </>
+          ) : null}
+        </p>
       </section>
 
       {/* ---------- ad-free pass ---------- */}
@@ -457,6 +496,16 @@ export default function TokensPage() {
               }}
             >
               {adFreeArmed ? "Confirm" : "Go ad-free"} · <TokenIcon size={14} /> {AD_FREE_PRICE}
+            </button>
+          ) : null}
+          {isNative && adFree && !adFree.active && play?.adfree ? (
+            <button
+              type="button"
+              className="ac-btn ac-btn-sm"
+              disabled={busy}
+              onClick={() => void playRun(() => buySubscription(ADFREE_PRODUCT, "monthly", user.id), "You're ad-free! Renews monthly on Google Play.")}
+            >
+              Ad-free · {play.adfree}/month
             </button>
           ) : null}
         </div>

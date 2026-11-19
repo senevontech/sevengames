@@ -6,7 +6,18 @@ import { Link, useLocation } from "react-router-dom";
 import PlayerAvatar from "./PlayerAvatar";
 import type { LobbyApi } from "../games/carrom/matchmaking";
 import type { RoomPeer, RoomStatus } from "../lib/gameRoom";
+import { useOnline } from "../lib/online";
 import "./online-lobby.css";
+
+/** Shown instead of online menus while there's no connection. */
+export function OfflineNotice({ what = "Online play" }: { what?: string }) {
+  return (
+    <div className="ol-card ol-offline">
+      <h3>You're offline</h3>
+      <p className="ol-sub">{what} needs an internet connection. You can still play against the CPU or with friends on this device.</p>
+    </div>
+  );
+}
 
 export function SignInToPlay({ what }: { what: string }) {
   const location = useLocation();
@@ -45,12 +56,14 @@ export function OnlineMenu({
 }) {
   const [code, setCode] = useState("");
   const [now, setNow] = useState(Date.now());
+  const online = useOnline();
   useEffect(() => {
     if (!lobby.searching) return;
     const id = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, [lobby.searching]);
 
+  if (!online) return <OfflineNotice />;
   return (
     <div className="ol">
       {lobby.incoming.map((inv) => (

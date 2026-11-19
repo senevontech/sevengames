@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Senevon Games</string>
+    <string name="title_activity_main">Senevon Games</string>
+    <string name="package_name">com.senevon.games</string>
+    <string name="custom_url_scheme">com.senevon.games</string>
+    <!-- AdMob app id: Google's TEST id until you set yours -->
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+</resources>

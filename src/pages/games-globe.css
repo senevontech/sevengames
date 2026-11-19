@@ -905,3 +905,144 @@
     letter-spacing: 0.18em;
   }
 }
+
+/* ============================================================
+   Hamburger menu (GamesNav mobileMenu): phones only
+   ============================================================ */
+.gs .gs-desk {
+  display: contents;
+}
+
+.gs .gs-burger {
+  display: none;
+  position: relative;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .gs .gs-has-burger .gs-desk {
+    display: none;
+  }
+
+  .gs .gs-has-burger .gs-burger {
+    display: flex;
+  }
+}
+
+.gs .gs-burger.is-open .gs-icon-btn {
+  opacity: 0.75;
+}
+
+.gs .gs-burger-panel {
+  position: fixed;
+  z-index: 60;
+  top: 64px;
+  left: 16px;
+  right: 16px;
+  max-height: calc(100dvh - 84px);
+  overflow-y: auto;
+  padding: 8px;
+  border-radius: 18px;
+  background: #fff;
+  color: #141414;
+  box-shadow: 0 20px 50px -16px rgba(0, 0, 0, 0.45);
+  transform-origin: top right;
+  animation: gs-cats-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.gs .gs-burger-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  margin-bottom: 6px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: #f1f1f1;
+  color: #777;
+}
+
+.gs .gs-burger-search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: none;
+  color: #141414;
+  font: inherit;
+  font-size: 16px; /* 16px stops iOS zooming in on focus */
+  outline: none;
+}
+
+.gs .gs-burger-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gs .gs-burger-list a,
+.gs .gs-burger-list button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.gs .gs-burger-list a:active,
+.gs .gs-burger-list button:active,
+.gs .gs-burger-list a:focus-visible,
+.gs .gs-burger-list button:focus-visible {
+  background: #f1f1f1;
+  outline: none;
+}
+
+.gs .gs-burger-empty {
+  padding: 10px;
+  font-size: 14px;
+  color: #777;
+}
+
+.gs .gs-burger-label {
+  margin: 10px 10px 4px;
+  font-family: var(--h3-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #888;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gs .gs-burger-panel {
+    animation: none;
+  }
+}
+
+/* Flat variant (/game2): one solid colour, no gradient, light waves or vignette */
+.gs.gs-flat {
+  background: var(--gs-bg);
+}
+
+.gs.gs-flat::before,
+.gs.gs-flat::after {
+  display: none;
+}
+
+.gs.gs-flat .gs-icon-btn,
+.gs.gs-flat .gs-home {
+  filter: none;
+}
+
+.gs.gs-flat .h3-nav .h3-account-icon {
+  box-shadow: 0 0 0 2px var(--gs-ink);
+}

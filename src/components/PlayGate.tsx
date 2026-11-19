@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useOnline } from "../lib/online";
 import { Link } from "react-router-dom";
-import { LogIn, Play, Plus, RotateCcw, Tv } from "lucide-react";
+import { LogIn, Play, Plus, RotateCcw, Tv, WifiOff } from "lucide-react";
 import { useAuthContext } from "../context/AuthContext";
 import { useTokens } from "../lib/tokens";
 import { formatTokens } from "../lib/currency";
@@ -29,6 +30,7 @@ export default function PlayGate({
 }) {
   const { user } = useAuthContext();
   const { wallet, guestBalance, spendForPlay, adFree } = useTokens();
+  const online = useOnline();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [adOpen, setAdOpen] = useState(false);
@@ -53,6 +55,21 @@ export default function PlayGate({
       {formatTokens(cost)}
     </span>
   );
+
+  // premium games need the server to take the tokens: locked while offline
+  if (!online)
+    return (
+      <div className={`tk-gatebar${again ? " is-again" : ""}`} role="region" aria-label="Start game">
+        <div className="tk-gatebar-inner">
+          <span className="tk-start is-offline" aria-disabled="true">
+            <WifiOff size={18} aria-hidden="true" />
+            <span>Connect to play</span>
+            {Cost}
+          </span>
+        </div>
+        <p className="tk-gatebar-note">Premium games need an internet connection. Free games work offline.</p>
+      </div>
+    );
 
   return (
     <div className={`tk-gatebar${again ? " is-again" : ""}`} role="region" aria-label="Start game">

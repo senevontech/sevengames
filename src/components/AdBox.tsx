@@ -16,7 +16,7 @@ export default function AdBox({
   fallback?: ReactNode;
 }) {
   const settings = useSiteSettings();
-  const ads = useLiveAds();
+  const ads = useLiveAds("banner");
   const [index, setIndex] = useState(0);
   const seen = useRef(new Set<string>());
 

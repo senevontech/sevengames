@@ -10,3 +10,10 @@ supabase/.temp
 
 # Raw/working art (not deployed)
 asset-sources/
+
+# Android app: secrets and local paths (never commit)
+android/keystore.properties
+*.jks
+*.keystore
+android/local.properties
+.env.app

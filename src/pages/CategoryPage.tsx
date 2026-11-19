@@ -58,7 +58,7 @@ export default function CategoryPage() {
     };
   }, [category]);
 
-  if (!category) return <Navigate to="/games" replace />;
+  if (!category) return <Navigate to="/" replace />;
   const realCount = slides.length - soonIds.size;
 
   return (
@@ -70,7 +70,7 @@ export default function CategoryPage() {
         </Link>
         <div className="h3-nav-end">
           <div className="h3-menu h3-menu-end">
-            <Link to="/games">All games</Link>
+            <Link to="/">All games</Link>
           </div>
           <NavAccount />
         </div>

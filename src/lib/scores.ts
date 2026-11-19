@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../supabase";
+import { enqueue } from "./offlineQueue";
+import { isNetworkError, isOnline } from "./online";
 import { parseAvatar, type AvatarChoice } from "./avatar";
 
 export type ScoreRow = {
@@ -244,9 +246,19 @@ export function useSaveScore(user: User | null) {
 
       const s = Math.max(0, Math.round(score));
       const secs = Math.max(0, Math.round(seconds));
+      const args = { p_game: gameId, p_score: s, p_seconds: secs };
+      // offline (the app): keep it and send it when the connection is back
+      if (!isOnline()) {
+        enqueue(user.id, "submit_score", args);
+        return false;
+      }
       // Server function first (works regardless of table policies, adds sanity checks) …
-      const rpc = await supabase.rpc("submit_score", { p_game: gameId, p_score: s, p_seconds: secs });
+      const rpc = await supabase.rpc("submit_score", args);
       if (!rpc.error) return rpc.data !== false;
+      if (isNetworkError(rpc.error)) {
+        enqueue(user.id, "submit_score", args);
+        return false;
+      }
       // … falling back to a direct insert if supabase/leaderboard.sql hasn't been run yet.
       if (!/Could not find the function|does not exist/i.test(rpc.error.message)) {
         console.error("[scores] save failed:", rpc.error.message);

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { adminCall, uploadImage } from "../../lib/adminApi";
-import { adState, type Ad } from "../../lib/ads";
+import { adState, placementLabel, type Ad, type AdPlacement } from "../../lib/ads";
 
 type Draft = {
   id?: string;
@@ -17,6 +17,7 @@ type Draft = {
   daily_end: string;
   max_impressions: string;
   sort_order: string;
+  placement: AdPlacement;
 };
 
 const blank: Draft = {
@@ -33,6 +34,7 @@ const blank: Draft = {
   daily_end: "",
   max_impressions: "",
   sort_order: "0",
+  placement: "all",
 };
 
 const toLocalInput = (iso: string | null) => {
@@ -57,6 +59,7 @@ const fromAd = (ad: Ad): Draft => ({
   daily_end: ad.daily_end?.slice(0, 5) ?? "",
   max_impressions: ad.max_impressions ? String(ad.max_impressions) : "",
   sort_order: String(ad.sort_order),
+  placement: ad.placement ?? "all",
 });
 
 function ImageField({
@@ -248,6 +251,17 @@ export default function AdsManager({ stats }: { stats?: Record<string, { impress
               <label>Order (lower shows first)</label>
               <input type="number" value={draft.sort_order} onChange={(e) => set("sort_order", e.target.value)} />
             </div>
+            <div className="adm-field">
+              <label>Placement</label>
+              <select value={draft.placement} onChange={(e) => set("placement", e.target.value as AdPlacement)}>
+                {(Object.keys(placementLabel) as AdPlacement[]).map((p) => (
+                  <option key={p} value={p}>
+                    {placementLabel[p]}
+                  </option>
+                ))}
+              </select>
+              <small>Home disks use the Thumbnail (square), else the cover image cropped to a circle.</small>
+            </div>
           </div>
 
           <ImageField
@@ -341,7 +355,9 @@ export default function AdsManager({ stats }: { stats?: Record<string, { impress
                       )}
                       <div>
                         <strong>{ad.title}</strong>
-                        <small>{new URL(ad.link_url).hostname}</small>
+                        <small>
+                          {new URL(ad.link_url).hostname} · {placementLabel[ad.placement ?? "all"]}
+                        </small>
                       </div>
                     </div>
                   </td>

@@ -1643,3 +1643,25 @@ h3 {
 .adm-row-dirty td {
   background: rgba(255, 138, 61, 0.08);
 }
+
+/* ---------- the Android app ---------- */
+/* leave room for AdMob's bottom banner so it never covers the page */
+html.has-app-banner body {
+  padding-bottom: 64px;
+}
+
+/* a button that looks like a text link */
+.tw-link {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: var(--ac-accent, #ff8a3d);
+  text-decoration: underline;
+  background: none;
+  cursor: pointer;
+}
+
+/* no long-press text selection / callouts on game controls in the app */
+html.is-app {
+  -webkit-tap-highlight-color: transparent;
+}

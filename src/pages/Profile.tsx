@@ -225,7 +225,7 @@ export default function Profile() {
           {playedGameIds.length === 0 ? (
             <div className="pf-empty">
               <p>No rounds yet. Pick a game and set your first record.</p>
-              <Link className="ac-btn ac-btn-primary ac-btn-sm" to="/games">
+              <Link className="ac-btn ac-btn-primary ac-btn-sm" to="/">
                 Browse games
               </Link>
             </div>

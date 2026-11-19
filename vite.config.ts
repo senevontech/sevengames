@@ -33,7 +33,8 @@ function adsense(client: string | null): Plugin {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "VITE_");
-  const client = (env.VITE_ADSENSE_CLIENT ?? "").trim();
+  // the Android app ("--mode app") never loads AdSense (apps use AdMob instead)
+  const client = mode === "app" ? "" : (env.VITE_ADSENSE_CLIENT ?? "").trim();
   return {
     plugins: [react(), adsense(/^ca-pub-\d{10,20}$/.test(client) ? client : null)],
     build: {

@@ -1,6 +1,7 @@
 /* Carrom game component — mode menu (1vCPU, 2P, 4P, online), lobby,
    and the shared game table with host-authoritative online sync. */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useOnline } from "../../lib/online";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import type { GameProps } from "../index";
 import {
@@ -129,6 +130,7 @@ export default function CarromGame({ onFinish }: GameProps) {
   const strikerGlowRef = useRef<string | undefined>(undefined);
 
   const auth = useAuthContext();
+  const netOnline = useOnline();
   const prog = useCarromProgress(auth.user);
   const progRef = useRef(prog);
   progRef.current = prog;
@@ -1082,14 +1084,14 @@ export default function CarromGame({ onFinish }: GameProps) {
                   type="button"
                   className={`carrom-chip-btn${onlineOpen ? " on" : ""}`}
                   aria-expanded={onlineOpen}
-                  disabled={!CarromNet.configured}
-                  title={CarromNet.configured ? "Play online" : "Online play needs Supabase"}
+                  disabled={!CarromNet.configured || !netOnline}
+                  title={!netOnline ? "You're offline" : CarromNet.configured ? "Play online" : "Online play needs Supabase"}
                   onClick={() => setOnlineOpen((o) => !o)}
                 >
                   Online {onlineOpen ? "▴" : "▾"}
                 </button>
               </div>
-              {onlineOpen ? (
+              {onlineOpen && netOnline ? (
                 <>
                   <div className="carrom-start-more is-online">
                     <button

@@ -11,6 +11,8 @@ import PlayerAvatar from "../components/PlayerAvatar";
 import { useCarromLobby, type LobbyApi, type Matched } from "./carrom/matchmaking";
 import { ArrowsNet, type MatchMode, type MatchResult, type NetStatus, type Peer, type Progress } from "./arrowsNet";
 import { ArrowsPlay, MATCH_LIVES } from "./arrows";
+import { useOnline } from "../lib/online";
+import { OfflineNotice } from "../components/OnlineLobby";
 
 const MODES: { id: MatchMode; label: string; blurb: string }[] = [
   { id: "race", label: "Race", blurb: "Same board for both. First to clear it wins — 3 lives." },
@@ -197,6 +199,7 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
     return () => window.clearInterval(id);
   }, [lobby.searching]);
 
+  const isOnlineNow = useOnline();
   const progressCb = useCallback((p: Progress) => netRef.current?.progress(p), []);
   const endCb = useCallback((type: "finish" | "out", ms: number) => {
     setMyEnd({ type, ms });
@@ -204,6 +207,13 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
   }, []);
 
   /* ---------- gates ---------- */
+  if (!isOnlineNow && phase === "menu") {
+    return (
+      <div className="game-surface arw-surface arw-online">
+        <OfflineNotice />
+      </div>
+    );
+  }
   if (!ArrowsNet.configured) {
     return (
       <div className="game-surface arw-surface arw-online">

@@ -1,0 +1,31 @@
+.offline-banner {
+  position: fixed;
+  z-index: 2000;
+  left: 50%;
+  top: max(8px, env(safe-area-inset-top));
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 24px);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font: 600 12px/1.2 Inter, -apple-system, "Segoe UI", sans-serif;
+  color: #fff;
+  background: rgba(30, 30, 36, 0.92);
+  box-shadow: 0 8px 22px -10px rgba(0, 0, 0, 0.6);
+  transform: translateX(-50%);
+  pointer-events: none;
+  animation: offline-in 0.3s ease both;
+}
+
+@keyframes offline-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+}
+
+.tk-start.is-offline {
+  opacity: 0.7;
+  cursor: default;
+}

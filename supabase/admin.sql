@@ -33,6 +33,11 @@ create table if not exists public.ads (
   updated_at timestamptz not null default now()
 );
 
+-- Where an ad may appear: 'all' (banners + home-page promo disks), 'banner' or 'disk' only.
+alter table public.ads add column if not exists placement text not null default 'all';
+alter table public.ads drop constraint if exists ads_placement_check;
+alter table public.ads add constraint ads_placement_check check (placement in ('all', 'banner', 'disk'));
+
 alter table public.ads enable row level security;
 
 drop policy if exists "Public can read active ads" on public.ads;

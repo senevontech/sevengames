@@ -6,6 +6,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../../supabase";
+import { enqueue } from "../../lib/offlineQueue";
+import { isNetworkError, isOnline } from "../../lib/online";
 import { useTokens } from "../../lib/tokens";
 import { BOARDS, COIN_SETS, STRIKERS, itemKey, type BoardTheme, type CoinSet, type ShopKind, type StrikerSkin } from "./skins";
 import { effectiveStats, type StatKey, type StrikerStats } from "./stats";
@@ -146,7 +148,11 @@ export function useCarromProgress(user: User | null) {
       if (server) {
         const after = levelForXp(server.xp + gain);
         setServer({ ...server, xp: server.xp + gain }); // optimistic; the server has the final say
-        void rpc("carrom_award_xp", { p_amount: gain }).then(setServer, () => {});
+        if (!isOnline() && user) enqueue(user.id, "carrom_award_xp", { p_amount: gain }, "xp:carrom");
+        else
+          void rpc("carrom_award_xp", { p_amount: gain }).then(setServer, (e) => {
+            if (user && isNetworkError(e)) enqueue(user.id, "carrom_award_xp", { p_amount: gain }, "xp:carrom");
+          });
         return { before, after };
       }
       const next = { ...guest, xp: guest.xp + gain };
@@ -154,7 +160,7 @@ export function useCarromProgress(user: User | null) {
       writeGuest(next);
       return { before, after: levelForXp(next.xp) };
     },
-    [level, server, guest, rpc],
+    [level, server, guest, rpc, user],
   );
 
   const buy = useCallback(

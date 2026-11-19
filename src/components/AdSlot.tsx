@@ -1,4 +1,6 @@
 import { useEffect, useRef } from "react";
+import { requestBanner } from "../lib/admob";
+import { isNative } from "../lib/native";
 import { Link } from "react-router-dom";
 import { ADSENSE_CLIENT, ADSENSE_SLOT, adsenseConfigured, ensureAdsenseScript } from "../lib/adsense";
 import { AD_FREE_PRICE, useShowAds } from "../lib/tokens";
@@ -11,7 +13,14 @@ import "./ad-slot.css";
  * is still loading, so an ad never flashes up for someone who paid to remove them).
  */
 export default function AdSlot({ placement, className = "" }: { placement: string; className?: string }) {
-  const show = useShowAds() && adsenseConfigured;
+  const showAds = useShowAds();
+  // the app: AdMob's native banner at the bottom of the screen while this page is open
+  useEffect(() => {
+    if (!isNative || !showAds) return;
+    void requestBanner(true);
+    return () => void requestBanner(false);
+  }, [showAds]);
+  const show = showAds && adsenseConfigured && !isNative;
   const insRef = useRef<HTMLModElement>(null);
 
   useEffect(() => {

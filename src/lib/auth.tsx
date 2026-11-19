@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { isNative, nativeGoogleSignIn } from "./native";
 import type { ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "../supabase";
@@ -49,6 +50,10 @@ export function useAuthState(): AuthState {
       configured: isSupabaseConfigured,
       async signInWithGoogle() {
         const client = await requireClient();
+        if (isNative) {
+          await nativeGoogleSignIn();
+          return;
+        }
         const { error } = await client.auth.signInWithOAuth({
           provider: "google",
           options: { redirectTo: `${window.location.origin}/auth/callback` },

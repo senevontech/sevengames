@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAuthContext } from "../context/AuthContext";
+import { watchRewarded } from "../lib/admob";
+import { isNative } from "../lib/native";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import TokenIcon from "./TokenIcon";
@@ -102,8 +105,9 @@ type Stage =
   | { kind: "message"; text: string };
 
 export default function AdRewardModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { wallet, startAdView, claimAd } = useTokens();
-  const ads = useLiveAds();
+  const { wallet, startAdView, claimAd, refresh } = useTokens();
+  const { user } = useAuthContext();
+  const ads = useLiveAds("banner");
   const [stage, setStage] = useState<Stage>({ kind: "loading" });
   const viewRef = useRef<{ id: string; started: number } | null>(null);
   // bumps to start another ad without closing the modal
@@ -141,6 +145,18 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
         return setStage({ kind: "message", text: "You've watched today's ads — come back tomorrow for more tokens." });
       }
       try {
+        // the app: an AdMob rewarded ad, credited by the server (admob-ssv)
+        if (isNative && user) {
+          setStage({ kind: "claiming" });
+          const res = await watchRewarded(user.id);
+          if (!alive()) return;
+          await refresh();
+          return setStage(
+            res === "rewarded"
+              ? { kind: "done", reward: wallet.ad_reward ?? 50 }
+              : { kind: "message", text: "The ad was closed early, so no tokens this time." },
+          );
+        }
         if (GAM_UNIT) {
           const id = await startAdView("network");
           if (!alive()) return;

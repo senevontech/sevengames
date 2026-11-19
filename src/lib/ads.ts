@@ -18,8 +18,24 @@ export type Ad = {
   impressions: number;
   clicks: number;
   sort_order: number;
+  /** 'all' = banners + home-page promo disks; missing (column not added yet) counts as 'all'. */
+  placement?: AdPlacement;
   created_at: string;
 };
+
+export type AdPlacement = "all" | "banner" | "disk";
+
+export const placementLabel: Record<AdPlacement, string> = {
+  all: "Everywhere",
+  banner: "Banners only",
+  disk: "Home disks only",
+};
+
+/** Can this ad show in a slot of kind `where`? */
+export function fitsPlacement(ad: Pick<Ad, "placement">, where: "banner" | "disk") {
+  const p = ad.placement ?? "all";
+  return p === "all" || p === where;
+}
 
 function minutesOf(time: string) {
   const [h, m] = time.split(":").map(Number);
@@ -47,7 +63,8 @@ export function adState(ad: Ad, now = new Date()): AdState {
   return "live";
 }
 
-export function useLiveAds() {
+/** Live ads for one kind of slot: "banner" (sponsored boxes, reward ads) or "disk" (home promos). */
+export function useLiveAds(where: "banner" | "disk") {
   const [ads, setAds] = useState<Ad[]>([]);
   useEffect(() => {
     if (!supabase) return;
@@ -56,11 +73,11 @@ export function useLiveAds() {
       supabase.from("ads").select("*").eq("active", true).order("sort_order", { ascending: true }),
     ).then(({ data }) => {
       if (!alive || !data) return;
-      setAds((data as Ad[]).filter((ad) => adState(ad) === "live"));
+      setAds((data as Ad[]).filter((ad) => adState(ad) === "live" && fitsPlacement(ad, where)));
     });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [where]);
   return ads;
 }

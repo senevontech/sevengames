@@ -8,6 +8,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, u
 import { useAuthContext } from "../context/AuthContext";
 import { supabase } from "../supabase";
 import { tokenErrorText, useTokens } from "./tokens";
+import { enqueue } from "./offlineQueue";
+import { isNetworkError, isOnline } from "./online";
 import { DEFAULT_FX, DEFAULT_SKIN, levelForXp, type BoardGame, type BoosterItem, type ShopSlot } from "./shopCatalog";
 
 export type ShopState = {
@@ -221,6 +223,12 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const use = useCallback(
     async (item: BoosterItem) => {
       if (!state || state.inventory[item] <= 0) return false;
+      // offline: use it now, tell the server when back online
+      if (!isOnline() && user) {
+        enqueue(user.id, "shop_use", { p_item: item });
+        setState((s) => (s ? { ...s, inventory: { ...s.inventory, [item]: Math.max(0, s.inventory[item] - 1) } } : s));
+        return true;
+      }
       try {
         apply(await rpc("shop_use", { p_item: item }));
         return true;
@@ -228,7 +236,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
         return false;
       }
     },
-    [rpc, apply, state],
+    [rpc, apply, state, user],
   );
 
   const xpOf = useCallback((game: BoardGame) => state?.xp?.[game] ?? 0, [state]);
@@ -244,10 +252,17 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const awardXp = useCallback(
     async (game: BoardGame, amount: number) => {
       if (!user || amount <= 0) return;
+      const args = { p_game: game, p_amount: Math.round(amount) };
+      const queue = () => {
+        enqueue(user.id, "award_game_xp", args, `xp:${game}`);
+        // show it straight away; the server confirms when it's sent
+        setState((s) => (s ? { ...s, xp: { ...s.xp, [game]: (s.xp?.[game] ?? 0) + args.p_amount } } : s));
+      };
+      if (!isOnline()) return queue();
       try {
-        apply(await rpc("award_game_xp", { p_game: game, p_amount: Math.round(amount) }));
-      } catch {
-        /* not set up yet / rate-limited: no XP this time */
+        apply(await rpc("award_game_xp", args));
+      } catch (e) {
+        if (isNetworkError(e)) queue(); /* else not set up yet / rate-limited: no XP this time */
       }
     },
     [user, rpc, apply],

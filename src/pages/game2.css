@@ -1,0 +1,1109 @@
+/* ============================================================
+   /game2: disk-based game browser, mobile first, in the game pages'
+   neumorphic style (soft extruded surfaces, light + dark).
+   Builds on .gs.gs-flat (games-globe.css) for the header; the page
+   sets --gs-bg / --gs-ink inline and data-theme="light|dark".
+   ============================================================ */
+
+/* ---------- Tokens (same soft surfaces as game-neu.css) ---------- */
+.g2[data-theme="light"] {
+  --neu-bg: #e3e5ea;
+  --neu-hi: #ffffff;
+  --neu-lo: #b6bac3;
+  --neu-accent: #e25a00;
+}
+
+.g2[data-theme="dark"] {
+  --neu-bg: #2c2e33;
+  --neu-hi: #383b41;
+  --neu-lo: #1c1d21;
+  --neu-accent: #ff8a3d;
+}
+
+.g2 {
+  --g2-pad: 16px;
+  --g2-muted: color-mix(in srgb, var(--gs-ink) 58%, transparent);
+  --neu-raise: 6px 6px 14px var(--neu-lo), -6px -6px 14px var(--neu-hi), inset 0 0 0 var(--neu-lo),
+    inset 0 0 0 var(--neu-hi);
+  --neu-raise-sm: 3px 3px 8px var(--neu-lo), -3px -3px 8px var(--neu-hi), inset 0 0 0 var(--neu-lo),
+    inset 0 0 0 var(--neu-hi);
+  --neu-half: 1px 1px 3px var(--neu-lo), -1px -1px 3px var(--neu-hi), inset 2px 2px 5px var(--neu-lo),
+    inset -2px -2px 5px var(--neu-hi);
+  --neu-press: 0 0 0 var(--neu-lo), 0 0 0 var(--neu-hi), inset 4px 4px 9px var(--neu-lo),
+    inset -4px -4px 9px var(--neu-hi);
+  --neu-well: inset 3px 3px 7px var(--neu-lo), inset -3px -3px 7px var(--neu-hi);
+  --neu-panel: 14px 14px 30px var(--neu-lo), -14px -14px 30px var(--neu-hi);
+  --neu-orange: linear-gradient(145deg, #ff9d52, #f26a0c);
+  --neu-orange-raise: 6px 6px 14px var(--neu-lo), -6px -6px 14px var(--neu-hi),
+    inset 2px 2px 4px rgba(255, 225, 190, 0.6), inset -3px -3px 6px rgba(150, 45, 0, 0.35);
+  --neu-orange-press: 0 0 0 var(--neu-lo), 0 0 0 var(--neu-hi), inset 4px 4px 9px #b44600,
+    inset -4px -4px 9px #ffac6b;
+  --neu-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --neu-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* A normal scrolling page (the globe page is a fixed, non-scrolling screen) */
+.gs.g2 {
+  position: relative;
+  inset: auto;
+  min-height: 100dvh;
+  overflow: visible;
+  overflow-x: clip;
+  user-select: auto;
+  -webkit-user-select: auto;
+}
+
+/* ============================================================
+   Header: soft raised icon buttons, orange raised account
+   ============================================================ */
+.gs.g2 .h3-nav {
+  background: var(--gs-bg);
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.gs.g2 .h3-nav-end {
+  gap: 12px;
+}
+
+.gs.g2 .gs-icon-btn,
+.gs.g2 .gs-home {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise-sm);
+  color: var(--gs-ink);
+  filter: none;
+  transition:
+    box-shadow 0.22s var(--neu-ease),
+    transform 0.45s var(--neu-spring),
+    color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gs.g2 .h3-nav .h3-account,
+.gs.g2 .h3-nav .h3-account-icon {
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+}
+
+.gs.g2 .h3-nav .h3-account {
+  border-radius: 50%;
+  box-shadow: var(--neu-orange-raise);
+}
+
+.gs.g2 .h3-nav .h3-account-icon {
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .gs.g2 .gs-icon-btn:hover,
+  .gs.g2 .gs-home:hover {
+    opacity: 1;
+    box-shadow: var(--neu-half);
+    transform: translateY(1px) scale(0.97);
+    color: var(--neu-accent);
+  }
+}
+
+.gs.g2 .gs-icon-btn:active,
+.gs.g2 .gs-home:active,
+.gs.g2 .gs-cats.is-open .gs-icon-btn,
+.gs.g2 .gs-burger.is-open .gs-icon-btn {
+  opacity: 1;
+  box-shadow: var(--neu-press);
+  transform: scale(0.95);
+  color: var(--neu-accent);
+  transition:
+    box-shadow 0.08s ease-out,
+    transform 0.08s ease-out;
+}
+
+/* Dropdowns and the phone menu: soft panels on the page surface */
+.gs.g2 .gs-cats-menu,
+.gs.g2 .gs-burger-panel,
+.gs.g2 .gs-search-results {
+  background: var(--neu-bg);
+  color: var(--gs-ink);
+  box-shadow: var(--neu-panel);
+}
+
+.gs.g2 .gs-cats-menu a:hover,
+.gs.g2 .gs-cats-menu a:focus-visible,
+.gs.g2 .gs-burger-list a:active,
+.gs.g2 .gs-burger-list button:active,
+.gs.g2 .gs-burger-list a:focus-visible,
+.gs.g2 .gs-burger-list button:focus-visible,
+.gs.g2 .gs-search-results li.is-hi {
+  background: transparent;
+  box-shadow: var(--neu-well);
+}
+
+.gs.g2 .gs-cats-icon {
+  background: var(--neu-bg);
+  color: var(--neu-accent);
+  box-shadow: var(--neu-raise-sm);
+}
+
+.gs.g2 .gs-burger-search,
+.gs.g2 .gs-search-input {
+  background: var(--neu-bg);
+  box-shadow: var(--neu-well);
+  border: 0;
+  color: var(--g2-muted);
+}
+
+.gs.g2 .gs-burger-search input,
+.gs.g2 .gs-search-input {
+  color: var(--gs-ink);
+}
+
+.gs.g2 .gs-r-cat,
+.gs.g2 .gs-cats-count,
+.gs.g2 .gs-burger-label {
+  color: var(--g2-muted);
+}
+
+@media (max-width: 640px) {
+  .gs.g2 .h3-nav {
+    padding: 12px 16px;
+  }
+
+  .gs.g2 .h3-nav-end {
+    gap: 10px;
+  }
+
+  .gs.g2 .gs-icon-btn,
+  .gs.g2 .gs-home,
+  .gs.g2 .h3-nav .h3-account,
+  .gs.g2 .h3-nav .h3-account-icon {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+  }
+}
+
+/* ============================================================
+   Layout
+   ============================================================ */
+.g2-main {
+  padding: 74px 0 48px;
+}
+
+.g2-section {
+  padding: 10px 0 6px;
+}
+
+.g2-heading {
+  margin: 0 0 6px;
+  padding: 0 var(--g2-pad);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--gs-ink);
+}
+
+/* Heading + chips on one line when there's room, chips scroll under it on phones */
+.g2-head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin-bottom: 4px;
+}
+
+.g2-head-row .g2-heading {
+  margin: 0;
+}
+
+/* ---------- Chips (collection / ranking pickers) ---------- */
+.g2-chips {
+  display: flex;
+  gap: 10px;
+  max-width: 100%;
+  padding: 14px var(--g2-pad);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.g2-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.g2-chip {
+  flex: none;
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise-sm);
+  color: var(--g2-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    box-shadow 0.22s var(--neu-ease),
+    transform 0.45s var(--neu-spring),
+    color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.g2-chip.is-on {
+  box-shadow: var(--neu-press);
+  color: var(--neu-accent);
+}
+
+@media (hover: hover) {
+  .g2-chip:not(.is-on):hover {
+    box-shadow: var(--neu-half);
+    color: var(--gs-ink);
+  }
+}
+
+.g2-chip:active {
+  transform: scale(0.96);
+}
+
+.g2-chip:focus-visible {
+  outline: 2px solid var(--neu-accent);
+  outline-offset: 3px;
+}
+
+/* ============================================================
+   Uniform disk rows
+   ============================================================ */
+.g2-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  margin: 0;
+  /* vertical padding leaves room for the soft shadows (the row scrolls, so it clips) */
+  padding: 14px var(--g2-pad) 12px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: var(--g2-pad);
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.g2-row::-webkit-scrollbar {
+  display: none;
+}
+
+.g2-row > li {
+  flex: none;
+  scroll-snap-align: start;
+}
+
+.g2-fade-in > li {
+  animation: g2-in 0.4s var(--neu-ease) backwards;
+}
+
+.g2-fade-in > li:nth-child(2) { animation-delay: 30ms; }
+.g2-fade-in > li:nth-child(3) { animation-delay: 60ms; }
+.g2-fade-in > li:nth-child(4) { animation-delay: 90ms; }
+.g2-fade-in > li:nth-child(5) { animation-delay: 120ms; }
+.g2-fade-in > li:nth-child(n + 6) { animation-delay: 150ms; }
+
+@keyframes g2-in {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+}
+
+.g2-item {
+  --g2-disk: 66px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 76px;
+  color: inherit;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.g2-item .gd,
+.g2-cat-disk,
+.g2-player-disk {
+  width: var(--g2-disk);
+  height: var(--g2-disk);
+  transition:
+    box-shadow 0.22s var(--neu-ease),
+    transform 0.45s var(--neu-spring);
+}
+
+@media (hover: hover) {
+  .g2-item:hover .gd,
+  .g2-item:hover .g2-cat-disk,
+  .g2-item:hover .g2-player-disk {
+    box-shadow: var(--neu-half);
+    transform: translateY(1px) scale(0.97);
+  }
+}
+
+.g2-item:active .gd,
+.g2-item:active .g2-cat-disk,
+.g2-item:active .g2-player-disk {
+  box-shadow: var(--neu-press);
+  transform: scale(0.94);
+  transition:
+    box-shadow 0.08s ease-out,
+    transform 0.08s ease-out;
+}
+
+.g2-item:focus-visible {
+  outline: none;
+}
+
+.g2-item:focus-visible .gd,
+.g2-item:focus-visible .g2-cat-disk,
+.g2-item:focus-visible .g2-player-disk {
+  outline: 2px solid var(--neu-accent);
+  outline-offset: 3px;
+}
+
+.g2-label {
+  max-width: 100%;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--gs-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.g2-sub {
+  margin-top: -5px;
+  font-size: 10.5px;
+  color: var(--g2-muted);
+  white-space: nowrap;
+}
+
+/* "Try next" divider between recently played and suggestions */
+.g2-divider {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  gap: 6px;
+  padding-bottom: 20px;
+}
+
+.g2-divider::before {
+  content: "";
+  width: 4px;
+  height: 56px;
+  border-radius: 4px;
+  box-shadow: var(--neu-well);
+}
+
+.g2-divider span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--h3-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--g2-muted);
+}
+
+/* ============================================================
+   Game disk: raised soft rim around the face
+   ============================================================ */
+.gd {
+  display: block;
+  flex: none;
+  padding: 5px;
+  border-radius: 50%;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise);
+}
+
+.gd-face {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.28), transparent 60%),
+    var(--gd-accent);
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.18);
+  container-type: inline-size;
+}
+
+.gd-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* Art-less games: big faint initial, a thin inner ring, the icon on top */
+.gd-letter {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 92cqw;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.06em;
+  color: rgba(255, 255, 255, 0.16);
+  transform: translate(14%, 10%);
+  user-select: none;
+}
+
+.gd-ring {
+  position: absolute;
+  inset: 11%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+}
+
+.gd-icon {
+  position: relative;
+  width: 40%;
+  height: 40%;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+}
+
+/* ---------- Category disks: soft disk, icon in the category colour ---------- */
+.g2-cat-disk {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise);
+  color: var(--cat);
+}
+
+.g2-cat-disk svg {
+  width: 38%;
+  height: 38%;
+}
+
+/* small coloured well behind the icon */
+.g2-cat-disk::before {
+  content: "";
+  grid-area: 1 / 1;
+  width: 62%;
+  height: 62%;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cat) 14%, transparent);
+  box-shadow: var(--neu-well);
+}
+
+.g2-cat-disk svg {
+  grid-area: 1 / 1;
+}
+
+/* ---------- Player disks ---------- */
+.g2-player-disk {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise);
+}
+
+.g2-player-disk > :first-child {
+  grid-area: 1 / 1;
+}
+
+.g2-av {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(145deg, hsl(var(--h) 70% 60%), hsl(calc(var(--h) + 30) 65% 42%));
+}
+
+.g2-av img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.g2-rank {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise-sm);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--g2-muted);
+}
+
+.g2-rank.is-1 {
+  color: #2a1400;
+  background: linear-gradient(145deg, #ffd66b, #f0a500);
+}
+
+.g2-rank.is-2 {
+  color: #1d1f23;
+  background: linear-gradient(145deg, #eef0f3, #b7bcc5);
+}
+
+.g2-rank.is-3 {
+  color: #2a1200;
+  background: linear-gradient(145deg, #f3b98a, #c27a43);
+}
+
+.g2-skel .g2-player-disk {
+  box-shadow: var(--neu-well);
+}
+
+.g2-skel-line {
+  width: 48px;
+  height: 9px;
+  border-radius: 9px;
+  box-shadow: var(--neu-well);
+}
+
+.g2-skel {
+  animation: g2-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes g2-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.g2-empty {
+  margin: 6px var(--g2-pad) 0;
+  padding: 18px;
+  border-radius: 18px;
+  box-shadow: var(--neu-well);
+  font-size: 13px;
+  color: var(--g2-muted);
+  text-align: center;
+}
+
+/* ============================================================
+   Centre carousel (DiskCarousel)
+   ============================================================ */
+.dc {
+  margin: 4px 0 0;
+}
+
+.dc-stage {
+  position: relative;
+}
+
+.dc-scroller {
+  /* centre disk size; the component resolves it to px into --dc-size */
+  --dc-size-src: min(52vw, 240px);
+  --dc-size: 180px;
+  --dc-slot: 81px;
+  display: flex;
+  /* extra height so the raised shadows aren't clipped */
+  height: calc(var(--dc-size) + 56px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dc-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.dc-spacer {
+  flex: none;
+  width: calc(50% - var(--dc-slot) / 2);
+}
+
+.dc-slot {
+  position: relative;
+  flex: none;
+  width: var(--dc-slot);
+  scroll-snap-align: center;
+}
+
+.dc-disk {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--dc-size);
+  height: var(--dc-size);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  visibility: hidden; /* the carousel shows only the disks near the centre */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dc-disk .gd {
+  width: 100%;
+  height: 100%;
+  padding: 4%;
+  box-shadow: var(--neu-panel);
+}
+
+.dc-disk:focus-visible {
+  outline: none;
+}
+
+.dc-disk:focus-visible .gd {
+  outline: 3px solid var(--neu-accent);
+  outline-offset: 4px;
+}
+
+/* Page-coloured fade over both edges: disks "leave" the viewport */
+.dc-stage::before,
+.dc-stage::after {
+  content: "";
+  position: absolute;
+  z-index: 150;
+  top: 0;
+  bottom: 0;
+  width: 22%;
+  pointer-events: none;
+}
+
+.dc-stage::before {
+  left: 0;
+  background: linear-gradient(to right, var(--gs-bg) 6%, color-mix(in srgb, var(--gs-bg) 55%, transparent) 55%, transparent);
+}
+
+.dc-stage::after {
+  right: 0;
+  background: linear-gradient(to left, var(--gs-bg) 6%, color-mix(in srgb, var(--gs-bg) 55%, transparent) 55%, transparent);
+}
+
+.dc-arrow {
+  position: absolute;
+  z-index: 160;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-top: -19px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise-sm);
+  color: var(--gs-ink);
+  cursor: pointer;
+  transition:
+    box-shadow 0.22s var(--neu-ease),
+    transform 0.45s var(--neu-spring),
+    opacity 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dc-prev {
+  left: 10px;
+}
+
+.dc-next {
+  right: 10px;
+}
+
+@media (hover: hover) {
+  .dc-arrow:hover {
+    box-shadow: var(--neu-half);
+    color: var(--neu-accent);
+  }
+}
+
+.dc-arrow:active {
+  box-shadow: var(--neu-press);
+  transform: scale(0.94);
+  transition:
+    box-shadow 0.08s ease-out,
+    transform 0.08s ease-out;
+}
+
+.dc-arrow:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dc-arrow:focus-visible {
+  outline: 2px solid var(--neu-accent);
+  outline-offset: 3px;
+}
+
+/* ============================================================
+   Hero: the centre game's details
+   ============================================================ */
+.g2-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 auto 18px;
+  padding: 0 var(--g2-pad);
+  max-width: 560px;
+  text-align: center;
+  animation: g2-hero-in 0.35s var(--neu-ease) both;
+}
+
+@keyframes g2-hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.g2-hero-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--gs-ink);
+}
+
+.g2-hero-meta {
+  margin: 4px 0 0;
+  font-family: var(--h3-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--g2-muted);
+}
+
+.g2-hero-desc {
+  display: -webkit-box;
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--g2-muted);
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.9em; /* keeps the layout steady while swiping */
+}
+
+.g2-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.g2-hero-best {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  box-shadow: var(--neu-well);
+  font-size: 12px;
+  color: var(--g2-muted);
+}
+
+.g2-hero-best b {
+  font-size: 14px;
+  color: var(--neu-accent);
+}
+
+.g2-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 26px 0 22px;
+  border-radius: 999px;
+  background: var(--neu-orange);
+  box-shadow: var(--neu-orange-raise);
+  color: #1f0c00;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    box-shadow 0.22s var(--neu-ease),
+    transform 0.45s var(--neu-spring),
+    filter 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .g2-play:hover {
+    transform: translateY(1px) scale(0.985);
+    filter: brightness(0.97);
+  }
+}
+
+.g2-play:active {
+  box-shadow: var(--neu-orange-press);
+  transform: scale(0.96);
+  transition:
+    box-shadow 0.08s ease-out,
+    transform 0.08s ease-out;
+}
+
+.g2-play:focus-visible {
+  outline: 2px solid var(--gs-ink);
+  outline-offset: 3px;
+}
+
+/* ============================================================
+   Larger screens
+   ============================================================ */
+@media (min-width: 641px) {
+  .g2 {
+    --g2-pad: 24px;
+  }
+
+  .g2-main {
+    padding-top: 84px;
+  }
+
+  .g2-heading {
+    font-size: 26px;
+  }
+
+  /* the chips scroll (so they clip): keep room for the soft shadows on every side, and pull
+     the row back by the same amount so the chips still sit right after the heading */
+  .g2-head-row .g2-chips {
+    padding-left: 14px;
+    margin-left: -14px;
+  }
+
+  .g2-row {
+    gap: 24px;
+  }
+
+  .g2-item {
+    --g2-disk: 76px;
+    width: 88px;
+  }
+
+  .dc-scroller {
+    --dc-size-src: min(30vw, 260px);
+  }
+
+  .dc-prev {
+    left: 20px;
+  }
+
+  .dc-next {
+    right: 20px;
+  }
+
+  .g2-hero-title {
+    font-size: 28px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .g2 {
+    --g2-pad: 34px; /* lines up with the header */
+  }
+
+  .g2-main {
+    padding-top: 92px;
+  }
+
+  .g2-heading {
+    font-size: 28px;
+  }
+
+  .g2-item {
+    --g2-disk: 84px;
+    width: 96px;
+  }
+
+  .dc-scroller {
+    --dc-size-src: min(21vw, 290px);
+  }
+
+  .g2-hero-title {
+    font-size: 30px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .g2-hero,
+  .g2-fade-in > li,
+  .g2-skel {
+    animation: none;
+  }
+
+  .g2-item .gd,
+  .g2-cat-disk,
+  .g2-player-disk,
+  .g2-chip,
+  .g2-play,
+  .dc-arrow,
+  .gs.g2 .gs-icon-btn,
+  .gs.g2 .gs-home {
+    transition: none;
+  }
+}
+
+/* ============================================================
+   Token balance in the header: raised soft pill, coin in the accent
+   ============================================================ */
+.gs.g2 .h3-nav .tk-pill,
+.gs.g2 .h3-nav .tk-pill.tk-pill-solid {
+  height: 38px;
+  padding: 0 14px 0 8px;
+  gap: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise-sm);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: var(--gs-ink);
+  font-size: 13.5px;
+  font-weight: 700;
+  transition:
+    box-shadow 0.22s var(--neu-ease),
+    transform 0.45s var(--neu-spring),
+    color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gs.g2 .h3-nav .tk-pill svg {
+  color: var(--neu-accent);
+}
+
+/* the coin sits in a small soft well */
+.gs.g2 .h3-nav .tk-pill-coin {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  box-shadow: var(--neu-well);
+}
+
+.gs.g2 .h3-nav .tk-pill-coin svg {
+  width: 17px;
+  height: 17px;
+}
+
+@media (hover: hover) {
+  .gs.g2 .h3-nav .tk-pill:hover {
+    opacity: 1;
+    box-shadow: var(--neu-half);
+    transform: translateY(1px) scale(0.98);
+  }
+}
+
+.gs.g2 .h3-nav .tk-pill:active {
+  box-shadow: var(--neu-press);
+  transform: scale(0.96);
+  transition:
+    box-shadow 0.08s ease-out,
+    transform 0.08s ease-out;
+}
+
+.gs.g2 .h3-nav .tk-pill:focus-visible {
+  outline: 2px solid var(--neu-accent);
+  outline-offset: 3px;
+}
+
+/* balance going up / down: tint the number briefly */
+.gs.g2 .h3-nav .tk-pill.is-up b {
+  color: #1f9d55;
+}
+
+.gs.g2 .h3-nav .tk-pill.is-down b {
+  color: var(--neu-accent);
+}
+
+@media (max-width: 640px) {
+  .gs.g2 .h3-nav .tk-pill,
+  .gs.g2 .h3-nav .tk-pill.tk-pill-solid {
+    height: 36px;
+    padding: 0 11px 0 6px;
+    font-size: 12.5px;
+  }
+
+  .gs.g2 .h3-nav .tk-pill-coin {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* narrow phones: logo + tokens + 3 buttons have to fit in one line */
+@media (max-width: 400px) {
+  .gs.g2 .h3-nav-end {
+    gap: 8px;
+  }
+
+  .gs.g2 .h3-logo img {
+    width: 96px;
+    height: auto;
+  }
+}
+
+/* ============================================================
+   Sponsored disks (admin ads) in "Try next"
+   ============================================================ */
+.g2-ad-disk {
+  position: relative;
+}
+
+.g2-ad-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--g2-muted);
+  background: var(--neu-bg);
+  box-shadow: var(--neu-well);
+  border-radius: 50%;
+}
+
+/* small "Ad" badge on the rim, in the same raised style as the rank badges */
+.g2-ad-tag {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  display: grid;
+  place-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise-sm);
+  font-family: var(--h3-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--neu-accent);
+}
+
+/* the badge sits outside the disk, so the face clips on its own */
+.g2-ad-disk.gd {
+  overflow: visible;
+}

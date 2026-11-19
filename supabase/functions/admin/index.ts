@@ -284,6 +284,7 @@ function cleanAd(input: Record<string, unknown>) {
     daily_end: optTime(input.daily_end),
     max_impressions: Number.isFinite(max) && max > 0 ? Math.floor(max) : null,
     sort_order: Number.isFinite(Number(input.sort_order)) ? Math.floor(Number(input.sort_order)) : 0,
+    placement: input.placement === "banner" || input.placement === "disk" ? input.placement : "all",
     updated_at: new Date().toISOString(),
   };
 }
