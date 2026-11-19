@@ -13,7 +13,14 @@
         clinking against the ones already inside
       - discs slide on boric powder: a fine, grainy hiss whose texture flickers like real powder
    Sounds are panned by where they happen and sent through a small wooden-room reverb.
-   Bursts are rate-limited so a big break never gets harsh. */
+
+   Dynamics (tuned so it sounds like a real board, not a wall of clicks):
+      - loudness follows impact speed on an expanding curve: a light touch is a faint tick,
+        a smash is a sharp clack (~30 dB apart), instead of everything at a similar level
+      - very light contacts (coins settling) make no sound at all
+      - softer hits are also darker (less high end), like real wood
+      - only a gentle safety limiter on the output (no squashing), little reverb, a faint
+        powder hiss, and a cap on how many sounds overlap during a break */
 
 const MUTE_KEY = "senevon:carrom-mute";
 const SAMPLE_NAMES = ["hit-coin", "hit-striker", "wall", "pot", "flick"] as const;
@@ -23,6 +30,18 @@ type SampleName = (typeof SAMPLE_NAMES)[number];
 type Mode = [freq: number, decay: number, amp: number];
 
 const rnd = (a: number, b: number) => a + Math.random() * (b - a);
+
+const MASTER = 0.7;
+/** impact speed (px/s) that counts as a full-strength hit */
+const FULL = 1500;
+/** quieter than this and a contact makes no sound (coins nudging / settling) */
+const SILENT_BELOW = 140;
+
+/** Impact speed → loudness 0..1 on an expanding curve: soft touches are much quieter than smashes. */
+function level(speed: number) {
+  const v = Math.max(0, Math.min(1, (speed - SILENT_BELOW) / (FULL - SILENT_BELOW)));
+  return Math.pow(v, 1.6);
+}
 
 class CarromAudio {
   private ctx: AudioContext | null = null;
@@ -54,14 +73,15 @@ class CarromAudio {
     this.ctx = c;
 
     const comp = c.createDynamicsCompressor();
-    comp.threshold.value = -12;
-    comp.knee.value = 8;
-    comp.ratio.value = 3.5;
-    comp.attack.value = 0.001;
-    comp.release.value = 0.1;
+    // a safety limiter only: loud hits stay louder than soft ones
+    comp.threshold.value = -4;
+    comp.knee.value = 4;
+    comp.ratio.value = 8;
+    comp.attack.value = 0.002;
+    comp.release.value = 0.12;
     comp.connect(c.destination);
     this.master = c.createGain();
-    this.master.gain.value = this.muted ? 0 : 0.95;
+    this.master.gain.value = this.muted ? 0 : MASTER;
     this.master.connect(comp);
 
     // shared white noise
@@ -87,7 +107,7 @@ class CarromAudio {
     const verb = c.createConvolver();
     verb.buffer = ir;
     this.wet = c.createGain();
-    this.wet.gain.value = 0.18;
+    this.wet.gain.value = 0.09;
     this.wet.connect(verb).connect(this.master);
 
     // powder slide: band-passed noise, its level flickered by a slow noise "grain" signal
@@ -152,7 +172,7 @@ class CarromAudio {
     } catch {
       /* ignore */
     }
-    if (this.master && this.ctx) this.master.gain.setTargetAtTime(m ? 0 : 0.95, this.ctx.currentTime, 0.02);
+    if (this.master && this.ctx) this.master.gain.setTargetAtTime(m ? 0 : MASTER, this.ctx.currentTime, 0.02);
   }
 
   private ready() {
@@ -163,7 +183,7 @@ class CarromAudio {
     if (!this.ready()) return false;
     const now = performance.now();
     this.recent = this.recent.filter((t) => now - t < 90);
-    if (this.recent.length > 10) return false;
+    if (this.recent.length >= 5) return false;
     this.recent.push(now);
     return true;
   }
@@ -210,7 +230,7 @@ class CarromAudio {
     src.buffer = this.noise;
     const lp = c.createBiquadFilter();
     lp.type = "lowpass";
-    lp.frequency.value = 1800 + bright * 9000;
+    lp.frequency.value = 900 + Math.pow(bright, 1.2) * 7500;
     const g = c.createGain();
     g.gain.setValueAtTime(1, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + ms / 1000);
@@ -229,12 +249,12 @@ class CarromAudio {
       bp.Q.value = Math.max(2, Math.PI * f * decay * 0.7);
       const g = this.ctx!.createGain();
       // a resonator's output level falls as Q rises; compensate so modes stay balanced
-      g.gain.value = vol * amp * Math.sqrt(bp.Q.value) * 2.5;
+      g.gain.value = vol * amp * Math.sqrt(bp.Q.value) * 1.5;
       exc.connect(bp).connect(g).connect(dest);
     }
     // a little of the raw knock itself: the "click" of contact
     const click = this.ctx!.createGain();
-    click.gain.value = vol * 0.35 * (0.4 + bright);
+    click.gain.value = vol * 0.07 * bright * bright;
     exc.connect(click).connect(dest);
   }
 
@@ -245,9 +265,10 @@ class CarromAudio {
 
   /** Coin / striker collision. `mass` = striker mass (heavier → deeper, fuller). */
   hit(strength: number, striker: boolean, x = 500, mass = 1.7) {
-    if (!this.ok()) return;
-    const v = Math.min(1, strength / 1600);
-    const vol = 0.05 + Math.pow(v, 0.7) * 0.6;
+    if (strength < SILENT_BELOW || !this.ok()) return;
+    const v = Math.min(1, strength / FULL);
+    // the striker is heavier: its hits carry more weight than coin-on-coin ticks
+    const vol = (striker ? 0.62 : 0.42) * Math.max(0.03, level(strength));
     const o = this.out(x, 1, 0.7);
     if (this.sample(striker ? "hit-striker" : "hit-coin", o, vol * 1.3, striker ? 1.7 / mass : rnd(0.95, 1.08))) return;
     // coins are small, hard and bright; the striker is bigger and heavier → lower, fuller
@@ -266,19 +287,20 @@ class CarromAudio {
       v,
       striker ? 2.5 : 1.5,
     );
-    this.boardThump(o, 0.001, vol * (striker ? 0.28 : 0.14) * (striker ? mass / 1.7 : 1));
+    if (striker && v > 0.25) this.boardThump(o, 0.001, vol * 0.18 * (mass / 1.7));
   }
 
   /** Disc into the wooden frame. */
   wall(strength: number, x = 500) {
-    if (!this.ok()) return;
-    const v = Math.min(1, strength / 1600);
-    const vol = 0.06 + Math.pow(v, 0.8) * 0.55;
+    if (strength < SILENT_BELOW * 1.4 || !this.ok()) return;
+    const v = Math.min(1, strength / FULL);
+    // the rail is cushioned: a dull thud, quieter than a disc-on-disc clack
+    const vol = 0.4 * Math.max(0.03, level(strength));
     const o = this.out(x, 1, 1);
     if (this.sample("wall", o, vol * 1.3)) return;
     this.resonate(o, 0, [[rnd(170, 200), 0.06, 1], [rnd(410, 450), 0.035, 0.55], [rnd(760, 820), 0.02, 0.35]], vol * 0.55, v * 0.5, 5);
     // the disc's own small click against the rail
-    this.resonate(o, 0, [[2100, 0.012, 1]], vol * 0.18, v);
+    this.resonate(o, 0, [[2100, 0.012, 1]], vol * 0.08, v);
   }
 
   /** Disc into a pocket: edge tick, drop into the net, clink on the coins inside. */
@@ -288,7 +310,7 @@ class CarromAudio {
     const o = this.out(x, 1, 1.1);
     if (this.sample("pot", o, 0.7 + v * 0.3)) return;
     // brushing the pocket's wooden edge
-    if (speed > 200) this.resonate(o, 0, [[rnd(900, 1050), 0.02, 1], [1900, 0.01, 0.4]], 0.12 + v * 0.18, v * 0.6);
+    if (speed > 300) this.resonate(o, 0, [[rnd(900, 1050), 0.02, 1], [1900, 0.01, 0.4]], 0.05 + v * v * 0.14, v * 0.6);
     // the soft fall into the cloth net
     const c = this.ctx!;
     const t = c.currentTime + 0.16;
@@ -299,7 +321,7 @@ class CarromAudio {
     lp.frequency.value = 700;
     const g = c.createGain();
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.22, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.14, t + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
     src.connect(lp).connect(g).connect(o);
     src.start(t, Math.random(), 0.2);
@@ -308,7 +330,7 @@ class CarromAudio {
     const clinks = 2 + (Math.random() < 0.5 ? 1 : 0);
     for (let i = 0; i < clinks; i++) {
       const at = 0.3 + i * rnd(0.05, 0.09);
-      this.resonate(o, at, [[rnd(2100, 2700), 0.015, 1], [rnd(3300, 3900), 0.009, 0.5]], 0.08 / (i + 1), 0.7);
+      this.resonate(o, at, [[rnd(2100, 2700), 0.015, 1], [rnd(3300, 3900), 0.009, 0.5]], 0.045 / (i + 1), 0.5);
     }
     if (kind === "queen") {
       // the queen is the same material: give it a slightly fuller, longer clink
@@ -320,9 +342,9 @@ class CarromAudio {
   rattle(x = 500) {
     if (!this.ok()) return;
     const o = this.out(x, 1, 1);
-    this.resonate(o, 0, [[1050, 0.025, 1], [2200, 0.012, 0.5]], 0.32, 0.8);
-    this.resonate(o, 0.04, [[980, 0.02, 1]], 0.2, 0.6);
-    this.boardThump(o, 0.005, 0.15);
+    this.resonate(o, 0, [[1050, 0.025, 1], [2200, 0.012, 0.5]], 0.2, 0.6);
+    this.resonate(o, 0.04, [[980, 0.02, 1]], 0.12, 0.5);
+    this.boardThump(o, 0.005, 0.08);
   }
 
   /** The finger flicking the striker: a nail "tsk" and the striker leaving. */
@@ -330,8 +352,9 @@ class CarromAudio {
     if (!this.ok()) return;
     const o = this.out(x, 1, 0.5);
     if (this.sample("flick", o, 0.5 + power * 0.5)) return;
-    this.resonate(o, 0, [[rnd(3400, 4200), 0.006, 1]], 0.12 + power * 0.25, 0.9, 1);
-    this.resonate(o, 0.003, [[rnd(240, 280), 0.035, 1]], 0.15 + power * 0.3, 0.2, 3);
+    const p = Math.pow(Math.max(0, Math.min(1, power)), 1.4);
+    this.resonate(o, 0, [[rnd(3400, 4200), 0.006, 1]], 0.04 + p * 0.14, 0.4 + p * 0.5, 1);
+    this.resonate(o, 0.003, [[rnd(240, 280), 0.035, 1]], 0.06 + p * 0.2, 0.2, 3);
   }
 
   /** Striker nudged along the baseline (slider): a short powdery scuff. */
@@ -357,7 +380,7 @@ class CarromAudio {
   /** Clock tick for the last seconds of a turn: a small wooden knock. */
   tick(urgent: boolean) {
     if (!this.ready()) return;
-    this.resonate(this.out(500, 1, 0.3), 0, [[urgent ? 1900 : 1500, 0.02, 1]], urgent ? 0.2 : 0.12, 0.6);
+    this.resonate(this.out(500, 1, 0.3), 0, [[urgent ? 1900 : 1500, 0.02, 1]], urgent ? 0.12 : 0.07, 0.5);
   }
 
   /** Time ran out: two low knocks on the frame. */
@@ -388,10 +411,10 @@ class CarromAudio {
   slide(totalSpeed: number) {
     if (!this.ctx || !this.slideGain || !this.slideFilter) return;
     const t = this.ctx.currentTime;
-    const k = Math.min(1, totalSpeed / 2600);
-    const g = this.muted ? 0 : 0.09 * Math.pow(k, 0.75);
-    this.slideGain.gain.setTargetAtTime(g, t, 0.05);
-    this.slideFilter.frequency.setTargetAtTime(900 + k * 1700, t, 0.08);
+    const k = Math.min(1, Math.max(0, totalSpeed - 120) / 2600);
+    const g = this.muted ? 0 : 0.035 * Math.pow(k, 1.3);
+    this.slideGain.gain.setTargetAtTime(g, t, 0.06);
+    this.slideFilter.frequency.setTargetAtTime(700 + k * 1100, t, 0.08);
   }
 }
 
