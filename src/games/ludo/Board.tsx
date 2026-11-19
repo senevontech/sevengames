@@ -72,6 +72,8 @@ type Props = {
   choices: number[];
   onPick: (token: number) => void;
   labels: Partial<Record<Color, string>>;
+  /** quarter turns clockwise (0–3), so the viewer's yard sits bottom-right */
+  rot?: number;
 };
 
 function Star({ x, y, color }: { x: number; y: number; color: string }) {
@@ -84,7 +86,15 @@ function Star({ x, y, color }: { x: number; y: number; color: string }) {
   return <polygon points={pts.join(" ")} fill="none" stroke={color} strokeWidth={0.07} strokeLinejoin="round" />;
 }
 
-export default function LudoBoard({ s, shown, theme, dice, choices, onPick, labels }: Props) {
+/** (x, y) turned `q` quarter turns clockwise about the board's centre. */
+function turnPoint(x: number, y: number, q: number): [number, number] {
+  let dx = x - 7.5;
+  let dy = y - 7.5;
+  for (let k = 0; k < q; k++) [dx, dy] = [-dy, dx];
+  return [7.5 + dx, 7.5 + dy];
+}
+
+export default function LudoBoard({ s, shown, theme, dice, choices, onPick, labels, rot = 0 }: Props) {
   const col = (c: number) => theme[COLOR_KEYS[c]];
   const turnColor = s.colors[s.turn];
 
@@ -106,6 +116,8 @@ export default function LudoBoard({ s, shown, theme, dice, choices, onPick, labe
   return (
     <svg className="lu-board" viewBox="0 0 15 15" role="img" aria-label="Ludo board">
       <rect x={0} y={0} width={15} height={15} rx={0.5} fill={theme.bg} />
+      {/* the board turns so the viewer's yard is bottom-right (names are drawn upright after) */}
+      <g transform={`rotate(${rot * 90} 7.5 7.5)`}>
 
       {/* yards */}
       {YARD_ORIGINS.map(([ox, oy], c) => (
@@ -116,11 +128,6 @@ export default function LudoBoard({ s, shown, theme, dice, choices, onPick, labe
             const [x, y] = tokenPoint(c as Color, i, -1);
             return <circle key={i} cx={x} cy={y} r={0.5} fill={col(c)} opacity={0.28} />;
           })}
-          {labels[c as Color] ? (
-            <text x={ox + 3} y={oy + (oy ? 5.62 : 0.68)} className="lu-yard-label" fill={theme.track}>
-              {labels[c as Color]}
-            </text>
-          ) : null}
         </g>
       ))}
 
@@ -165,6 +172,20 @@ export default function LudoBoard({ s, shown, theme, dice, choices, onPick, labe
             <circle r={0.11} fill={col(c)} />
             {dice.tokenShine ? <ellipse cx={-0.12} cy={-0.14} rx={0.12} ry={0.07} fill="#fff" opacity={0.7} /> : null}
           </g>
+        );
+      })}
+      </g>
+
+      {/* player names, upright, in each yard's top or bottom band wherever the yard ended up */}
+      {YARD_ORIGINS.map(([ox, oy], c) => {
+        const name = labels[c as Color];
+        if (!name) return null;
+        const [cx, cy] = turnPoint(ox + 3, oy + 3, rot);
+        const top = cy < 7.5;
+        return (
+          <text key={`label-${c}`} x={cx} y={top ? cy - 2.32 : cy + 2.62} className="lu-yard-label" fill={theme.track}>
+            {name}
+          </text>
         );
       })}
     </svg>

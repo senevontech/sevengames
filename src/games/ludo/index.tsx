@@ -256,7 +256,8 @@ export default function LudoGame(_props: GameProps) {
         : Array.from({ length: n }, (_, i) => ({ kind: "human", name: `Player ${i + 1}` }));
     setSeats(list);
     seatsRef.current = list;
-    const s = newGame(n);
+    // a random colour for you (seat 0) each game; the board turns so your yard is bottom-right
+    const s = newGame(n, Math.floor(Math.random() * 4));
     stRef.current = s;
     setSt(s);
     awarded.current = false;
@@ -511,7 +512,7 @@ export default function LudoGame(_props: GameProps) {
               start: () => startLocal("cpu", cpuPlayers),
               settings: (
                 <div className="ol-card">
-            <p className="ol-sub">You play Red against the CPU.</p>
+            <p className="ol-sub">You get a random colour, in the bottom-right corner.</p>
             {seatPicker(cpuPlayers, setCpuPlayers, [2, 3, 4], "Players")}
                 </div>
               ),
@@ -564,6 +565,10 @@ export default function LudoGame(_props: GameProps) {
   }
 
   /* ----- the game ----- */
+  // turn the board so your yard (online: yours; on one device: player 1's) is bottom-right.
+  // Yards go clockwise from the top-left (red, green, yellow, blue); bottom-right is corner 2.
+  const viewColor = st.colors[mySeat >= 0 ? mySeat : 0] ?? 2;
+  const boardRot = (2 - viewColor + 4) % 4;
   const winnerSeat = st.winner === null ? -1 : st.colors.indexOf(st.winner);
   const iWon = st.phase === "over" && winnerSeat >= 0 && winnerSeat === mySeat;
   const turnName = seatNow?.name ?? COLOR_NAMES[turnColor];
@@ -607,7 +612,7 @@ export default function LudoGame(_props: GameProps) {
       </ul>
 
       <div className="lu-board-wrap" style={{ "--lu-line": theme.line } as React.CSSProperties}>
-        <LudoBoard s={st} shown={shown} theme={theme} dice={diceStyle} choices={choices} onPick={myMove} labels={labels} />
+        <LudoBoard s={st} shown={shown} theme={theme} dice={diceStyle} choices={choices} onPick={myMove} labels={labels} rot={boardRot} />
         {st.phase === "over" || hostGone ? (
           <div className="lu-overlay">
             <div className={`lu-card${iWon ? " is-win" : ""}`}>

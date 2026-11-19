@@ -40,9 +40,11 @@ export type LudoState = {
   last: { color: Color; token: number; from: number; to: number; captured: { color: Color; token: number }[] } | null;
 };
 
-export function newGame(players: number): LudoState {
+/** `shift` turns the colours round the board (0–3): local games pass a random one, so you
+ *  don't always play red. Turn order and the 2-player "opposite corners" stay the same. */
+export function newGame(players: number, shift = 0): LudoState {
   return {
-    colors: colorsFor(players),
+    colors: colorsFor(players).map((c) => ((c + shift) % 4) as Color),
     tokens: [0, 1, 2, 3].map(() => [-1, -1, -1, -1]),
     turn: 0,
     phase: "roll",
