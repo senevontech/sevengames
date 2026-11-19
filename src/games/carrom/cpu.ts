@@ -11,6 +11,9 @@ import {
   BASE_MAX,
   BASE_MIN,
   COIN_R,
+  DISC_E,
+  FRICTION_K,
+  FRICTION_LIN,
   MIN_POWER_SPEED,
   PF_MAX,
   PF_MIN,
@@ -28,14 +31,11 @@ import {
   type Vec,
   type World,
 } from "./engine";
-import { CPU_STATS, massFor, maxSpeedFor } from "./stats";
+import { BASE_STATS, massFor, maxSpeedFor } from "./stats";
 
 export type CpuPlan = { t: number; dir: Vec; power: number };
 
-// keep in step with engine.ts physics
-const FRICTION_K = 1.05;
-const FRICTION_LIN = 46;
-const DISC_E = 0.93;
+// keep in step with engine.ts physics (friction and disc bounce are imported from it)
 const WALL_E_SOFT = 0.78;
 const WALL_E_HARD = 0.62;
 const WALL_SLIDE = 0.97;
@@ -98,7 +98,9 @@ export function planCpuShot(world: World): CpuPlan {
   const seat = world.turn;
   const me = world.players[seat];
   const own = me.color;
-  const stats = me.kind === "cpu" ? CPU_STATS : me.stats;
+  // plan with exactly the striker the engine will shoot with (shootStriker: stats ?? BASE_STATS),
+  // so power is never misjudged, e.g. for CPUs filling empty seats in an online room
+  const stats = me.stats ?? BASE_STATS;
   const top = maxSpeedFor(stats.power);
   const ms = massFor(stats.weight);
 
@@ -142,7 +144,7 @@ export function planCpuShot(world: World): CpuPlan {
         }
 
         // coin speed needed after impact → striker speed needed at contact
-        const coinStart = speedNeeded(Math.max(0, td - POCKET_R * 0.5), ARRIVE);
+        const coinStart = speedNeeded(td, ARRIVE);
 
         /** Score a shot along `legs`; returns the start speed it needs (or null if impossible).
          *  `e` = wall restitution assumed for a bank; `commit` = add it to the candidates. */
@@ -248,7 +250,11 @@ export function planCpuShot(world: World): CpuPlan {
 function safetyShot(world: World, seat: number, ownCoins: Disc[], top: number): CpuPlan {
   const inward = norm(minDirFor(seat, world.seats));
   const forward = (d: Vec) => d.x * inward.x + d.y * inward.y >= 0.08;
-  const pools: Disc[][] = [ownCoins, world.discs.filter((d) => d.alive && d.kind !== "striker")];
+  // Only ever push your own coins (or the queen) towards pockets, never the opponent's.
+  // With one coin left and the queen still out, that coin can't be potted yet: work the queen.
+  const queen = world.queenDisc.alive && world.queen.state === "board" ? [world.queenDisc] : [];
+  const lastCoin = ownCoins.length === 1 && queen.length > 0;
+  const pools: Disc[][] = lastCoin ? [queen] : [ownCoins, queen];
   for (const pool of pools) {
     let best: (CpuPlan & { score: number }) | null = null;
     for (let i = 0; i <= 16; i += 1) {

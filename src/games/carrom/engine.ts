@@ -60,7 +60,7 @@ export type Sink = {
   a: number;
   w: number;
 };
-export const SINK_T = 0.75;
+export const SINK_T = 0.45;
 export type Shot = { potted: Disc[]; strikerPotted: boolean; contact: boolean };
 
 export type World = {
@@ -98,10 +98,10 @@ export const STRIKER_R = 30;
 const STRIKER_M = 1.7;
 const COIN_M = 1;
 export const POCKET_R = 34;
-const POCKET_CAPTURE = 40;
-const POCKET_SKIP = 36;
-const POCKET_PULL = 52;
-const PULL_F = 300;
+// A disc drops only once its centre is over the hole (like a real pocket): no wider capture
+// ring and no pull towards the pocket. Near a pocket the frame is open (the mouth).
+const POCKET_CAPTURE = POCKET_R;
+const POCKET_SKIP = POCKET_R + 2;
 export const POCKETS = [
   { x: WALL + 26, y: WALL + 26 },
   { x: PF_MAX - 26, y: WALL + 26 },
@@ -112,14 +112,16 @@ export const BASE_MIN = 218;
 export const BASE_MAX = 782;
 export const BASE_OFF = 44;
 // Friction: a powdered carrom board behaves mostly like constant sliding friction (mu*g), plus a
-// little speed-proportional drag. Coins slow steadily and stop crisply, as on a real board.
-const FRICTION_K = 1.05;
-const FRICTION_LIN = 46;
-const STOP_SPEED = 7;
+// little speed-proportional drag. Coins slow steadily and stop crisply, as on a real board:
+// a full-power striker still crosses the board and rebounds, but slow coins don't creep on.
+// (cpu.ts reads these, so its shot strength stays right.)
+export const FRICTION_K = 0.35;
+export const FRICTION_LIN = 520;
+const STOP_SPEED = 12;
 // Rubber-lined frame: bounces lose more energy the harder they hit.
 const WALL_E_SOFT = 0.78;
 const WALL_E_HARD = 0.62;
-const DISC_E = 0.93;
+export const DISC_E = 0.93;
 /** Coin-on-coin surface friction: glancing hits transfer spin and a little sideways push. */
 const DISC_MU = 0.06;
 /** Coins hitting a pocket's jaw faster than this can rattle out instead of dropping. */
@@ -514,10 +516,6 @@ function wallAndPocket(world: World, d: Disc, dt: number) {
       }
       pot(world, d, p);
       return;
-    }
-    if (pd < POCKET_PULL && pd > 0.001) {
-      d.vx += (dx / pd) * PULL_F * dt;
-      d.vy += (dy / pd) * PULL_F * dt;
     }
   }
 
