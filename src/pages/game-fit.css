@@ -188,18 +188,15 @@
   overflow: hidden;
 }
 
-/* natural width (at most the window's), centred by its margins; FitBox sets the scale */
+/* laid out at the window's full width; FitBox sets the scale (about the centre) */
 .fitbox-inner {
   position: absolute;
   top: 50%;
-  left: 0;
-  right: 0;
-  width: fit-content;
-  max-width: 100%;
-  margin-inline: auto;
+  left: 50%;
+  width: 100%;
   padding: clamp(6px, 1vw, 12px);
   box-sizing: border-box;
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
   transform-origin: center;
 }
 
@@ -368,9 +365,10 @@
 /* ============================================================
    Start bar (paid games): just "Start game · cost", compact
    ============================================================ */
+/* the bar sits under the preview (tokens.css), so no padding of its own */
 .site.site-game .tk-gatebar {
   gap: 4px;
-  padding: 28px 12px 10px;
+  padding: 0;
 }
 
 .site.site-game .tk-gatebar-inner {
@@ -410,11 +408,6 @@
   font-size: 11.5px;
 }
 
-/* less room reserved under the preview for the slimmer bar */
-.site.site-game .gp-preview,
-.site.site-game .carrom-preview {
-  padding-bottom: 64px !important;
-}
 
 /* ============================================================
    Play mode (html.gp-playing): only the game + floating buttons
@@ -560,4 +553,27 @@ html.gp-playing .site.site-game .gp-side-scrim {
 .site.site-game .gp-stage.is-full .iframe-wrap {
   inset: max(54px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom))
     max(8px, env(safe-area-inset-left));
+}
+
+/* ui.css gives every .game-stage child position: relative; the fit box must stay pinned
+   to all four edges of the window (or it collapses to zero height) */
+.site.site-game .gp-stage > .fitbox {
+  position: absolute;
+  inset: 0;
+}
+
+/* play mode: the title row must lose to nothing (its layout rule above is more specific) */
+html.gp-playing .site.site-game .gp .game-header.gp-top {
+  display: none;
+}
+
+/* orbit.css (legacy) forces main.route padding on phones with !important: game pages set their own */
+@media (max-width: 820px) {
+  .site.site-game main.route.site-main {
+    padding: 70px 10px 78px !important;
+  }
+}
+
+html.gp-playing .site.site-game main.route.site-main {
+  padding: 8px !important;
 }
