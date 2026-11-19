@@ -117,3 +117,149 @@
     max-width: none;
   }
 }
+
+/* ============================================================
+   Neumorphism on the page's own colour (the background is left
+   exactly as it is). Every surface is see-through, so it always
+   matches the current game colour, even mid-transition; depth comes
+   from a white highlight (top-left) and a dark shadow (bottom-right).
+   ============================================================ */
+.cp {
+  --cpn-hi: rgba(255, 255, 255, 0.34);
+  --cpn-lo: rgba(0, 0, 0, 0.26);
+  --cpn-raise: 6px 6px 14px var(--cpn-lo), -6px -6px 14px var(--cpn-hi);
+  --cpn-raise-sm: 3px 3px 8px var(--cpn-lo), -3px -3px 8px var(--cpn-hi);
+  --cpn-half: 1px 1px 3px var(--cpn-lo), -1px -1px 3px var(--cpn-hi), inset 2px 2px 5px var(--cpn-lo),
+    inset -2px -2px 5px var(--cpn-hi);
+  --cpn-press: inset 4px 4px 9px var(--cpn-lo), inset -4px -4px 9px var(--cpn-hi);
+  --cpn-well: inset 3px 3px 7px var(--cpn-lo), inset -3px -3px 7px var(--cpn-hi);
+  --cpn-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* dark colours: a softer highlight (a bright one would glow) and a deeper shadow */
+.cp.cp-on-dark {
+  --cpn-hi: rgba(255, 255, 255, 0.14);
+  --cpn-lo: rgba(0, 0, 0, 0.42);
+}
+
+/* ---------- discs: lifted off the page instead of a hard drop shadow ---------- */
+.cp .fc-disc {
+  box-shadow:
+    0 0 0 3px rgba(0, 0, 0, 0.55),
+    16px 16px 36px var(--cpn-lo),
+    -16px -16px 36px var(--cpn-hi);
+}
+
+.cp .fc-disc.is-left,
+.cp .fc-disc.is-right {
+  box-shadow:
+    0 0 0 3px rgba(0, 0, 0, 0.55),
+    12px 12px 28px var(--cpn-lo),
+    -12px -12px 28px var(--cpn-hi);
+}
+
+/* ---------- prev / next + Play: raised, sink when pressed ---------- */
+.cp .fc-btn,
+.cp .fc .fc-play {
+  border: 0;
+  background: transparent;
+  color: var(--cp-ink);
+  box-shadow: var(--cpn-raise-sm);
+  transition:
+    box-shadow 0.22s ease,
+    transform 0.45s var(--cpn-spring);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cp .fc .fc-play {
+  height: 46px;
+  padding: 0 24px;
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: var(--cpn-raise);
+}
+
+@media (hover: hover) {
+  .cp .fc-btn:hover,
+  .cp .fc .fc-play:hover {
+    background: transparent;
+    box-shadow: var(--cpn-half);
+    transform: translateY(1px) scale(0.985);
+  }
+}
+
+.cp .fc-btn:active,
+.cp .fc .fc-play:active {
+  box-shadow: var(--cpn-press);
+  transform: scale(0.95);
+  transition:
+    box-shadow 0.08s ease-out,
+    transform 0.08s ease-out;
+}
+
+.cp .fc .fc-play.is-soon {
+  box-shadow: var(--cpn-well);
+  opacity: 0.8;
+}
+
+/* ---------- category switcher: a sunken track, the current category raised ---------- */
+.cp .cp-switch {
+  gap: 4px;
+  padding: 5px;
+  background: transparent;
+  box-shadow: var(--cpn-well);
+}
+
+.cp .cp-switch a {
+  transition:
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.cp .cp-switch a[aria-current="page"],
+.cp.cp-on-dark .cp-switch a[aria-current="page"],
+.cp:not(.cp-on-dark) .cp-switch a[aria-current="page"] {
+  background: transparent;
+  color: var(--cp-ink);
+  box-shadow: var(--cpn-raise-sm);
+  font-weight: 700;
+}
+
+.cp .cp-switch a:active {
+  box-shadow: var(--cpn-press);
+}
+
+/* ---------- nav: "All games" as a raised pill, account raised ---------- */
+.cp .h3-menu a {
+  padding: 9px 16px;
+  border-radius: 999px;
+  box-shadow: var(--cpn-raise-sm);
+  transition:
+    box-shadow 0.22s ease,
+    transform 0.45s var(--cpn-spring);
+}
+
+.cp .h3-menu a:active {
+  box-shadow: var(--cpn-press);
+  transform: scale(0.96);
+}
+
+.cp .h3-nav .h3-account {
+  box-shadow: var(--cpn-raise-sm);
+}
+
+.cp .fc-btn:focus-visible,
+.cp .fc .fc-play:focus-visible,
+.cp .cp-switch a:focus-visible,
+.cp .h3-menu a:focus-visible {
+  outline: 2px solid var(--cp-ink);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cp .fc-btn,
+  .cp .fc .fc-play,
+  .cp .h3-menu a {
+    transition: none;
+  }
+}

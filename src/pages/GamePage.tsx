@@ -22,6 +22,7 @@ import "../games/game-skin.css";
 import "./game-neu.css";
 import "./game-fit.css";
 import FitBox from "../components/FitBox";
+import StartAd from "../components/StartAd";
 import { GateShort, PlayGateContext, type PlayGateApi } from "../games/PlayFlow";
 
 /** The game as it looks before you start: a custom preview, or its own start screen made inert. */
@@ -126,6 +127,9 @@ export default function GamePage() {
   useEffect(() => () => window.clearTimeout(lockTimer.current), []);
   // "full" = native Fullscreen API when available, otherwise a fixed overlay (e.g. iPhone Safari).
   const [full, setFull] = useState(false);
+  // Banner under the start screen: web only (the app shows AdMob's own bottom banner), never
+  // for ad-free players, gone once a game starts
+  const startAd = showAds && !isNative && !playing && cost !== null && !full;
 
   useEffect(() => {
     const sync = () => {
@@ -310,7 +314,7 @@ export default function GamePage() {
         <div className="gp-frame">
           <section
             ref={stageRef}
-            className={`game-stage gp-stage${full ? " is-full" : ""}`}
+            className={`game-stage gp-stage${full ? " is-full" : ""}${startAd ? " has-ad" : ""}`}
             onPointerDownCapture={() => {
               // free games start on the first touch; paid ones when "Start game" is paid
               if (!playing && cost !== null && !selfGated && !(premium && (paidPlay === 0 || locked))) setPlaying(true);
@@ -397,6 +401,7 @@ export default function GamePage() {
                 <iframe src={game.embedUrl} title={game.title} allow="gamepad; fullscreen" />
               </div>
             )}
+            {startAd ? <StartAd /> : null}
           </section>
         </div>
         {sideOpen ? (

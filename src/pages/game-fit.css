@@ -664,3 +664,53 @@ html.gp-playing .site.site-game main.route.site-main {
     display: none;
   }
 }
+
+/* ============================================================
+   Ad strip under the start screen (web, AdSense banner)
+   ============================================================ */
+/* the game window keeps the bottom strip free for the banner (320×50 phones, 728×90 wide) */
+.site.site-game .gp-stage.has-ad .fitbox {
+  bottom: 62px;
+}
+
+@media (min-width: 768px) {
+  .site.site-game .gp-stage.has-ad .fitbox {
+    bottom: 102px;
+  }
+}
+
+.site.site-game .gp-stage .gp-ad {
+  position: absolute;
+  z-index: 4;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  display: grid;
+  place-items: center;
+  height: var(--ad-h, 50px);
+  pointer-events: auto;
+}
+
+.site.site-game .gp-ad .adsbygoogle {
+  max-width: 100%;
+}
+
+/* dev only, when AdSense isn't set up: shows where the ad goes */
+.gp-ad-placeholder {
+  display: grid;
+  place-items: center;
+  width: min(var(--ad-w, 320px), 100%);
+  height: var(--ad-h, 50px);
+  border-radius: 10px;
+  border: 1px dashed color-mix(in srgb, currentColor 30%, transparent);
+  font-family: var(--h3-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+/* the app: body leaves 64px for AdMob's bottom banner, so the game page is that much shorter */
+html.has-app-banner .site.site-game {
+  height: calc(100dvh - 64px);
+}

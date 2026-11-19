@@ -138,6 +138,7 @@ export default function PlayFlow({
       {preview}
 
       <div className="pf-bar">
+        <div className="pf-line">
         {modes.length > 1 ? (
           <div className="pf-modes" role="radiogroup" aria-label="How to play">
             {modes.map((m) => (
@@ -148,7 +149,8 @@ export default function PlayFlow({
                 aria-checked={m.key === modeKey}
                 className={`pf-mode${m.key === modeKey ? " is-on" : ""}`}
                 disabled={m.disabled}
-                title={m.disabled ? m.note : undefined}
+                title={m.disabled ? m.note : m.label}
+                aria-label={m.label}
                 onClick={() => choose(m)}
               >
                 {m.icon}
@@ -182,6 +184,7 @@ export default function PlayFlow({
               </span>
             ) : null}
           </button>
+        </div>
         </div>
 
         {gearOpen && mode.settings ? <div className="pf-settings">{mode.settings}</div> : null}

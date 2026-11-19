@@ -575,3 +575,52 @@
   text-underline-offset: 3px;
   cursor: pointer;
 }
+
+/* mode switch, ⚙ and Play side by side on one line */
+.pf-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  max-width: 100%;
+}
+
+.pf-line .pf-modes {
+  min-width: 0;
+}
+
+/* phones: modes show just their icons so the whole row fits on one line */
+@media (max-width: 600px) {
+  .pf-line {
+    gap: 8px;
+  }
+
+  .pf-modes .pf-mode {
+    width: 38px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .pf-modes .pf-mode > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .pf-modes .pf-mode svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .pf-line .pf-gear {
+    width: 38px;
+    height: 38px;
+  }
+
+  .pf-line .pf-play {
+    padding-right: 20px;
+  }
+}
