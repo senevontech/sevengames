@@ -9,7 +9,14 @@ import { useLayoutEffect, useRef, type ReactNode } from "react";
  * `maxScale` when there's room, centred. Scaling is a CSS transform, so the games' own pointer
  * maths (which divide by their on-screen size) keep working. It re-fits whenever the box or the
  * content changes size.
+ *
+ * Only gameplay is meant to fit without scrolling: long screens such as menus or a locker would
+ * need shrinking below MIN_FIT, so they're shown at normal size and the box scrolls instead.
  */
+/** Below this, shrinking would make a screen too small to use: it scrolls instead. Gameplay
+ *  screens are built to roughly fit, so they stay above it and never scroll. */
+const MIN_FIT = 0.7;
+
 export default function FitBox({ children, maxScale = 1 }: { children: ReactNode; maxScale?: number }) {
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -43,8 +50,17 @@ export default function FitBox({ children, maxScale = 1 }: { children: ReactNode
       const h = inner.offsetHeight;
       const w = drawnWidth();
       if (!w || !h) return;
-      const s = Math.min(maxScale, outer.clientWidth / w, outer.clientHeight / h);
-      inner.style.transform = `translate(-50%, -50%) scale(${s > 0 ? s : 1})`;
+      const byWidth = Math.min(maxScale, outer.clientWidth / w);
+      const s = Math.min(byWidth, outer.clientHeight / h);
+      if (s < MIN_FIT) {
+        // a long screen (menu, locker, list): normal size, and the window scrolls instead
+        const sw = Math.min(1, byWidth);
+        outer.dataset.mode = "scroll";
+        inner.style.transform = `translateX(-50%) scale(${sw > 0 ? sw : 1})`;
+      } else {
+        delete outer.dataset.mode;
+        inner.style.transform = `translate(-50%, -50%) scale(${s > 0 ? s : 1})`;
+      }
     };
 
     fit();

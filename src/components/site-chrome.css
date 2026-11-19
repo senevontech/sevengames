@@ -788,3 +788,177 @@
     transform: scale(0);
   }
 }
+
+/* ============================================================
+   Phones: hamburger menu in the header instead of the bottom bar
+   ============================================================ */
+.site-menu {
+  display: none;
+  position: relative;
+}
+
+.site-menu-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.site-menu-panel {
+  position: fixed;
+  z-index: 70;
+  top: 68px;
+  left: 12px;
+  right: 12px;
+  max-height: calc(100dvh - 84px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 10px;
+  border-radius: 20px;
+  background: #2b2b2e;
+  color: #f1f1f3;
+  box-shadow: 0 24px 50px -18px rgba(0, 0, 0, 0.6);
+  animation: site-menu-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.site-menu-panel::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes site-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+
+.site-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-menu-item:active,
+.site-menu-item:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+}
+
+.site-menu-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  color: #ff8a3d;
+  background: rgba(255, 138, 61, 0.12);
+}
+
+.site-menu-label {
+  margin: 10px 10px 4px;
+  font-family: var(--h3-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.site-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* game / account pages (light + dark soft surfaces) */
+.site[data-gtheme] .site-menu-btn {
+  border: 0;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise-sm);
+}
+
+/* the nav sits outside .site-main, where --text isn't set: give the icon the theme's ink */
+.site[data-gtheme="light"] .site-menu-btn {
+  color: #17181b;
+}
+
+.site[data-gtheme="dark"] .site-menu-btn {
+  color: #f1f1f3;
+}
+
+.site[data-gtheme] .site-menu.is-open .site-menu-btn {
+  box-shadow: var(--neu-press);
+  color: var(--neu-accent);
+}
+
+.site[data-gtheme] .site-menu-panel {
+  background: var(--neu-bg);
+  color: var(--text, inherit);
+  box-shadow: var(--neu-panel);
+}
+
+.site[data-gtheme="light"] .site-menu-panel {
+  color: #17181b;
+}
+
+.site[data-gtheme] .site-menu-item:active,
+.site[data-gtheme] .site-menu-item:focus-visible {
+  background: transparent;
+  box-shadow: var(--neu-well);
+}
+
+.site[data-gtheme] .site-menu-icon {
+  color: var(--neu-accent);
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise-sm);
+}
+
+@media (max-width: 820px) {
+  .site-menu {
+    display: block;
+  }
+
+  /* no floating bottom bar on phones: its links live in the menu */
+  .site .h3-rail {
+    display: none !important;
+  }
+
+  .site-footer {
+    padding-bottom: 32px;
+  }
+}
+
+/* bottom of the menu: account pages + legal, like a mini footer */
+.site-menu-sep {
+  height: 1px;
+  margin: 10px 6px;
+  background: currentColor;
+  opacity: 0.12;
+}
+
+.site-menu-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 4px 10px 2px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.site-menu-foot a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

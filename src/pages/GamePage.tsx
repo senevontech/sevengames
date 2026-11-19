@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { gameFinishedAd } from "../lib/admob";
 import { isNative } from "../lib/native";
 import { Link, useParams } from "react-router-dom";
-import { ChevronLeft, ExternalLink, Info, Maximize, Minimize, Minimize2, MonitorPlay, Store, Trophy, X } from "lucide-react";
+import { ChevronLeft, ExternalLink, Info, Maximize, Minimize, Minimize2, Store, Trophy, X } from "lucide-react";
 import { GamePoster } from "../components/GamePoster";
 import { getGame, scoreLabel } from "../catalog";
 import { engines, previews } from "../games";
@@ -22,6 +22,7 @@ import "../games/game-skin.css";
 import "./game-neu.css";
 import "./game-fit.css";
 import FitBox from "../components/FitBox";
+import { GateShort, PlayGateContext, type PlayGateApi } from "../games/PlayFlow";
 
 /** The game as it looks before you start: a custom preview, or its own start screen made inert. */
 function GatePreview({ game }: { game: NonNullable<ReturnType<typeof getGame>> }) {
@@ -41,6 +42,9 @@ function GatePreview({ game }: { game: NonNullable<ReturnType<typeof getGame>> }
   );
 }
 
+/** Games whose own start screen (PlayFlow) takes the payment: "Play · ⚡1" pays and starts. */
+const SELF_GATED = new Set(["carrom", "chess", "ludo", "arrows"]);
+
 function GameRunner({ gameId, onScore }: { gameId: string; onScore: (score: number) => void }) {
   const Engine = engines[gameId as keyof typeof engines];
   if (!Engine) return <p className="empty-note">This game is not available yet.</p>;
@@ -59,7 +63,7 @@ export default function GamePage() {
   // Tokens: premium games (cost > 0) are paid per play. `paidPlay` counts paid plays (it also
   // remounts the game fresh for each one); `locked` puts the gate back up after a finished match.
   const cost = useGameCost(game?.id);
-  const { wallet } = useTokens();
+  const { wallet, spendForPlay } = useTokens();
   // unlimited accounts (redeem code) play premium games without the gate
   const premium = (cost ?? 0) > 0 && !wallet?.unlimited;
   const premiumRef = useRef(premium);
@@ -81,6 +85,43 @@ export default function GamePage() {
   }, [playing]);
   // a new game page starts out of play mode
   useEffect(() => setPlaying(false), [id]);
+
+  // Two-step start for games with modes: their Play button pays (if needed) and starts
+  const selfGated = game?.kind === "builtin" && SELF_GATED.has(game.engine);
+  const [credit, setCredit] = useState(false); // a play already paid for ("Play again")
+  const [gateBusy, setGateBusy] = useState(false);
+  const [gateError, setGateError] = useState<ReactNode>(null);
+  const gateApi = useMemo<PlayGateApi>(
+    () => ({
+      cost: premium ? cost ?? 0 : 0,
+      credit,
+      busy: gateBusy,
+      error: gateError,
+      request: (start) => {
+        setGateError(null);
+        if (!premium || credit) {
+          setCredit(false);
+          setPlaying(true);
+          start();
+          return;
+        }
+        if (!game) return;
+        setGateBusy(true);
+        void spendForPlay(game.id).then((res) => {
+          setGateBusy(false);
+          if (res.ok) {
+            setPlaying(true);
+            start();
+          } else if (res.reason === "insufficient" || res.reason === "signin") {
+            setGateError(<GateShort signIn={!user} gameId={game.id} />);
+          } else {
+            setGateError(res.message ?? "Something went wrong.");
+          }
+        });
+      },
+    }),
+    [premium, cost, credit, gateBusy, gateError, game, user, spendForPlay],
+  );
   const lockTimer = useRef(0);
   useEffect(() => () => window.clearTimeout(lockTimer.current), []);
   // "full" = native Fullscreen API when available, otherwise a fixed overlay (e.g. iPhone Safari).
@@ -236,58 +277,43 @@ export default function GamePage() {
           </ul>
           <p className="hero-sub">{game.description}</p>
         </div>
+        <div className="gp-modes gp-actions" role="group" aria-label="Game controls">
+          <button type="button" className={full ? "active" : ""} aria-pressed={full} onClick={enterFull} title="Full screen (F)">
+            <Maximize size={15} />
+            <span>Full screen</span>
+          </button>
+          <Link to="/tokens#buy" className="gp-shop" aria-label="Shop: get tokens" title="Shop">
+            <Store size={15} />
+            <span>Shop</span>
+          </Link>
+          {/* phones: the leaderboard opens as a panel over the game */}
+          <button
+            type="button"
+            className={`gp-lb-btn${sideOpen ? " active" : ""}`}
+            aria-label="Leaderboard"
+            aria-expanded={sideOpen}
+            onClick={() => setSideOpen((o) => !o)}
+          >
+            <Trophy size={15} />
+          </button>
+          {game.kind === "iframe" ? (
+            <a href={game.embedUrl} target="_blank" rel="noopener noreferrer" aria-label="Open original site" title="Original site">
+              <ExternalLink size={15} />
+            </a>
+          ) : null}
+        </div>
       </header>
 
 
       <div className="game-layout">
-        {/* Glass frame: toolbar on top, the game edge-to-edge underneath */}
+        {/* the game window (its controls live in the header row) */}
         <div className="gp-frame">
-          <div className="gp-toolbar">
-            <div className="gp-now">
-              <span className="gp-dot" aria-hidden="true" />
-              <span className="gp-now-title">{game.title}</span>
-              <span className="gp-now-meta">{game.kind === "iframe" ? "Web game" : "Senevon original"}</span>
-            </div>
-            <div className="gp-modes" role="group" aria-label="How to play">
-              <button type="button" className={full ? "" : "active"} aria-pressed={!full} onClick={exitFull}>
-                <MonitorPlay size={15} />
-                <span>Play here</span>
-              </button>
-              <button type="button" className={full ? "active" : ""} aria-pressed={full} onClick={enterFull}>
-                <Maximize size={15} />
-                <span>Full screen</span>
-                <kbd className="gp-kbd" aria-hidden="true">F</kbd>
-              </button>
-              <Link to="/tokens#buy" className="gp-shop" aria-label="Shop: get tokens" title="Shop">
-                <Store size={15} />
-                <span>Shop</span>
-              </Link>
-              {/* phones: the leaderboard opens as a panel over the game */}
-              <button
-                type="button"
-                className={`gp-lb-btn${sideOpen ? " active" : ""}`}
-                aria-label="Leaderboard"
-                aria-expanded={sideOpen}
-                onClick={() => setSideOpen((o) => !o)}
-              >
-                <Trophy size={15} />
-                <span>Top 10</span>
-              </button>
-              {game.kind === "iframe" ? (
-                <a href={game.embedUrl} target="_blank" rel="noopener noreferrer" aria-label="Open original site">
-                  <ExternalLink size={15} />
-                  <span>Original site</span>
-                </a>
-              ) : null}
-            </div>
-          </div>
-
           <section
             ref={stageRef}
             className={`game-stage gp-stage${full ? " is-full" : ""}`}
             onPointerDownCapture={() => {
               // free games start on the first touch; paid ones when "Start game" is paid
-              if (!playing && cost !== null && !(premium && (paidPlay === 0 || locked))) setPlaying(true);
+              if (!playing && cost !== null && !selfGated && !(premium && (paidPlay === 0 || locked))) setPlaying(true);
             }}
           >
             {playing ? (
@@ -327,7 +353,7 @@ export default function GamePage() {
             ) : null}
             {cost === null ? (
               <p className="empty-note">Loading…</p>
-            ) : premium && paidPlay === 0 ? (
+            ) : premium && paidPlay === 0 && !selfGated ? (
               // preview of the game with the start bar UNDER it
               <FitBox maxScale={1.5}>
                 <div className="gp-play-wrap">
@@ -347,7 +373,9 @@ export default function GamePage() {
             ) : game.kind === "builtin" ? (
               <FitBox maxScale={1.5}>
               <div className="gp-play-wrap">
-                <GameRunner key={paidPlay} gameId={game.engine} onScore={handleFinish} />
+                <PlayGateContext.Provider value={gateApi}>
+                  <GameRunner key={paidPlay} gameId={game.engine} onScore={handleFinish} />
+                </PlayGateContext.Provider>
                 {premium && locked ? (
                   <PlayGate
                     gameId={game.id}
@@ -357,6 +385,7 @@ export default function GamePage() {
                     onPaid={() => {
                       setLocked(false);
                       setPaidPlay((n) => n + 1);
+                      if (selfGated) setCredit(true); // its Play button won't charge again
                       setPlaying(true);
                     }}
                   />

@@ -22,6 +22,9 @@ import {
   type Move,
   type State,
 } from "./engine";
+
+/** The start screen's board (display only). */
+const PREVIEW_STATE = fromFen(START_FEN);
 import type { Level } from "./ai";
 import { useAuthContext } from "../../context/AuthContext";
 import { useAvatar } from "../../lib/avatar";
@@ -31,6 +34,8 @@ import { supabase } from "../../supabase";
 import { GameRoom, randomId, type RoomMsg, type RoomPeer, type RoomStatus } from "../../lib/gameRoom";
 import { useCarromLobby, type LobbyApi, type Matched } from "../carrom/matchmaking";
 import { OnlineMenu, RoomWaiting, SignInToPlay } from "../../components/OnlineLobby";
+import PlayFlow from "../PlayFlow";
+import { Bot, Globe, Users } from "lucide-react";
 import PlayerAvatar from "../../components/PlayerAvatar";
 import { parseAvatar, type AvatarChoice } from "../../lib/avatar";
 import "./chess.css";
@@ -716,22 +721,30 @@ export default function ChessGame(_props: GameProps) {
   if (screen === "menu") {
     return (
       <div className="game-surface ch-surface">
-        <div className="ol-seg ch-tabs" role="tablist" aria-label="How to play">
-          {(["cpu", "pass", "online"] as Mode[]).map((t) => (
-            <button key={t} type="button" role="tab" aria-selected={menuTab === t} className={menuTab === t ? "active" : ""} onClick={() => setMenuTab(t)}>
-              {t === "cpu" ? "vs CPU" : t === "pass" ? "2 players" : "Online"}
-            </button>
-          ))}
-        </div>
-        {user ? xpBar : null}
-
-        {menuTab === "cpu" ? (
-          <div className="ol-card">
-            {saved && saved.moves.length ? (
-              <button type="button" className="primary-btn" onClick={() => startCpu(saved)}>
-                Resume game · {LEVELS.find((l) => l.id === saved.level)?.label} · move {Math.ceil(saved.moves.length / 2)}
+        {/* Play → how to play → that mode's settings */}
+        <PlayFlow
+          id="chess"
+          preview={
+            <div className="pf-preview ch-preview" inert>
+              <Board s={PREVIEW_STATE} moves={[]} canMove={false} flipped={false} lastMove={null} onMove={() => {}} theme={theme} pieces={pieceSet} />
+            </div>
+          }
+          corner={user ? xpBar : null}
+          homeExtra={(go) =>
+            saved && saved.moves.length ? (
+              <button type="button" className="pf-link" onClick={() => go(() => startCpu(saved))}>
+                Resume · {LEVELS.find((l) => l.id === saved.level)?.label} · move {Math.ceil(saved.moves.length / 2)}
               </button>
-            ) : null}
+            ) : null
+          }
+          modes={[
+            {
+              key: "cpu",
+              label: "vs CPU",
+              icon: <Bot size={15} />,
+              start: () => startCpu(),
+              settings: (
+                <div className="ol-card">
             <p className="ol-sub">Difficulty</p>
             <div className="ol-seg" role="radiogroup" aria-label="Difficulty">
               {LEVELS.map((l) => (
@@ -754,25 +767,28 @@ export default function ChessGame(_props: GameProps) {
                 </button>
               ))}
             </div>
-            <button type="button" className={saved?.moves.length ? "ghost-btn" : "primary-btn"} onClick={() => startCpu()}>
-              New game
-            </button>
-          </div>
-        ) : null}
-
-        {menuTab === "pass" ? (
-          <div className="ol-card">
+                </div>
+              ),
+            },
+            {
+              key: "pass",
+              label: "2 players",
+              icon: <Users size={15} />,
+              start: startPass,
+              settings: (
+                <div className="ol-card">
             <p className="ol-sub">Two players on this device, taking turns.</p>
             <label className="ch-check">
               <input type="checkbox" checked={autoFlip} onChange={(e) => setAutoFlip(e.target.checked)} /> Turn the board after each move
             </label>
-            <button type="button" className="primary-btn" onClick={startPass}>
-              Start
-            </button>
-          </div>
-        ) : null}
-
-        {menuTab === "online" ? (
+                </div>
+              ),
+            },
+            {
+              key: "online",
+              label: "Online",
+              icon: <Globe size={15} />,
+              panel: (
           !GameRoom.configured ? (
             <div className="ol-card">
               <p className="ol-sub">Online play isn't available right now.</p>
@@ -802,7 +818,10 @@ export default function ChessGame(_props: GameProps) {
               footer={<RatingBoard me={user.id} />}
             />
           )
-        ) : null}
+              ),
+            },
+          ]}
+        />
       </div>
     );
   }

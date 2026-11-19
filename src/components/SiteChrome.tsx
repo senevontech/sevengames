@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { House, Moon, Sun, Trophy } from "lucide-react";
+import { Coins, House, Menu, Moon, Sun, Trophy, UserRound, X } from "lucide-react";
 import { categories, games } from "../catalog";
 import { categoryIcon } from "../lib/categoryIcons";
 import NavAccount from "./NavAccount";
@@ -16,6 +16,96 @@ import "./site-chrome.css";
  */
 
 const usedCategories = categories.filter((c) => c === "All" || games.some((g) => g.category === c));
+
+/**
+ * Phones: the sidebar's links (home, categories, leaderboards) in a hamburger menu in the header,
+ * instead of a floating bottom bar. Closes on outside tap, Escape, or navigating.
+ */
+function SiteMenu({ pathname }: { pathname: string }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className={`site-menu${open ? " is-open" : ""}`} ref={rootRef}>
+      <button
+        type="button"
+        className="site-menu-btn"
+        aria-label={open ? "Close menu" : "Open menu"}
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {open ? <X size={18} /> : <Menu size={18} />}
+      </button>
+      {open ? (
+        <nav className="site-menu-panel" aria-label="Browse games">
+          <Link to="/" className="site-menu-item">
+            <span className="site-menu-icon" aria-hidden="true">
+              <House size={17} />
+            </span>
+            Home
+          </Link>
+          <Link to="/leaderboards" className="site-menu-item">
+            <span className="site-menu-icon" aria-hidden="true">
+              <Trophy size={17} />
+            </span>
+            Leaderboards
+          </Link>
+          <p className="site-menu-label">Categories</p>
+          <div className="site-menu-grid">
+            {usedCategories
+              .filter((c) => c !== "All")
+              .map((c) => {
+                const Icon = categoryIcon[c];
+                return (
+                  <Link key={c} to={`/category/${c.toLowerCase()}`} className="site-menu-item">
+                    <span className="site-menu-icon" aria-hidden="true">
+                      <Icon size={16} />
+                    </span>
+                    {c}
+                  </Link>
+                );
+              })}
+          </div>
+          <div className="site-menu-sep" />
+          <Link to="/tokens" className="site-menu-item">
+            <span className="site-menu-icon" aria-hidden="true">
+              <Coins size={16} />
+            </span>
+            Tokens & shop
+          </Link>
+          <Link to="/profile" className="site-menu-item">
+            <span className="site-menu-icon" aria-hidden="true">
+              <UserRound size={16} />
+            </span>
+            Profile
+          </Link>
+          <div className="site-menu-foot">
+            <span>© {new Date().getFullYear()} Senevon Game Studio</span>
+            <Link to="/privacy">Privacy policy</Link>
+          </div>
+        </nav>
+      ) : null}
+    </div>
+  );
+}
 
 export default function SiteChrome({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
@@ -69,6 +159,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
                 {theme === "light" ? <Moon size={17} /> : <Sun size={17} />}
               </button>
             ) : null}
+            <SiteMenu pathname={pathname} />
             <NavAccount />
           </div>
         </nav>

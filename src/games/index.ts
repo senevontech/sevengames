@@ -20,7 +20,7 @@ import StackGame from "./stack";
 import DodgeGame from "./dodge";
 import ConnectFour from "./connect-four";
 import LightsOut from "./lights-out";
-import ArrowsGame from "./arrowsGame";
+import ArrowsGame, { ArrowsPreview } from "./arrowsGame";
 import ChessGame from "./chess/index";
 import LudoGame from "./ludo/index";
 
@@ -58,6 +58,7 @@ export const engines: Record<GameEngine, (props: GameProps) => React.JSX.Element
 /** What to show behind the premium "Start game" bar (default: the game's own start screen, inert). */
 export const previews: Partial<Record<GameEngine, () => React.JSX.Element>> = {
   carrom: CarromPreview,
+  arrows: ArrowsPreview,
 };
 
 export function shuffle<T>(items: T[]): T[] {

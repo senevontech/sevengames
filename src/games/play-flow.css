@@ -1,0 +1,577 @@
+/* PlayFlow: Play → mode cards → mode settings. Soft (neumorphic) surfaces from the game stage's
+   --neu-* tokens (game-neu.css), with fallbacks for anywhere they're not set. */
+
+.pf {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  --pf-bg: var(--neu-bg, #202127);
+  --pf-hi: var(--neu-hi, #2d2f36);
+  --pf-lo: var(--neu-lo, #121317);
+  --pf-accent: var(--neu-accent, #ff9a55);
+  --pf-raise: 5px 5px 12px var(--pf-lo), -5px -5px 12px var(--pf-hi);
+  --pf-raise-sm: 3px 3px 8px var(--pf-lo), -3px -3px 8px var(--pf-hi);
+  --pf-press: inset 3px 3px 7px var(--pf-lo), inset -3px -3px 7px var(--pf-hi);
+}
+
+/* ---------- corner extras (level, locker) ---------- */
+/* its own row above the preview (never over the board) */
+.pf-corner {
+  align-self: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 100%;
+  margin-bottom: -4px;
+}
+
+/* chips that live in the corner */
+.pf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 12px 0 4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pf-bg);
+  box-shadow: var(--pf-raise-sm);
+  color: var(--text, inherit);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pf-chip:active {
+  box-shadow: var(--pf-press);
+  transform: scale(0.96);
+}
+
+.pf-chip-badge {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 800;
+  color: #1f0c00;
+  background: linear-gradient(145deg, #ff9d52, #f26a0c);
+}
+
+/* level bars passed in as corner content (chess / ludo): small pills */
+.pf-corner .ch-xp,
+.pf-corner .lu-xp {
+  margin: 0;
+  min-width: 120px;
+  font-size: 11px;
+}
+
+/* ---------- step 1: one big Play ---------- */
+.pf-home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.pf-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  height: 52px;
+  padding: 0 32px 0 8px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 800;
+  color: #1f0c00;
+  background: linear-gradient(145deg, #ff9d52, #f26a0c);
+  box-shadow:
+    6px 6px 14px var(--pf-lo),
+    -6px -6px 14px var(--pf-hi),
+    inset 2px 2px 4px rgba(255, 225, 190, 0.6),
+    inset -3px -3px 6px rgba(150, 45, 0, 0.35);
+  cursor: pointer;
+  transition:
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pf-play-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: #f26a0c;
+  background: #fff;
+}
+
+.pf-play-icon svg {
+  margin-left: 2px;
+}
+
+@media (hover: hover) {
+  .pf-play:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.pf-play:active {
+  transform: scale(0.96);
+  box-shadow: inset 4px 4px 9px #b44600, inset -4px -4px 9px #ffac6b;
+}
+
+.pf-play:focus-visible,
+.pf-card:focus-visible,
+.pf-back:focus-visible,
+.pf-chip:focus-visible,
+.pf-help-btn:focus-visible {
+  outline: 2px solid var(--pf-accent);
+  outline-offset: 3px;
+}
+
+/* ---------- steps 2 + 3 ---------- */
+.pf-step {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  width: min(420px, 100%);
+  animation: pf-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes pf-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.pf-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text, inherit);
+}
+
+.pf-back {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--pf-bg);
+  box-shadow: var(--pf-raise-sm);
+  color: var(--text, inherit);
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pf-back:active {
+  box-shadow: var(--pf-press);
+  transform: scale(0.94);
+}
+
+/* Arrows: the back button floats over the game's top-left corner */
+.pf-back-float {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  left: 0;
+}
+
+.arw-shell {
+  position: relative;
+}
+
+.pf-cards {
+  display: grid;
+  gap: 12px;
+}
+
+.pf-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 16px 12px 12px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--pf-bg);
+  box-shadow: var(--pf-raise);
+  color: var(--text, inherit);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .pf-card:not(:disabled):hover {
+    transform: translateY(-1px);
+  }
+
+  .pf-card:not(:disabled):hover .pf-card-icon {
+    color: var(--pf-accent);
+  }
+}
+
+.pf-card:not(:disabled):active {
+  box-shadow: var(--pf-press);
+  transform: scale(0.98);
+}
+
+.pf-card:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.pf-card-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  box-shadow: var(--pf-press);
+  color: var(--text, inherit);
+  transition: color 0.2s ease;
+}
+
+.pf-card-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pf-card-text b {
+  font-size: 15.5px;
+}
+
+.pf-card-text small {
+  font-size: 12.5px;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+}
+
+.pf-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.pf-content > .ol-card,
+.pf-content > * {
+  max-width: 100%;
+}
+
+.pf-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.pf-go {
+  min-width: 140px;
+}
+
+/* ---------- one-line help with "?" ---------- */
+.pf-help {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.pf-help-text {
+  min-width: 0;
+  margin: 0;
+  padding-top: 5px;
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: center;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pf-help.is-open .pf-help-text {
+  white-space: normal;
+}
+
+.pf-help-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--pf-bg);
+  box-shadow: var(--pf-raise-sm);
+  color: var(--text, inherit);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pf-help-btn:active {
+  box-shadow: var(--pf-press);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-step {
+    animation: none;
+  }
+}
+
+/* Arrows: a small row with Back above the game (doesn't cover its level badge) */
+.pf-back-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary, inherit);
+}
+
+.pf-back-row .pf-back {
+  width: 30px;
+  height: 30px;
+}
+
+/* a frozen preview (paid games, before "Start game") never shows the Play steps */
+[inert] .pf-home,
+[inert] .pf-step,
+[inert] .pf-back-row {
+  display: none;
+}
+
+/* the game behind Play (frozen, slightly dimmed so Play reads as the next step) */
+.pf-preview {
+  width: min(100%, 460px);
+  pointer-events: none;
+  user-select: none;
+  filter: saturate(0.92);
+  opacity: 0.92;
+}
+
+.pf-preview .lu-board-wrap,
+.pf-preview .ch-board {
+  margin-inline: auto;
+}
+
+/* once a mode is picked, the preview steps aside for the settings */
+.pf:has(.pf-step) > .pf-preview {
+  display: none;
+}
+
+.pf-play {
+  height: 46px;
+  gap: 10px;
+  padding: 0 26px 0 6px;
+  font-size: 16px;
+}
+
+.pf-play-icon {
+  width: 34px;
+  height: 34px;
+}
+
+/* ============================================================
+   Two-step start: [mode chips] → [⚙] [▶ Play · ⚡1]
+   ============================================================ */
+.pf-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+/* mode switch: one soft track, the picked mode pressed in */
+.pf-modes {
+  display: inline-flex;
+  max-width: 100%;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  box-shadow: var(--pf-press);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pf-modes::-webkit-scrollbar {
+  display: none;
+}
+
+.pf-mode {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.65));
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pf-mode.is-on {
+  background: var(--pf-bg);
+  box-shadow: var(--pf-raise-sm);
+  color: var(--pf-accent);
+}
+
+.pf-mode:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pf-mode:focus-visible,
+.pf-gear:focus-visible {
+  outline: 2px solid var(--pf-accent);
+  outline-offset: 2px;
+}
+
+.pf-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pf-gear {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--pf-bg);
+  box-shadow: var(--pf-raise-sm);
+  color: var(--text, inherit);
+  cursor: pointer;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    color 0.2s ease;
+}
+
+.pf-gear.is-on {
+  box-shadow: var(--pf-press);
+  color: var(--pf-accent);
+}
+
+.pf-gear:active {
+  transform: scale(0.94);
+}
+
+.pf-play:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* cost inside Play */
+.pf-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 28px;
+  margin-right: -16px;
+  padding: 0 9px 0 6px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  background: rgba(60, 20, 0, 0.3);
+}
+
+/* ⚙ settings: a compact soft well under the Play row */
+.pf-settings {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: min(380px, 100%);
+  padding: 12px;
+  border-radius: 18px;
+  box-shadow: var(--pf-press);
+  animation: pf-in 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.pf-settings .ol-card {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  border: 0;
+  gap: 8px;
+}
+
+.pf-settings .ol-sub {
+  margin: 0;
+  font-size: 12px;
+}
+
+.pf-error {
+  margin: 0;
+  font-size: 12.5px;
+  text-align: center;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+}
+
+.pf-error a,
+.pf-link {
+  color: var(--pf-accent);
+  font-weight: 700;
+}
+
+.pf-link {
+  padding: 2px 6px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12.5px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}

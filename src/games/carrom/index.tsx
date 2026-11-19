@@ -60,6 +60,8 @@ import { matchXp, useCarromProgress } from "./progress";
 import { CPU_STATS, FAIR_STATS, tierOf, type StrikerStats } from "./stats";
 import CarromLocker, { LevelBar } from "./Locker";
 import { BoardPreview } from "./Preview";
+import PlayFlow, { HelpLine } from "../PlayFlow";
+import { Bot, Globe, Users } from "lucide-react";
 import "./carrom.css";
 
 type Mode = "cpu" | "local2" | "local4" | "host2" | "host4" | "join";
@@ -137,6 +139,8 @@ export default function CarromGame({ onFinish }: GameProps) {
   const [muted, setMuted] = useState(carromAudio.muted);
   const [reward, setReward] = useState<{ xp: number; before: number; after: number; combos: number } | null>(null);
   const [format, setFormatState] = useState<Format>(readFormat);
+  // same-device players (start screen ⚙): 2, or 4 in two teams
+  const [localSeats, setLocalSeats] = useState<2 | 4>(2);
   const formatRef = useRef<Format>(format);
   formatRef.current = format;
   const setFormat = (f: Format) => {
@@ -1048,51 +1052,68 @@ export default function CarromGame({ onFinish }: GameProps) {
 
   /* ============ UI ============ */
 
+  const formatPicker = (
+    <div className="carrom-format" role="radiogroup" aria-label="Match length">
+      <button type="button" role="radio" aria-checked={format === "board"} className={format === "board" ? "on" : ""} onClick={() => setFormat("board")}>
+        Quick · 1 board
+      </button>
+      <button type="button" role="radio" aria-checked={format === "match"} className={format === "match" ? "on" : ""} onClick={() => setFormat("match")}>
+        Match · to {MATCH_TARGET}
+      </button>
+    </div>
+  );
+
   if (screen === "menu" || screen === "join-form") {
     return (
       <div className="game-surface carrom-surface">
         {screen === "join-form" ? <p className="game-status">Join with a 4-character room code</p> : null}
         {screen === "menu" ? (
           <>
-            {/* the board first, ready to play; the choices sit underneath it */}
-            <BoardPreview />
-            <div className="carrom-start">
-              <button type="button" className="carrom-start-main" onClick={() => startLocal("cpu")}>
-                <span className="carrom-start-play" aria-hidden="true">
-                  ▶
-                </span>
-                Play vs CPU
-              </button>
-
-              <div className="carrom-format" role="radiogroup" aria-label="Match length">
-                <button type="button" role="radio" aria-checked={format === "board"} className={format === "board" ? "on" : ""} onClick={() => setFormat("board")}>
-                  Quick · 1 board
+            {/* Play → how to play → that mode's settings (PlayFlow); the board stays on top */}
+            <PlayFlow
+              id="carrom"
+              preview={<BoardPreview />}
+              corner={
+                <button type="button" className="pf-chip" onClick={() => setPhase("locker")} title="Locker & shop">
+                  <span className="pf-chip-badge">{prog.level}</span>
+                  Locker
                 </button>
-                <button type="button" role="radio" aria-checked={format === "match"} className={format === "match" ? "on" : ""} onClick={() => setFormat("match")}>
-                  Match · to {MATCH_TARGET}
-                </button>
-              </div>
-
-              <div className="carrom-start-more" aria-label="More ways to play">
-                <button type="button" className="carrom-chip-btn" onClick={() => startLocal("local2")}>
-                  2P · same device
-                </button>
-                <button type="button" className="carrom-chip-btn" onClick={() => startLocal("local4")}>
-                  4P · teams
-                </button>
-                <button
-                  type="button"
-                  className={`carrom-chip-btn${onlineOpen ? " on" : ""}`}
-                  aria-expanded={onlineOpen}
-                  disabled={!CarromNet.configured || !netOnline}
-                  title={!netOnline ? "You're offline" : CarromNet.configured ? "Play online" : "Online play needs Supabase"}
-                  onClick={() => setOnlineOpen((o) => !o)}
-                >
-                  Online {onlineOpen ? "▴" : "▾"}
-                </button>
-              </div>
-              {onlineOpen && netOnline ? (
-                <>
+              }
+              modes={[
+                {
+                  key: "cpu",
+                  label: "vs CPU",
+                  icon: <Bot size={15} />,
+                  start: () => startLocal("cpu"),
+                  settings: formatPicker,
+                },
+                {
+                  key: "local",
+                  label: "Same device",
+                  icon: <Users size={15} />,
+                  start: () => startLocal(localSeats === 4 ? "local4" : "local2"),
+                  settings: (
+                    <>
+                      <div className="carrom-format" role="radiogroup" aria-label="Players">
+                        <button type="button" role="radio" aria-checked={localSeats === 2} className={localSeats === 2 ? "on" : ""} onClick={() => setLocalSeats(2)}>
+                          2 players
+                        </button>
+                        <button type="button" role="radio" aria-checked={localSeats === 4} className={localSeats === 4 ? "on" : ""} onClick={() => setLocalSeats(4)}>
+                          4 · teams
+                        </button>
+                      </div>
+                      {formatPicker}
+                    </>
+                  ),
+                },
+                {
+                  key: "online",
+                  label: "Online",
+                  icon: <Globe size={15} />,
+                  disabled: !CarromNet.configured || !netOnline,
+                  note: !netOnline ? "You're offline" : "Not available right now",
+                  panel: (
+                    <>
                   <div className="carrom-start-more is-online">
                     <button
                       type="button"
@@ -1176,9 +1197,12 @@ export default function CarromGame({ onFinish }: GameProps) {
                       )}
                     </div>
                   ) : null}
-                </>
-              ) : null}
-
+                    </>
+                  ),
+                },
+              ]}
+              notices={
+                <>
               {/* invites reach you anywhere on this menu, even with the Online options closed */}
               {lobby.incoming.map((inv) => (
                 <div key={inv.id} className="carrom-mm-card carrom-mm-invite" role="alert">
@@ -1209,12 +1233,9 @@ export default function CarromGame({ onFinish }: GameProps) {
                   </button>
                 </p>
               ) : null}
-
-              <button type="button" className="carrom-profile carrom-start-profile" onClick={() => setPhase("locker")}>
-                <LevelBar level={prog.level} xp={prog.xp} pro={prog.pro} compact />
-                <span className="carrom-profile-cta">Locker & shop ›</span>
-              </button>
-            </div>
+                </>
+              }
+            />
           </>
         ) : (
           <form
@@ -1485,10 +1506,10 @@ export default function CarromGame({ onFinish }: GameProps) {
         </button>
       )}
 
-      <p className="carrom-hint">
+      <HelpLine short="Slide to place · drag to aim · release to shoot">
         Slide to place the striker (or A / D) · drag on the board to aim (pull back like a slingshot, or point
         where you want it to go) · release to shoot · {TURN_SECONDS}s per turn · arrow keys fine-tune, space shoots
-      </p>
+      </HelpLine>
     </div>
   );
 }

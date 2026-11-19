@@ -16,6 +16,8 @@ import { useCarromLobby, type LobbyApi, type Matched } from "../carrom/matchmaki
 import { OnlineMenu, RoomWaiting, SignInToPlay } from "../../components/OnlineLobby";
 import PlayerAvatar from "../../components/PlayerAvatar";
 import "./ludo.css";
+import PlayFlow from "../PlayFlow";
+import { Bot, Globe, Users } from "lucide-react";
 
 type Mode = "cpu" | "pass" | "online";
 type Seat = { kind: "human" | "cpu"; name: string; clientId?: string; userId?: string; avatar?: AvatarChoice | null; timeouts?: number };
@@ -483,38 +485,54 @@ export default function LudoGame(_props: GameProps) {
   if (screen === "menu") {
     return (
       <div className="game-surface lu-surface">
-        <div className="ol-seg" role="tablist" aria-label="How to play">
-          {(["cpu", "pass", "online"] as Mode[]).map((t) => (
-            <button key={t} type="button" role="tab" aria-selected={menuTab === t} className={menuTab === t ? "active" : ""} onClick={() => setMenuTab(t)}>
-              {t === "cpu" ? "vs CPU" : t === "pass" ? "Same device" : "Online"}
-            </button>
-          ))}
-        </div>
-        {user ? (
+        {/* Play → how to play → that mode's settings */}
+        <PlayFlow
+          id="ludo"
+          preview={
+            <div className="pf-preview lu-preview" inert>
+              <div className="lu-board-wrap" style={{ "--lu-line": theme.line } as React.CSSProperties}>
+                <LudoBoard s={st} shown={shown} theme={theme} dice={diceStyle} choices={[]} onPick={() => {}} labels={labels} />
+              </div>
+            </div>
+          }
+          corner={
+            user ? (
           <div className="lu-xp" title={`${xp} XP`}>
             <span>Ludo level {lv}</span>
             <i style={{ width: `${lv >= 30 ? 100 : ((xp - xpForLevel(lv)) / (xpForLevel(lv + 1) - xpForLevel(lv))) * 100}%` }} />
           </div>
-        ) : null}
-        {menuTab === "cpu" ? (
-          <div className="ol-card">
+            ) : null
+          }
+          modes={[
+            {
+              key: "cpu",
+              label: "vs CPU",
+              icon: <Bot size={15} />,
+              start: () => startLocal("cpu", cpuPlayers),
+              settings: (
+                <div className="ol-card">
             <p className="ol-sub">You play Red against the CPU.</p>
             {seatPicker(cpuPlayers, setCpuPlayers, [2, 3, 4], "Players")}
-            <button type="button" className="primary-btn" onClick={() => startLocal("cpu", cpuPlayers)}>
-              Play
-            </button>
-          </div>
-        ) : null}
-        {menuTab === "pass" ? (
-          <div className="ol-card">
+                </div>
+              ),
+            },
+            {
+              key: "pass",
+              label: "Same device",
+              icon: <Users size={15} />,
+              start: () => startLocal("pass", passPlayers),
+              settings: (
+                <div className="ol-card">
             <p className="ol-sub">Friends on this device take turns.</p>
             {seatPicker(passPlayers, setPassPlayers, [2, 3, 4], "Players")}
-            <button type="button" className="primary-btn" onClick={() => startLocal("pass", passPlayers)}>
-              Play
-            </button>
-          </div>
-        ) : null}
-        {menuTab === "online" ? (
+                </div>
+              ),
+            },
+            {
+              key: "online",
+              label: "Online",
+              icon: <Globe size={15} />,
+              panel: (
           !GameRoom.configured ? (
             <div className="ol-card">
               <p className="ol-sub">Online play isn't available right now.</p>
@@ -537,7 +555,10 @@ export default function LudoGame(_props: GameProps) {
               onJoin={(code) => joinRoom(code)}
             />
           )
-        ) : null}
+              ),
+            },
+          ]}
+        />
       </div>
     );
   }
