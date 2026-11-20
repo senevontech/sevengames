@@ -48,7 +48,12 @@ export type Game = {
   poster?: string;
 } & (
   | { kind: "builtin"; engine: GameEngine }
-  | { kind: "iframe"; embedUrl: string }
+  | {
+      kind: "iframe";
+      embedUrl: string;
+      /** Only playable on this site: loads straight in the frame, no "new window" prompt or original-site link. */
+      embedOnly?: boolean;
+    }
 );
 
 export const categories: Array<GameCategory | "All"> = [
@@ -166,6 +171,7 @@ export const games: Game[] = [
     category: "Action",
     kind: "iframe",
     embedUrl: "https://droiddoom.onrender.com",
+    embedOnly: true,
     difficulty: "Hard",
     minutes: 10,
     accent: "#ff3b30",

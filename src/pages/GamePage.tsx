@@ -99,8 +99,10 @@ export default function GamePage() {
 
   // Web games (they run another site in a frame) play best in their own window: ask first.
   // "ask" → overlay; "opened" → opened elsewhere (frame not loaded); "here" → play in the frame.
-  const [extMode, setExtMode] = useState<"ask" | "opened" | "here">("ask");
-  useEffect(() => setExtMode("ask"), [id]);
+  // (embed-only games skip the question and always play here)
+  const embedOnly = game?.kind === "iframe" && Boolean(game.embedOnly);
+  const [extMode, setExtMode] = useState<"ask" | "opened" | "here">(embedOnly ? "here" : "ask");
+  useEffect(() => setExtMode(embedOnly ? "here" : "ask"), [id, embedOnly]);
 
   // Two-step start for games with modes: their Play button pays (if needed) and starts
   const selfGated = game?.kind === "builtin" && SELF_GATED.has(game.engine);
@@ -317,7 +319,7 @@ export default function GamePage() {
           >
             <Trophy size={15} />
           </button>
-          {game.kind === "iframe" ? (
+          {game.kind === "iframe" && !game.embedOnly ? (
             <a href={game.embedUrl} target="_blank" rel="noopener noreferrer" aria-label="Open original site" title="Original site">
               <ExternalLink size={15} />
             </a>
