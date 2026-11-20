@@ -108,12 +108,25 @@ export async function watchRewarded(userId: string): Promise<"rewarded" | "skipp
     const { error: claimErr } = await supabase.rpc("claim_ad_reward", { p_view: viewId });
     return claimErr ? "skipped" : "rewarded";
   }
-  // wait for AdMob's server callback to land (usually a second or two)
-  for (let i = 0; i < 12; i++) {
+  // wait for AdMob's server callback (admob-ssv) to credit it — usually a second or two
+  for (let i = 0; i < 6; i++) {
     await new Promise((r) => window.setTimeout(r, 1000));
     if ((await balance()) > before) return "rewarded";
   }
-  return "rewarded"; // it will still arrive; the wallet refreshes on its own
+  // No callback (server-side verification not set up on the ad unit, or AdMob is slow): claim it
+  // the way the website does. Both paths lock and mark the same ad view, so it's never paid twice.
+  console.warn("AdMob SSV callback didn't arrive in time; claiming the reward from the app");
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { error: claimErr } = await supabase.rpc("claim_ad_reward", { p_view: viewId });
+    if (!claimErr || claimErr.message.includes("already_claimed")) return "rewarded";
+    // a very short ad: the server's minimum watch time isn't up yet — wait it out once
+    if (claimErr.message.includes("ad_not_finished") && attempt === 0) {
+      await new Promise((r) => window.setTimeout(r, 8000));
+      continue;
+    }
+    throw new Error(claimErr.message);
+  }
+  return "skipped";
 }
 
 async function balance() {
