@@ -89,7 +89,7 @@ function SiteMenu({ pathname }: { pathname: string }) {
             <span className="site-menu-icon" aria-hidden="true">
               <Coins size={16} />
             </span>
-            Tokens & shop
+            Tokens & frames
           </Link>
           <Link to="/profile" className="site-menu-item">
             <span className="site-menu-icon" aria-hidden="true">

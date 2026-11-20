@@ -261,7 +261,7 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
     const resultCard = result ? (
       <div className="arw-overlay" role="dialog" aria-modal="true" aria-labelledby="arw-result-title">
         <div className={`arw-card arw-result${won ? " is-win" : draw ? "" : " is-loss"}`}>
-          <h3 id="arw-result-title">{won ? "You win! 🏆" : draw ? "It's a draw" : "You lose"}</h3>
+          <h3 id="arw-result-title">{won ? "You won! 🏆" : draw ? "It's a draw" : "You lost"}</h3>
           <p>{detail}</p>
           <div className="arw-confirm-actions">
             <button type="button" className="ghost-btn" onClick={leave}>

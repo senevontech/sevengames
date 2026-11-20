@@ -46,7 +46,9 @@ import {
   drawSinks,
   drawStriker,
   drawTurnTimer,
+  fractionToBoard,
   seatRingColor,
+  setBoardView,
   setViewAngle,
 } from "./render";
 import { CarromNet, type NetStatus, type RosterEntry } from "./online";
@@ -56,8 +58,9 @@ import PlayerAvatar from "../../components/PlayerAvatar";
 import { useAuthContext } from "../../context/AuthContext";
 import { carromAudio } from "./audio";
 import { STRIKERS, type StrikerSkin } from "./skins";
+import ResultBanner, { type Outcome } from "../ResultBanner";
 import { matchXp, useCarromProgress } from "./progress";
-import { CPU_STATS, FAIR_STATS, tierOf, type StrikerStats } from "./stats";
+import { CPU_STATS, FAIR_STATS, isPremiumStriker, playStats, tierOf, turnBonusSeconds, type StrikerStats } from "./stats";
 import CarromLocker, { LevelBar } from "./Locker";
 import { BoardPreview } from "./Preview";
 import PlayFlow, { HelpLine } from "../PlayFlow";
@@ -110,6 +113,10 @@ export default function CarromGame({ onFinish }: GameProps) {
   const dragRef = useRef<{ mode: "aim"; ax: number; ay: number } | null>(null);
   // Turn clock (0 = not running)
   const deadlineRef = useRef(0);
+  /** length of the current turn (base + striker bonus), for the clock ring */
+  const turnMsRef = useRef(TURN_MS);
+  /** the "You won / You lost" card at the end of a game (not between boards of a match) */
+  const [verdict, setVerdict] = useState<{ outcome: Outcome; title?: string; detail: string } | null>(null);
   const lastSecRef = useRef(-1);
   const timeoutRef = useRef<() => void>(() => {});
   const slidingRef = useRef(false);
@@ -184,9 +191,17 @@ export default function CarromGame({ onFinish }: GameProps) {
     phaseRef.current = p;
     // every new turn (or extra shot) starts a fresh clock
     if (p === "place") {
-      deadlineRef.current = performance.now() + TURN_MS;
+      // on this device, your upgraded / premium striker earns extra seconds on human turns
+      // (online keeps the same clock for everyone)
+      const w = worldRef.current;
+      const local = LOCAL_MODES.includes(modeRef.current);
+      const human = w?.players[w.turn]?.kind === "human";
+      const pr = progRef.current;
+      const bonus = local && human ? turnBonusSeconds(pr.strikerStats, isPremiumStriker(pr.striker)) : 0;
+      turnMsRef.current = (TURN_SECONDS + bonus) * 1000;
+      deadlineRef.current = performance.now() + turnMsRef.current;
       lastSecRef.current = -1;
-      setSecsLeft(TURN_SECONDS);
+      setSecsLeft(TURN_SECONDS + bonus);
     } else {
       deadlineRef.current = 0;
     }
@@ -296,6 +311,21 @@ export default function CarromGame({ onFinish }: GameProps) {
       }
       setBetween(null);
       setPhase("over");
+      {
+        const shared = modeRef.current === "local2" || modeRef.current === "local4";
+        const m = matchRef.current;
+        const detail =
+          formatRef.current === "match" && LOCAL_MODES.includes(modeRef.current)
+            ? `Match ${m.white}–${m.black}`
+            : `${world.potted[myColor ?? "white"].length} of your coins pocketed`;
+        setVerdict(
+          !winColor
+            ? { outcome: "draw", title: "Board over", detail: "Nobody pocketed for too long." }
+            : shared
+              ? { outcome: "win", title: `${winName}!`, detail: formatRef.current === "match" ? detail : "Well played, everyone." }
+              : { outcome: winColor === myColor ? "win" : "lose", detail },
+        );
+      }
       if (!finishedRef.current) {
         finishedRef.current = true;
         onFinish(scoreForSeat(world, mySeatRef.current) + (formatRef.current === "match" ? matchRef.current[myColor ?? "white"] * 5 : 0));
@@ -502,6 +532,7 @@ export default function CarromGame({ onFinish }: GameProps) {
     finishedRef.current = false;
     setReward(null);
     setBetween(null);
+    setVerdict(null);
     netRef.current?.leave();
     netRef.current = null;
     if (nextBoard) {
@@ -512,7 +543,8 @@ export default function CarromGame({ onFinish }: GameProps) {
     }
     setMatchScore({ ...matchRef.current });
     // your upgraded striker vs the CPU and on this device; the CPU is the same for everyone
-    const mine: StrikerStats = progRef.current.strikerStats;
+    // premium strikers play a level above their stats in power and weight
+    const mine: StrikerStats = playStats(progRef.current.strikerStats, isPremiumStriker(progRef.current.striker));
     const players: Array<{ name: string; kind: "human" | "cpu"; stats: StrikerStats }> =
       mode === "cpu"
         ? [
@@ -629,6 +661,11 @@ export default function CarromGame({ onFinish }: GameProps) {
           const score = scoreForSeat(world, mySeatRef.current);
           setMessage("Match over.");
           setPhase("over");
+          const meColor = world.players[mySeatRef.current]?.color;
+          setVerdict({
+            outcome: meColor === snap.winner ? "win" : "lose",
+            detail: `${world.potted[meColor ?? "white"].length} of your coins pocketed`,
+          });
           if (!finishedRef.current) {
             finishedRef.current = true;
             onFinish(score);
@@ -800,10 +837,7 @@ export default function CarromGame({ onFinish }: GameProps) {
   /** Screen point → board point (undoing the view rotation). */
   const toWorld = (e: ReactPointerEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const screen = {
-      x: ((e.clientX - rect.left) / rect.width) * SIZE,
-      y: ((e.clientY - rect.top) / rect.height) * SIZE,
-    };
+    const screen = fractionToBoard((e.clientX - rect.left) / rect.width, (e.clientY - rect.top) / rect.height);
     return rotateAboutCentre(screen, -viewAngle());
   };
 
@@ -989,8 +1023,7 @@ export default function CarromGame({ onFinish }: GameProps) {
     if (!canvas || !world) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const scale = canvas.width / SIZE;
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    setBoardView(ctx, canvas.width);
     ctx.fillStyle = "#120a05";
     ctx.fillRect(0, 0, SIZE, SIZE);
     // online: turn the whole board so your own baseline is at the bottom
@@ -1057,7 +1090,7 @@ export default function CarromGame({ onFinish }: GameProps) {
         strikerTierRef.current,
       );
       if (ph === "place" && deadlineRef.current > 0) {
-        drawTurnTimer(ctx, world.striker, (deadlineRef.current - performance.now()) / TURN_MS);
+        drawTurnTimer(ctx, world.striker, (deadlineRef.current - performance.now()) / turnMsRef.current);
       }
     }
     fxRef.current.draw(ctx, frameDtRef.current);
@@ -1097,9 +1130,9 @@ export default function CarromGame({ onFinish }: GameProps) {
               id="carrom"
               preview={<BoardPreview />}
               corner={
-                <button type="button" className="pf-chip" onClick={() => setPhase("locker")} title="Locker & shop">
-                  <span className="pf-chip-badge">{prog.level}</span>
-                  Locker
+                <button type="button" className="pf-chip" onClick={() => setPhase("locker")} title="Carrom shop: strikers, coins, boards and upgrades">
+                  <span className="pf-chip-badge" title={`Carrom level ${prog.level}`}>{prog.level}</span>
+                  Shop
                 </button>
               }
               modes={[
@@ -1409,7 +1442,7 @@ export default function CarromGame({ onFinish }: GameProps) {
             className={`carrom-timer${secsLeft <= 5 ? " warn" : ""}`}
             role="timer"
             aria-label={`${secsLeft} seconds left`}
-            style={{ "--left": secsLeft / TURN_SECONDS } as React.CSSProperties}
+            style={{ "--left": (secsLeft * 1000) / turnMsRef.current } as React.CSSProperties}
           >
             <i aria-hidden="true" />
             {secsLeft}s
@@ -1431,6 +1464,14 @@ export default function CarromGame({ onFinish }: GameProps) {
         </button>
       </div>
 
+      {screen === "over" && verdict && !between ? (
+        <ResultBanner
+          outcome={verdict.outcome}
+          title={verdict.title}
+          detail={verdict.detail}
+          onAgain={isOnline ? undefined : () => startLocal(modeRef.current as "cpu" | "local2" | "local4")}
+        />
+      ) : null}
       {screen === "over" && reward ? (
         <div className="carrom-reward" role="status">
           <b>+{reward.xp} XP</b>
@@ -1514,7 +1555,7 @@ export default function CarromGame({ onFinish }: GameProps) {
           className="ghost-btn"
           onClick={() => (isOnline ? leaveNet() : between ? startLocal(modeRef.current as "cpu" | "local2" | "local4") : setPhase("locker"))}
         >
-          {isOnline ? "Leave" : between ? "Restart match" : "Locker & shop"}
+          {isOnline ? "Leave" : between ? "Restart match" : "Shop"}
         </button>
       ) : (
         <button

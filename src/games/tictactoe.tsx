@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { GameProps } from "./index";
+import ResultBanner, { type Outcome } from "./ResultBanner";
 
 type Cell = "X" | "O" | null;
 
@@ -50,6 +51,7 @@ function bestMove(cells: Cell[]): number {
 export default function TicTacToe({ onFinish }: GameProps) {
   const [cells, setCells] = useState<Cell[]>(Array(9).fill(null));
   const [status, setStatus] = useState("Your move — you are X");
+  const [outcome, setOutcome] = useState<Outcome | null>(null);
 
   function play(index: number) {
     if (cells[index] || getWinner(cells)) return;
@@ -59,12 +61,14 @@ export default function TicTacToe({ onFinish }: GameProps) {
     if (getWinner(afterUser) === "X") {
       setCells(afterUser);
       setStatus("You win");
+      setOutcome("win");
       onFinish(120);
       return;
     }
     if (afterUser.every(Boolean)) {
       setCells(afterUser);
       setStatus("Draw");
+      setOutcome("draw");
       onFinish(75);
       return;
     }
@@ -76,9 +80,11 @@ export default function TicTacToe({ onFinish }: GameProps) {
 
     if (getWinner(afterOpponent) === "O") {
       setStatus("Opponent wins");
+      setOutcome("lose");
       onFinish(35);
     } else if (afterOpponent.every(Boolean)) {
       setStatus("Draw");
+      setOutcome("draw");
       onFinish(75);
     } else {
       setStatus("Your move — you are X");
@@ -88,6 +94,7 @@ export default function TicTacToe({ onFinish }: GameProps) {
   function reset() {
     setCells(Array(9).fill(null));
     setStatus("Your move — you are X");
+    setOutcome(null);
   }
 
   return (
@@ -109,6 +116,7 @@ export default function TicTacToe({ onFinish }: GameProps) {
       <button type="button" className="ghost-btn" onClick={reset}>
         New round
       </button>
+      {outcome ? <ResultBanner outcome={outcome} detail={outcome === "lose" ? "The opponent made three in a row." : undefined} onAgain={reset} /> : null}
     </div>
   );
 }

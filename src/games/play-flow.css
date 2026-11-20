@@ -624,3 +624,15 @@
     padding-right: 20px;
   }
 }
+
+/* ---------- a game's own shop (PlayFlow `shop`) ---------- */
+.pf-step-wide {
+  width: min(760px, 100%);
+}
+
+/* the shop reuses the account-page cards; drop the page padding inside a game */
+.pf-shop.acct {
+  max-width: none;
+  padding: 0;
+  gap: 12px;
+}

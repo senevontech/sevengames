@@ -249,7 +249,7 @@ export default function CarromLocker({ prog, signedIn, onBack }: { prog: Prog; s
         <button type="button" className="ghost-btn" onClick={onBack}>
           ‹ Back
         </button>
-        <h3>Locker</h3>
+        <h3>Carrom shop</h3>
         {signedIn ? (
           <Link to="/tokens" className="carrom-wallet" title="Get more tokens">
             <TokenIcon size={16} /> {wallet?.unlimited ? "∞" : formatTokens(wallet?.balance ?? 0)}

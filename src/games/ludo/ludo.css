@@ -299,6 +299,10 @@
   color: #40c057;
 }
 
+.lu-card.is-loss h3 {
+  color: #ff5a4a;
+}
+
 .lu-xp-gain {
   font-weight: 800;
   color: #ffd23f;

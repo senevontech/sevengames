@@ -19,6 +19,7 @@ const Admin = lazy(() => import("./pages/admin/Admin"));
 const TokensPage = lazy(() => import("./pages/TokensPage"));
 const Leaderboards = lazy(() => import("./pages/Leaderboards"));
 const PlayerPage = lazy(() => import("./pages/PlayerPage"));
+const AdFreePromo = lazy(() => import("./components/AdFreePromo"));
 import { TokensProvider } from "./lib/tokens";
 import { ShopProvider } from "./lib/shop";
 import { startOfflineSync } from "./lib/offlineQueue";
@@ -91,6 +92,9 @@ export default function App() {
       <OfflineBanner />
       <TokensProvider>
       <OfflineSync />
+      <Suspense fallback={null}>
+        <AdFreePromo />
+      </Suspense>
       <ShopProvider>
       <RouterRoutes>
         <Route

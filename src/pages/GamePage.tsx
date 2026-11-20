@@ -1,5 +1,6 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { gameFinishedAd } from "../lib/admob";
+import { promptAdFree } from "../lib/adFreePromo";
 import { isNative, openExternal } from "../lib/native";
 import { Link, useParams } from "react-router-dom";
 import { ChevronLeft, ExternalLink, Info, Maximize, Minimize, Minimize2, Store, Trophy, X } from "lucide-react";
@@ -250,6 +251,8 @@ export default function GamePage() {
         trackGame("game_finish", game.id, score);
         // the app: an interstitial after every few finished games (never mid-game)
         if (isNative && showAdsRef.current) void gameFinishedAd();
+        // "Go ad-free" offer once the result has been seen (at most once a day)
+        if (showAdsRef.current) promptAdFree("game_end", 3500);
         if (!userRef.current && !nudgeOff.current) setNudge(true);
         // premium: let the result show for a moment, then ask to pay for the next play
         if (premiumRef.current) {
@@ -300,9 +303,9 @@ export default function GamePage() {
             <Maximize size={15} />
             <span>Full screen</span>
           </button>
-          <Link to="/tokens#buy" className="gp-shop" aria-label="Shop: get tokens" title="Shop">
+          <Link to="/tokens#buy" className="gp-shop" aria-label="Get tokens" title="Get tokens">
             <Store size={15} />
-            <span>Shop</span>
+            <span>Tokens</span>
           </Link>
           {/* phones: the leaderboard opens as a panel over the game */}
           <button

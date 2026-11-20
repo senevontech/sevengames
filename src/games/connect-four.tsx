@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { GameProps } from "./index";
+import ResultBanner from "./ResultBanner";
 
 const COLS = 7;
 const ROWS = 6;
@@ -119,6 +120,9 @@ export default function ConnectFour({ onFinish }: GameProps) {
           </button>
         ))}
       </div>
+      {result ? (
+        <ResultBanner outcome={result} detail={result === "lose" ? "The CPU connected four." : undefined} onAgain={reset} />
+      ) : null}
       {result ? (
         <button type="button" className="primary-btn" onClick={reset}>
           Play again

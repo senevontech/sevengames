@@ -3,6 +3,7 @@
    each frame — cheap enough for 20 spinning discs at 60 fps on a phone. */
 
 import type { StrikerStats } from "./stats";
+import { grainify } from "./texture";
 
 /** How an item is obtained: bought with tokens; `minLevel` must be reached first.
  *  `pro` items are included with Senevon Pro. Prices match supabase/carrom.sql. */
@@ -30,7 +31,7 @@ export type CoinSet = {
   light: { face: [string, string]; rim: string; mark: string };
   dark: { face: [string, string]; rim: string; mark: string };
   queen: { face: [string, string]; rim: string; mark: string };
-  pattern?: "marble" | "rings" | "facets";
+  pattern?: "marble" | "rings" | "facets" | "wood";
   glow?: boolean;
 };
 
@@ -50,10 +51,11 @@ export const COIN_SETS: CoinSet[] = [
     id: "classic",
     name: "Classic Wood",
     shop: { price: 0, minLevel: 1 },
-    light: { face: ["#fbf7ec", "#d6cab0"], rim: "#b3a685", mark: "rgba(0,0,0,0.16)" },
-    dark: { face: ["#4a4a4f", "#17171a"], rim: "#000000", mark: "rgba(255,255,255,0.1)" },
-    queen: { face: ["#e05a51", "#8e241e"], rim: "#6e1b16", mark: "rgba(255,235,230,0.45)" },
-    pattern: "rings",
+    // natural turned wood (the "white" coins), ebonised black, red queen — matte, like a real set
+    light: { face: ["#eaa56c", "#cf8147"], rim: "#9a5726", mark: "rgba(80,34,8,0.5)" },
+    dark: { face: ["#363230", "#1a1716"], rim: "#0a0908", mark: "rgba(255,240,220,0.13)" },
+    queen: { face: ["#d34a3f", "#a3271f"], rim: "#62150f", mark: "rgba(60,8,4,0.45)" },
+    pattern: "wood",
   },
   {
     id: "marble",
@@ -128,6 +130,11 @@ export type BoardTheme = {
   field: [string, string];
   fieldGrain: string;
   ink: string;
+  /** fill of the baseline circles / centre spot (red on a classic board) */
+  accent: string;
+  /** colour of the pocket netting seen through the holes */
+  net: string;
+  /** corner caps (and neon pocket rings) */
   brass: [string, string, string];
   /** optional neon glow on the markings */
   glow?: string;
@@ -138,12 +145,14 @@ export const BOARDS: BoardTheme[] = [
     id: "classic",
     name: "Classic Maple",
     shop: { price: 0, minLevel: 1 },
-    frame: "#4a2614",
-    frameGrain: "#1c0c04",
-    field: ["#f6e3b8", "#ead09a"],
-    fieldGrain: "#9c6a2e",
-    ink: "#9e2b25",
-    brass: ["#f7d98a", "#a77a26", "#5c3f0c"],
+    frame: "#1e1815",
+    frameGrain: "#070505",
+    field: ["#f0d4ae", "#e2b98b"],
+    fieldGrain: "#a0643a",
+    ink: "#1d1612",
+    accent: "#b3302a",
+    net: "#b9454f",
+    brass: ["#e6e8eb", "#a5abb2", "#5b6168"],
   },
   {
     id: "tournament",
@@ -154,6 +163,8 @@ export const BOARDS: BoardTheme[] = [
     field: ["#e8c98e", "#cfa762"],
     fieldGrain: "#7a4a18",
     ink: "#1d1d1f",
+    accent: "#2a1a14",
+    net: "#33302e",
     brass: ["#e9eef4", "#9aa6b4", "#4b5563"],
   },
   {
@@ -165,6 +176,8 @@ export const BOARDS: BoardTheme[] = [
     field: ["#2a2740", "#1b1930"],
     fieldGrain: "#4b4570",
     ink: "#ff4fd8",
+    accent: "#3ff7ff",
+    net: "#3a2f66",
     brass: ["#7df9ff", "#2aa8c4", "#0d4b5c"],
     glow: "rgba(255,79,216,0.55)",
   },
@@ -251,7 +264,8 @@ function paintFace(
   g.translate(r, r);
 
   // body
-  const body = g.createRadialGradient(-r * 0.25, -r * 0.3, r * 0.1, 0, 0, r);
+  // centred, so the face looks the same at any spin angle (the light lives in lightingSprite)
+  const body = g.createRadialGradient(0, 0, r * 0.1, 0, 0, r);
   body.addColorStop(0, face[0]);
   body.addColorStop(1, face[1]);
   g.beginPath();
@@ -297,6 +311,26 @@ function paintFace(
     }
     g.closePath();
     g.stroke();
+  } else if (opts.pattern === "wood") {
+    // turned on a lathe: two cut grooves (dark cut + paler lip just inside) and a turned centre
+    for (const k of [0.74, 0.5]) {
+      g.lineWidth = Math.max(1, r * 0.055);
+      g.strokeStyle = mark;
+      g.beginPath();
+      g.arc(0, 0, r * k, 0, Math.PI * 2);
+      g.stroke();
+      g.lineWidth = Math.max(0.6, r * 0.03);
+      g.strokeStyle = "rgba(255,235,210,0.16)";
+      g.beginPath();
+      g.arc(0, 0, r * (k - 0.05), 0, Math.PI * 2);
+      g.stroke();
+    }
+    g.fillStyle = mark;
+    g.globalAlpha = 0.35;
+    g.beginPath();
+    g.arc(0, 0, r * 0.12, 0, Math.PI * 2);
+    g.fill();
+    g.globalAlpha = 1;
   } else if (!opts.striker) {
     // classic turned-wood rings + a small grain mark so rotation reads
     g.strokeStyle = mark;
@@ -339,12 +373,24 @@ function paintFace(
     }
   }
 
-  // bevelled rim
-  g.lineWidth = r * (opts.striker ? 0.1 : 0.08);
+  // chamfered rim: the cut edge, slightly darker, with a crisp outline
+  g.lineWidth = r * (opts.striker ? 0.1 : 0.09);
   g.strokeStyle = rim;
+  g.globalAlpha = 0.85;
   g.beginPath();
   g.arc(0, 0, r * 0.92, 0, Math.PI * 2);
   g.stroke();
+  g.globalAlpha = 1;
+  g.lineWidth = Math.max(0.8, r * 0.025);
+  g.strokeStyle = "rgba(0,0,0,0.45)";
+  g.beginPath();
+  g.arc(0, 0, r * 0.965, 0, Math.PI * 2);
+  g.stroke();
+
+  // matte material: fine per-pixel tooth, plus straight wood grain on wooden coins
+  let h = 0;
+  for (let i = 0; i < opts.seed.length; i++) h = (h * 31 + opts.seed.charCodeAt(i)) | 0;
+  grainify(c, h, opts.striker ? 0.05 : 0.09, opts.pattern === "wood" ? 1 : 0);
   return c;
 }
 
@@ -358,28 +404,38 @@ export function lightingSprite(px: number) {
   const g = c.getContext("2d")!;
   const r = px / 2;
   g.translate(r, r);
-  // edge shade (bevel)
-  const shade = g.createRadialGradient(0, 0, r * 0.7, 0, 0, r);
-  shade.addColorStop(0, "rgba(0,0,0,0)");
-  shade.addColorStop(1, "rgba(0,0,0,0.32)");
-  g.fillStyle = shade;
+  // Matte (diffuse-only) lighting from the top-left — no specular hot spot, no gloss.
+  // 1) soft fall-off across the face
+  const diffuse = g.createLinearGradient(-r, -r, r, r);
+  diffuse.addColorStop(0, "rgba(255,248,235,0.10)");
+  diffuse.addColorStop(0.5, "rgba(0,0,0,0)");
+  diffuse.addColorStop(1, "rgba(20,10,0,0.14)");
+  g.fillStyle = diffuse;
   g.beginPath();
   g.arc(0, 0, r * 0.97, 0, Math.PI * 2);
   g.fill();
-  // lacquer highlight (top-left)
-  const hi = g.createRadialGradient(-r * 0.38, -r * 0.42, 0, -r * 0.38, -r * 0.42, r * 0.7);
-  hi.addColorStop(0, "rgba(255,255,255,0.55)");
-  hi.addColorStop(1, "rgba(255,255,255,0)");
-  g.fillStyle = hi;
+  // 2) the chamfer: lit on the top-left, in shade bottom-right
+  g.save();
   g.beginPath();
-  g.arc(0, 0, r * 0.95, 0, Math.PI * 2);
+  g.arc(0, 0, r * 0.97, 0, Math.PI * 2);
+  g.arc(0, 0, r * 0.84, 0, Math.PI * 2, true);
+  g.clip();
+  const bevel = g.createLinearGradient(-r * 0.7, -r * 0.7, r * 0.7, r * 0.7);
+  bevel.addColorStop(0, "rgba(255,245,225,0.26)");
+  bevel.addColorStop(0.45, "rgba(255,245,225,0)");
+  bevel.addColorStop(0.55, "rgba(0,0,0,0)");
+  bevel.addColorStop(1, "rgba(0,0,0,0.36)");
+  g.fillStyle = bevel;
+  g.fillRect(-r, -r, r * 2, r * 2);
+  g.restore();
+  // 3) ambient occlusion right at the edge where the disc meets the board
+  const ao = g.createRadialGradient(0, 0, r * 0.86, 0, 0, r * 0.98);
+  ao.addColorStop(0, "rgba(0,0,0,0)");
+  ao.addColorStop(1, "rgba(0,0,0,0.22)");
+  g.fillStyle = ao;
+  g.beginPath();
+  g.arc(0, 0, r * 0.98, 0, Math.PI * 2);
   g.fill();
-  // thin bright rim catch-light
-  g.strokeStyle = "rgba(255,255,255,0.35)";
-  g.lineWidth = r * 0.04;
-  g.beginPath();
-  g.arc(0, 0, r * 0.94, Math.PI * 1.05, Math.PI * 1.55);
-  g.stroke();
   spriteCache.set(key, c);
   return c;
 }

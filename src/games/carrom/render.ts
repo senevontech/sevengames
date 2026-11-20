@@ -10,6 +10,7 @@
 import {
   BASE_MAX,
   BASE_MIN,
+  BASE_OFF,
   PF_MAX,
   PF_MIN,
   POCKETS,
@@ -27,6 +28,7 @@ import {
 import { BOARDS, coinSprite, lightingSprite, strikerSprite, type BoardTheme, type CoinSet, type StrikerSkin } from "./skins";
 import { AIM_FULL_PREVIEW, AIM_TARGET_LINE, aimReachFor } from "./stats";
 import { carromAudio } from "./audio";
+import { hexRgb, woodCanvas } from "./texture";
 
 /** Current screen rotation (set by the game each frame) so text can stay upright. */
 let viewAngle = 0;
@@ -46,160 +48,171 @@ function rr(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: n
   ctx.closePath();
 }
 
+/* ======================= view ======================= */
+
+/** Visible frame thickness (world units). The physics wall is WALL wide; we crop the view so
+ *  only this thin strip of frame shows — a slim modern board without touching the physics. */
+export const FRAME_T = 17;
+export const VIEW_MIN = WALL - FRAME_T;
+export const VIEW = SIZE - VIEW_MIN * 2;
+
+/** Map the canvas (px × px) onto the visible board area, in world units. */
+export function setBoardView(ctx: CanvasRenderingContext2D, px: number) {
+  const s = px / VIEW;
+  ctx.setTransform(s, 0, 0, s, -VIEW_MIN * s, -VIEW_MIN * s);
+}
+
+/** A point given as a fraction (0..1) of the canvas → world coordinates. */
+export const fractionToBoard = (fx: number, fy: number): Vec => ({ x: VIEW_MIN + fx * VIEW, y: VIEW_MIN + fy * VIEW });
+
 /* ======================= board (painted once) ======================= */
 
 let boardCache: { px: number; theme: string; canvas: HTMLCanvasElement } | null = null;
+/** Wood textures depend only on the theme, not the screen size: generated once per theme. */
+const woodCache = new Map<string, { field: HTMLCanvasElement; frame: HTMLCanvasElement }>();
 
-function woodGrain(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, horizontal: boolean, color: string, count: number, seed: number) {
-  let s = seed;
-  const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
-  g.save();
-  g.beginPath();
-  g.rect(x, y, w, h);
-  g.clip();
-  g.strokeStyle = color;
-  for (let i = 0; i < count; i++) {
-    g.globalAlpha = 0.05 + rnd() * 0.12;
-    g.lineWidth = 0.6 + rnd() * 2.2;
-    g.beginPath();
-    const off = rnd() * (horizontal ? h : w);
-    const amp = 2 + rnd() * 6;
-    const freq = 0.004 + rnd() * 0.01;
-    const steps = 40;
-    for (let k = 0; k <= steps; k++) {
-      const t = (k / steps) * (horizontal ? w : h);
-      const wob = Math.sin(t * freq + i) * amp + Math.sin(t * freq * 3.1 + i * 2) * amp * 0.3;
-      const px = horizontal ? x + t : x + off + wob;
-      const py = horizontal ? y + off + wob : y + t;
-      if (k) g.lineTo(px, py);
-      else g.moveTo(px, py);
-    }
-    g.stroke();
+function woodFor(th: BoardTheme) {
+  let w = woodCache.get(th.id);
+  if (!w) {
+    const seed = [...th.id].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) | 0, 7);
+    w = {
+      field: woodCanvas(720, 720, { light: th.field, dark: th.fieldGrain, seed, rings: 13, contrast: th.glow ? 0.6 : 0.9 }),
+      frame: woodCanvas(720, 40, { light: [th.frame, th.frame], dark: th.frameGrain, seed: seed + 3, rings: 3, contrast: 1 }),
+    };
+    woodCache.set(th.id, w);
   }
-  g.restore();
+  return w;
+}
+
+/** Small arrowhead at (x,y) pointing along angle a. */
+function arrowHead(g: CanvasRenderingContext2D, x: number, y: number, a: number, len: number, spread = 0.42) {
+  g.beginPath();
+  g.moveTo(x, y);
+  g.lineTo(x - Math.cos(a - spread) * len, y - Math.sin(a - spread) * len);
+  g.lineTo(x - Math.cos(a + spread) * len, y - Math.sin(a + spread) * len);
+  g.closePath();
+  g.fill();
 }
 
 function paintBoard(px: number, th: BoardTheme) {
   const c = document.createElement("canvas");
   c.width = c.height = px;
   const g = c.getContext("2d")!;
-  g.scale(px / SIZE, px / SIZE);
+  setBoardView(g, px);
+  const wood = woodFor(th);
+  const LO = VIEW_MIN;
+  const HI = SIZE - VIEW_MIN;
+  const W = PF_MAX - PF_MIN;
 
-  // --- frame: dark lacquered rosewood, four mitred planks with their own grain direction ---
-  rr(g, 0, 0, SIZE, SIZE, 34);
-  g.fillStyle = th.frame;
-  g.fill();
-  g.save();
-  rr(g, 0, 0, SIZE, SIZE, 34);
-  g.clip();
-  woodGrain(g, 0, 0, SIZE, WALL + 4, true, th.frameGrain, 22, 7);
-  woodGrain(g, 0, PF_MAX - 4, SIZE, WALL + 4, true, th.frameGrain, 22, 11);
-  woodGrain(g, 0, 0, WALL + 4, SIZE, false, th.frameGrain, 22, 13);
-  woodGrain(g, PF_MAX - 4, 0, WALL + 4, SIZE, false, th.frameGrain, 22, 17);
-  // lacquer sheen along the top-left of the frame
-  const sheen = g.createLinearGradient(0, 0, SIZE, SIZE);
-  sheen.addColorStop(0, "rgba(255,210,170,0.28)");
-  sheen.addColorStop(0.35, "rgba(255,210,170,0.04)");
-  sheen.addColorStop(1, "rgba(0,0,0,0.25)");
-  g.fillStyle = sheen;
-  g.fillRect(0, 0, SIZE, SIZE);
-  g.restore();
-  // mitre joints
-  g.strokeStyle = "rgba(0,0,0,0.35)";
-  g.lineWidth = 1.5;
+  // --- frame: four thin mitred rails, grain running along each ---
+  for (let i = 0; i < 4; i++) {
+    g.save();
+    g.translate(500, 500);
+    g.rotate((i * Math.PI) / 2);
+    g.translate(-500, -500);
+    g.beginPath();
+    g.moveTo(LO, LO);
+    g.lineTo(HI, LO);
+    g.lineTo(PF_MAX, PF_MIN);
+    g.lineTo(PF_MIN, PF_MIN);
+    g.closePath();
+    g.clip();
+    g.drawImage(wood.frame, 0, i * 6, 720, 20, LO, LO, VIEW, FRAME_T);
+    // rounded outer edge catches a little light; inner edge falls into shade (matte, no sheen).
+    // rails rotate with i: 0 = top, 1 = right, 2 = bottom, 3 = left
+    const edge = g.createLinearGradient(0, LO, 0, PF_MIN);
+    const lit = i === 0 || i === 3 ? 0.13 : 0.04;
+    edge.addColorStop(0, `rgba(255,240,220,${lit})`);
+    edge.addColorStop(0.35, "rgba(255,240,220,0)");
+    edge.addColorStop(1, "rgba(0,0,0,0.35)");
+    g.fillStyle = edge;
+    g.fillRect(LO, LO, VIEW, FRAME_T);
+    g.restore();
+  }
+  g.strokeStyle = "rgba(0,0,0,0.5)";
+  g.lineWidth = 0.8;
   for (const [a, b] of [
-    [0, 0],
-    [SIZE, 0],
-    [0, SIZE],
-    [SIZE, SIZE],
+    [LO, LO],
+    [HI, LO],
+    [LO, HI],
+    [HI, HI],
   ]) {
     g.beginPath();
     g.moveTo(a, b);
-    g.lineTo(a === 0 ? WALL : PF_MAX, b === 0 ? WALL : PF_MAX);
+    g.lineTo(a === LO ? PF_MIN : PF_MAX, b === LO ? PF_MIN : PF_MAX);
     g.stroke();
   }
 
-  // --- playfield: pale maple plywood, fine grain, powdered sheen ---
-  const W = PF_MAX - PF_MIN;
-  const maple = g.createLinearGradient(0, PF_MIN, 0, PF_MAX);
-  maple.addColorStop(0, th.field[0]);
-  maple.addColorStop(1, th.field[1]);
-  g.fillStyle = maple;
+  // --- playfield: matte plywood ---
+  g.drawImage(wood.field, PF_MIN, PF_MIN, W, W);
+  // broad, soft light — brighter towards the top-left, no hot spot
+  const light = g.createRadialGradient(430, 400, 80, 500, 500, 720);
+  light.addColorStop(0, "rgba(255,250,238,0.07)");
+  light.addColorStop(0.6, "rgba(0,0,0,0)");
+  light.addColorStop(1, "rgba(60,30,8,0.16)");
+  g.fillStyle = light;
   g.fillRect(PF_MIN, PF_MIN, W, W);
-  woodGrain(g, PF_MIN, PF_MIN, W, W, true, th.fieldGrain, 90, 3);
-  // fine cross-grain fibres + knots so the plywood doesn't look painted
-  woodGrain(g, PF_MIN, PF_MIN, W, W, false, th.fieldGrain, 24, 29);
-  {
-    let k = 41;
-    const rnd = () => ((k = (k * 16807) % 2147483647) / 2147483647);
-    g.save();
-    for (let i = 0; i < 5; i++) {
-      const kx = PF_MIN + 60 + rnd() * (W - 120);
-      const ky = PF_MIN + 60 + rnd() * (W - 120);
-      const kg = g.createRadialGradient(kx, ky, 0, kx, ky, 16 + rnd() * 12);
-      kg.addColorStop(0, th.fieldGrain);
-      kg.addColorStop(1, "rgba(0,0,0,0)");
-      g.globalAlpha = 0.08;
-      g.fillStyle = kg;
-      g.beginPath();
-      g.ellipse(kx, ky, 34, 12, 0, 0, Math.PI * 2);
-      g.fill();
-    }
-    g.restore();
-  }
-  const powder = g.createRadialGradient(470, 430, 60, 500, 500, 640);
-  powder.addColorStop(0, "rgba(255,255,255,0.28)");
-  powder.addColorStop(0.6, "rgba(255,255,255,0.06)");
-  powder.addColorStop(1, "rgba(90,55,15,0.18)");
-  g.fillStyle = powder;
-  g.fillRect(PF_MIN, PF_MIN, W, W);
-  // inner cushion: shadow cast by the raised frame onto the playfield
-  const inset = (x0: number, y0: number, x1: number, y1: number, w: number, h: number) => {
-    const gr = g.createLinearGradient(x0, y0, x1, y1);
-    gr.addColorStop(0, "rgba(40,20,5,0.45)");
-    gr.addColorStop(1, "rgba(40,20,5,0)");
+  // the raised frame casts a short shadow onto the field (deeper on the top & left)
+  const inset = (x: number, y: number, w: number, h: number, x1: number, y1: number, alpha: number) => {
+    const gr = g.createLinearGradient(x, y, x1, y1);
+    gr.addColorStop(0, `rgba(35,18,4,${alpha})`);
+    gr.addColorStop(1, "rgba(35,18,4,0)");
     g.fillStyle = gr;
-    g.fillRect(x0 < x1 || y0 < y1 ? Math.min(x0, x1) : Math.min(x0, x1), Math.min(y0, y1), w, h);
+    g.fillRect(x, y, w, h);
   };
-  inset(PF_MIN, PF_MIN, PF_MIN, PF_MIN + 16, W, 16);
-  inset(PF_MIN, PF_MIN, PF_MIN + 16, PF_MIN, 16, W);
-  inset(PF_MIN, PF_MAX, PF_MIN, PF_MAX - 10, W, 10);
-  inset(PF_MAX, PF_MIN, PF_MAX - 10, PF_MIN, 10, W);
-  g.strokeStyle = "rgba(30,14,4,0.6)";
-  g.lineWidth = 3;
+  inset(PF_MIN, PF_MIN, W, 12, PF_MIN, PF_MIN + 12, 0.42);
+  inset(PF_MIN, PF_MIN, 12, W, PF_MIN + 12, PF_MIN, 0.42);
+  inset(PF_MIN, PF_MAX - 6, W, 6, PF_MIN, PF_MAX - 6, 0.18);
+  inset(PF_MAX - 6, PF_MIN, 6, W, PF_MAX - 6, PF_MIN, 0.18);
+  g.strokeStyle = "rgba(20,10,2,0.55)";
+  g.lineWidth = 1.2;
   g.strokeRect(PF_MIN, PF_MIN, W, W);
 
-  // --- markings (printed red/black ink) ---
+  // --- markings: printed ink, multiplied into the wood so the grain shows through ---
   const ink = th.ink;
   g.save();
   if (th.glow) {
     g.shadowColor = th.glow;
-    g.shadowBlur = 14;
+    g.shadowBlur = 12;
+  } else {
+    g.globalCompositeOperation = "multiply";
   }
   g.strokeStyle = ink;
   g.fillStyle = ink;
-  g.globalAlpha = 0.92;
-  g.lineWidth = 3;
+  g.lineCap = "round";
+  g.globalAlpha = 0.9;
+
+  // centre circles + rosette + spot
+  g.lineWidth = 2.6;
   g.beginPath();
   g.arc(500, 500, 118, 0, Math.PI * 2);
   g.stroke();
-  g.lineWidth = 1.6;
+  g.lineWidth = 1.5;
+  g.beginPath();
+  g.arc(500, 500, 111, 0, Math.PI * 2);
+  g.stroke();
   g.beginPath();
   g.arc(500, 500, 58, 0, Math.PI * 2);
   g.stroke();
-  // centre rosette
-  for (let i = 0; i < 8; i++) {
-    const a = (i * Math.PI) / 4;
-    g.beginPath();
-    g.ellipse(500 + Math.cos(a) * 30, 500 + Math.sin(a) * 30, 14, 5, a, 0, Math.PI * 2);
-    g.globalAlpha = 0.35;
-    g.fill();
+  // eight-point star around the spot, in outline like a printed board
+  g.lineWidth = 1.4;
+  g.beginPath();
+  for (let i = 0; i < 16; i++) {
+    const a = (i * Math.PI) / 8 - Math.PI / 2;
+    const rr = i % 2 ? 22 : 44;
+    g.lineTo(500 + Math.cos(a) * rr, 500 + Math.sin(a) * rr);
   }
-  g.globalAlpha = 0.92;
+  g.closePath();
+  g.stroke();
+  g.fillStyle = th.accent;
   g.beginPath();
   g.arc(500, 500, 13, 0, Math.PI * 2);
   g.fill();
+  g.lineWidth = 1.8;
+  g.stroke();
+  g.fillStyle = ink;
 
+  // diagonal arrows towards each corner, with the curved "flick" arrow at their inner end
   for (const [sx, sy] of [
     [1, 1],
     [1, -1],
@@ -208,111 +221,173 @@ function paintBoard(px: number, th: BoardTheme) {
   ] as const) {
     const ux = sx * Math.SQRT1_2;
     const uy = sy * Math.SQRT1_2;
-    const x1 = 500 + ux * 185;
-    const y1 = 500 + uy * 185;
-    const x2 = 500 + ux * 430;
-    const y2 = 500 + uy * 430;
-    g.lineWidth = 3;
+    const out = Math.atan2(uy, ux);
+    const ac = { x: 500 + ux * 268, y: 500 + uy * 268 };
+    const R = 30;
+    // line: from the arc's outer edge to near the corner, arrowhead pointing at the pocket
+    const x1 = ac.x + ux * R;
+    const y1 = ac.y + uy * R;
+    const x2 = 500 + ux * 505;
+    const y2 = 500 + uy * 505;
+    g.lineWidth = 2;
     g.beginPath();
     g.moveTo(x1, y1);
-    g.lineTo(x2, y2);
+    g.lineTo(x2 - ux * 6, y2 - uy * 6);
     g.stroke();
-    const a = Math.atan2(-uy, -ux);
+    arrowHead(g, x2, y2, out, 17, 0.36);
+    // three-quarter arc around the inner end, open towards the centre, arrowheads at both tips
+    const a0 = out + Math.PI + 0.8;
+    const a1 = out + Math.PI - 0.8 + Math.PI * 2;
+    g.lineWidth = 1.8;
     g.beginPath();
-    g.moveTo(x1 + ux * 4, y1 + uy * 4);
-    g.lineTo(x1 - Math.cos(a - 0.45) * 26 + ux * 4, y1 - Math.sin(a - 0.45) * 26 + uy * 4);
-    g.lineTo(x1 - Math.cos(a + 0.45) * 26 + ux * 4, y1 - Math.sin(a + 0.45) * 26 + uy * 4);
-    g.closePath();
-    g.fill();
-    g.beginPath();
-    g.arc(x2, y2, 24, 0, Math.PI * 2);
+    g.arc(ac.x, ac.y, R, a0, a1);
     g.stroke();
-    g.beginPath();
-    g.arc(x2, y2, 9, 0, Math.PI * 2);
-    g.fill();
+    for (const [ang, dirSign] of [
+      [a0, -1],
+      [a1, 1],
+    ] as const) {
+      const tx = ac.x + Math.cos(ang) * R;
+      const ty = ac.y + Math.sin(ang) * R;
+      arrowHead(g, tx, ty, ang + (dirSign * Math.PI) / 2, 9, 0.5);
+    }
   }
+
+  // baselines: double rail ending in red circles
   for (let i = 0; i < 4; i++) {
     g.save();
     g.translate(500, 500);
     g.rotate((i * Math.PI) / 2);
     g.translate(-500, -500);
-    const y = PF_MAX - 44;
-    g.lineWidth = 3;
+    const y = PF_MAX - BASE_OFF;
+    g.lineWidth = 2;
     g.beginPath();
-    g.moveTo(BASE_MIN, y - 10);
-    g.lineTo(BASE_MAX, y - 10);
-    g.moveTo(BASE_MIN, y + 10);
-    g.lineTo(BASE_MAX, y + 10);
+    g.moveTo(BASE_MIN, y - 12);
+    g.lineTo(BASE_MAX, y - 12);
+    g.moveTo(BASE_MIN, y + 12);
+    g.lineTo(BASE_MAX, y + 12);
     g.stroke();
     for (const cx of [BASE_MIN, BASE_MAX]) {
-      g.fillStyle = ink;
+      g.fillStyle = th.accent;
       g.beginPath();
-      g.arc(cx, y, 17, 0, Math.PI * 2);
+      g.arc(cx, y, 12.5, 0, Math.PI * 2);
       g.fill();
-      g.fillStyle = th.field[0];
-      g.beginPath();
-      g.arc(cx, y, 6, 0, Math.PI * 2);
-      g.fill();
+      g.lineWidth = 2;
+      g.stroke();
     }
     g.restore();
   }
   g.restore();
 
-  // --- pockets: brass ring, deep net shadow ---
+  // --- pockets: a clean cut through the plywood, netting visible below ---
+  const net = hexRgb(th.net);
   for (const p of POCKETS) {
-    const depth = g.createRadialGradient(p.x + 4, p.y + 6, 2, p.x, p.y, POCKET_R);
-    depth.addColorStop(0, "#000");
-    depth.addColorStop(0.65, "#120a05");
-    depth.addColorStop(1, "#3a2414");
+    g.save();
     g.beginPath();
     g.arc(p.x, p.y, POCKET_R, 0, Math.PI * 2);
-    g.fillStyle = depth;
-    g.fill();
-    // net mesh hint
-    g.save();
     g.clip();
-    g.strokeStyle = "rgba(255,255,255,0.05)";
-    g.lineWidth = 1;
-    for (let k = -POCKET_R; k < POCKET_R; k += 7) {
+    g.fillStyle = `rgb(${net[0] * 0.5},${net[1] * 0.5},${net[2] * 0.5})`;
+    g.fillRect(p.x - POCKET_R, p.y - POCKET_R, POCKET_R * 2, POCKET_R * 2);
+    // knotted mesh
+    g.strokeStyle = `rgba(${net[0]},${net[1]},${net[2]},0.9)`;
+    g.lineWidth = 1.3;
+    for (let k = -POCKET_R * 2; k < POCKET_R * 2; k += 7) {
       g.beginPath();
       g.moveTo(p.x + k, p.y - POCKET_R);
-      g.lineTo(p.x + k + POCKET_R, p.y + POCKET_R);
-      g.moveTo(p.x + k + POCKET_R, p.y - POCKET_R);
+      g.lineTo(p.x + k + POCKET_R * 2, p.y + POCKET_R);
+      g.moveTo(p.x + k + POCKET_R * 2, p.y - POCKET_R);
       g.lineTo(p.x + k, p.y + POCKET_R);
       g.stroke();
     }
+    // depth: the net sags away, the board edge shades the rim
+    const depth = g.createRadialGradient(p.x + 6, p.y + 8, 2, p.x, p.y, POCKET_R);
+    depth.addColorStop(0, "rgba(0,0,0,0.12)");
+    depth.addColorStop(0.7, "rgba(0,0,0,0.42)");
+    depth.addColorStop(1, "rgba(0,0,0,0.85)");
+    g.fillStyle = depth;
+    g.fillRect(p.x - POCKET_R, p.y - POCKET_R, POCKET_R * 2, POCKET_R * 2);
     g.restore();
-    const brass = g.createLinearGradient(p.x - POCKET_R, p.y - POCKET_R, p.x + POCKET_R, p.y + POCKET_R);
-    brass.addColorStop(0, th.brass[0]);
-    brass.addColorStop(0.5, th.brass[1]);
-    brass.addColorStop(1, th.brass[2]);
-    g.lineWidth = 5;
-    g.strokeStyle = brass;
+    drawPocketLip(g, p, th);
+  }
+
+  // --- corner caps: small matte steel triangles over the mitres ---
+  for (const [cx, cy, dx, dy] of [
+    [LO, LO, 1, 1],
+    [HI, LO, -1, 1],
+    [LO, HI, 1, -1],
+    [HI, HI, -1, -1],
+  ] as const) {
+    const L = 22;
+    g.beginPath();
+    g.moveTo(cx, cy);
+    g.lineTo(cx + dx * L, cy);
+    g.lineTo(cx, cy + dy * L);
+    g.closePath();
+    const steel = g.createLinearGradient(cx, cy, cx + dx * L * 0.5, cy + dy * L * 0.5);
+    steel.addColorStop(0, th.brass[0]);
+    steel.addColorStop(0.7, th.brass[1]);
+    steel.addColorStop(1, th.brass[2]);
+    g.fillStyle = steel;
+    g.fill();
+    g.strokeStyle = "rgba(0,0,0,0.45)";
+    g.lineWidth = 0.8;
+    g.stroke();
+    g.fillStyle = "rgba(0,0,0,0.4)";
+    g.beginPath();
+    g.arc(cx + dx * 6, cy + dy * 6, 1.3, 0, Math.PI * 2);
+    g.fill();
+  }
+
+  // room light: corners fall away into shade
+  const lamp = g.createRadialGradient(480, 470, 160, 500, 500, 760);
+  lamp.addColorStop(0, "rgba(0,0,0,0)");
+  lamp.addColorStop(1, "rgba(0,0,0,0.26)");
+  g.fillStyle = lamp;
+  g.fillRect(LO, LO, VIEW, VIEW);
+  return c;
+}
+
+/** The pocket's cut edge (dark outline + the hole's wall); neon boards keep a lit ring. */
+function drawPocketLip(g: CanvasRenderingContext2D, p: Vec, th: BoardTheme) {
+  g.save();
+  if (th.glow) {
+    const ring = g.createLinearGradient(p.x - POCKET_R, p.y - POCKET_R, p.x + POCKET_R, p.y + POCKET_R);
+    ring.addColorStop(0, th.brass[0]);
+    ring.addColorStop(0.5, th.brass[1]);
+    ring.addColorStop(1, th.brass[2]);
+    g.strokeStyle = ring;
+    g.lineWidth = 4;
     g.beginPath();
     g.arc(p.x, p.y, POCKET_R + 1, 0, Math.PI * 2);
     g.stroke();
+  } else {
+    // inner wall of the hole: in shade near the light, lit on the far (bottom-right) side
+    const wall = g.createLinearGradient(p.x - POCKET_R, p.y - POCKET_R, p.x + POCKET_R, p.y + POCKET_R);
+    wall.addColorStop(0, "rgba(40,22,8,0.95)");
+    wall.addColorStop(1, th.field[1]);
+    g.strokeStyle = wall;
+    g.lineWidth = 3;
+    g.beginPath();
+    g.arc(p.x, p.y, POCKET_R - 1.5, 0, Math.PI * 2);
+    g.stroke();
+    g.strokeStyle = "rgba(25,12,3,0.6)";
+    g.lineWidth = 1;
+    g.beginPath();
+    g.arc(p.x, p.y, POCKET_R + 0.3, 0, Math.PI * 2);
+    g.stroke();
   }
-
-  // overhead lamp: warm pool of light in the middle, corners fall off into shadow
-  const lamp = g.createRadialGradient(480, 460, 120, 500, 500, 760);
-  lamp.addColorStop(0, "rgba(255,240,210,0.10)");
-  lamp.addColorStop(0.55, "rgba(0,0,0,0)");
-  lamp.addColorStop(1, "rgba(0,0,0,0.32)");
-  g.fillStyle = lamp;
-  g.fillRect(0, 0, SIZE, SIZE);
-  return c;
+  g.restore();
 }
 
 let currentTheme: BoardTheme = BOARDS[0];
 
-/** The static board, cached at the canvas' pixel size and theme. */
+/** The static board, cached at the canvas' pixel size and theme. Call with the board view set. */
 export function drawBoard(ctx: CanvasRenderingContext2D, theme: BoardTheme = BOARDS[0]) {
   const px = ctx.canvas.width;
   currentTheme = theme;
   if (!boardCache || boardCache.px !== px || boardCache.theme !== theme.id) {
     boardCache = { px, theme: theme.id, canvas: paintBoard(px, theme) };
   }
-  ctx.drawImage(boardCache.canvas, 0, 0, SIZE, SIZE);
+  ctx.drawImage(boardCache.canvas, VIEW_MIN, VIEW_MIN, VIEW, VIEW);
 }
 
 /* ======================= discs ======================= */
@@ -585,24 +660,9 @@ export function drawAimPreview(ctx: CanvasRenderingContext2D, world: World, dir:
   ctx.restore();
 }
 
-/** Brass rim + inner lip of a pocket, redrawn over a dropping disc so it slips UNDER the rim. */
+/** Pocket edge, redrawn over a dropping disc so it slips UNDER the lip. */
 function drawPocketRim(ctx: CanvasRenderingContext2D, p: Vec) {
-  ctx.save();
-  ctx.strokeStyle = "rgba(0,0,0,0.55)";
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.arc(p.x, p.y, POCKET_R - 2, 0, Math.PI * 2);
-  ctx.stroke();
-  const brass = ctx.createLinearGradient(p.x - POCKET_R, p.y - POCKET_R, p.x + POCKET_R, p.y + POCKET_R);
-  brass.addColorStop(0, currentTheme.brass[0]);
-  brass.addColorStop(0.5, currentTheme.brass[1]);
-  brass.addColorStop(1, currentTheme.brass[2]);
-  ctx.strokeStyle = brass;
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.arc(p.x, p.y, POCKET_R + 1, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.restore();
+  drawPocketLip(ctx, p, currentTheme);
 }
 
 const SINK_SLIDE = 0.34; // share of the animation spent sliding in, the rest is the drop
@@ -934,13 +994,14 @@ export const seatRingColor = (seat: number) => SEAT_COLORS[seat % 4];
 
 export function drawSeatLabels(ctx: CanvasRenderingContext2D, world: World, mySeat: number | null) {
   ctx.save();
-  ctx.font = "700 24px Inter, -apple-system, 'Segoe UI', sans-serif";
+  ctx.font = "700 17px Inter, -apple-system, 'Segoe UI', sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   for (const p of world.players) {
     const bl = baselineFor(p.seat, world.seats);
     const mx = (bl.min + bl.max) / 2;
-    const off = 70;
+    // between the outer baseline rail and the thin frame
+    const off = 29;
     let lx: number;
     let ly: number;
     let rot = 0;

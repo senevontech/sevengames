@@ -115,8 +115,8 @@ export const BASE_OFF = 44;
 // little speed-proportional drag. Coins slow steadily and stop crisply, as on a real board:
 // a full-power striker still crosses the board and rebounds, but slow coins don't creep on.
 // (cpu.ts reads these, so its shot strength stays right.)
-export const FRICTION_K = 0.35;
-export const FRICTION_LIN = 520;
+export const FRICTION_K = 0.55;
+export const FRICTION_LIN = 700;
 const STOP_SPEED = 12;
 // Rubber-lined frame: bounces lose more energy the harder they hit.
 const WALL_E_SOFT = 0.78;

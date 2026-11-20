@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { ChevronLeft, Play, Settings2 } from "lucide-react";
+import { ChevronLeft, Play, Settings2, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
 import TokenIcon from "../components/TokenIcon";
 import { formatTokens } from "../lib/currency";
@@ -66,6 +66,7 @@ export default function PlayFlow({
   corner,
   notices,
   homeExtra,
+  shop,
 }: {
   /** remembers the last mode per game */
   id: string;
@@ -75,6 +76,8 @@ export default function PlayFlow({
   notices?: ReactNode;
   /** under the Play row (e.g. "Resume"); gets `go` so it can pay first too */
   homeExtra?: (go: (start: () => void) => void) => ReactNode;
+  /** this game's own shop: a "Shop" chip in the corner opens it as a step */
+  shop?: { title: string; content: ReactNode };
 }) {
   const gate = usePlayGate();
   const [modeKey, setModeKey] = useState(() => {
@@ -84,6 +87,7 @@ export default function PlayFlow({
   });
   const [gearOpen, setGearOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [shopOpen, setShopOpen] = useState(false);
   const mode = modes.find((m) => m.key === modeKey) ?? modes[0];
 
   // a mode that becomes unavailable (went offline) falls back to the first one that works
@@ -115,6 +119,22 @@ export default function PlayFlow({
 
   const showCost = gate && gate.cost > 0 && !gate.credit;
 
+  if (shopOpen && shop) {
+    return (
+      <div className="pf">
+        <div className="pf-step pf-step-wide">
+          <div className="pf-head">
+            <button type="button" className="pf-back" aria-label="Back" onClick={() => setShopOpen(false)}>
+              <ChevronLeft size={18} />
+            </button>
+            <span>{shop.title}</span>
+          </div>
+          <div className="pf-shop acct">{shop.content}</div>
+        </div>
+      </div>
+    );
+  }
+
   if (panelOpen && mode.panel) {
     return (
       <div className="pf">
@@ -134,7 +154,19 @@ export default function PlayFlow({
 
   return (
     <div className="pf">
-      {corner ? <div className="pf-corner">{corner}</div> : null}
+      {corner || shop ? (
+        <div className="pf-corner">
+          {corner}
+          {shop ? (
+            <button type="button" className="pf-chip" onClick={() => setShopOpen(true)} title={shop.title}>
+              <span className="pf-chip-badge" aria-hidden="true">
+                <ShoppingBag size={14} strokeWidth={2.4} />
+              </span>
+              Shop
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       {preview}
 
       <div className="pf-bar">

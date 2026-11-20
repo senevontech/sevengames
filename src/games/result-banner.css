@@ -1,0 +1,150 @@
+/* Result card ("You won!" / "You lost" / draw) — fixed over the game, works in any layout. */
+.rb {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.5);
+  animation: rb-fade 0.25s ease both;
+}
+
+.rb-card {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: min(320px, 100%);
+  padding: 26px 20px 20px;
+  border-radius: 22px;
+  text-align: center;
+  color: #f3f1f6;
+  background: rgba(24, 22, 30, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 70px -26px rgba(0, 0, 0, 0.9);
+  animation: rb-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.rb-icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+}
+
+.rb-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.rb-detail {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.rb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.rb-actions button {
+  margin: 0;
+}
+
+/* win: gold */
+.rb-win .rb-card {
+  border-color: rgba(255, 200, 80, 0.4);
+  box-shadow:
+    0 30px 70px -26px rgba(0, 0, 0, 0.9),
+    0 0 60px -20px rgba(255, 190, 60, 0.55);
+}
+.rb-win .rb-icon {
+  color: #2a1a00;
+  background: linear-gradient(145deg, #ffe08a, #f5a623);
+  box-shadow: 0 8px 26px -8px rgba(245, 166, 35, 0.8);
+}
+.rb-win .rb-title {
+  color: #ffd166;
+}
+
+/* lose: muted red */
+.rb-lose .rb-icon {
+  color: #ffd9d4;
+  background: linear-gradient(145deg, #c2392f, #6e1b16);
+}
+.rb-lose .rb-title {
+  color: #ff7a6b;
+}
+
+/* draw: neutral */
+.rb-draw .rb-icon {
+  color: #e8e8f0;
+  background: linear-gradient(145deg, #6b6f80, #3a3d4a);
+}
+
+/* little rays behind the trophy */
+.rb-burst {
+  position: absolute;
+  top: 58px;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.rb-burst i {
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  width: 4px;
+  height: 14px;
+  border-radius: 2px;
+  background: #ffd166;
+  transform: rotate(var(--a)) translateY(-44px);
+  opacity: 0;
+  animation: rb-ray 0.9s 0.15s ease-out both;
+}
+
+@keyframes rb-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rb-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.7) translateY(12px);
+  }
+}
+
+@keyframes rb-ray {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(-30px) scaleY(0.4);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(-62px) scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rb,
+  .rb-card {
+    animation: none;
+  }
+  .rb-burst {
+    display: none;
+  }
+}

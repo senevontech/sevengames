@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Check } from "lucide-react";
 import TokenIcon from "./TokenIcon";
 import { useAuthContext } from "../context/AuthContext";
@@ -21,17 +21,48 @@ import {
   type ShopSlot,
 } from "../lib/shopCatalog";
 import { PieceSvg } from "../games/chess/pieces";
+import "../pages/account.css";
 import "./shop.css";
 
-type Tab = "skins" | "fx" | "frames" | "boosters" | "chess" | "ludo";
-const TABS: { id: Tab; label: string }[] = [
-  { id: "skins", label: "Arrow styles" },
-  { id: "fx", label: "Arrow effects" },
-  { id: "chess", label: "Chess" },
-  { id: "ludo", label: "Ludo" },
-  { id: "frames", label: "Avatar frames" },
-  { id: "boosters", label: "Boosters" },
-];
+type Tab = "skins" | "fx" | "frames" | "boosters" | "chessBoards" | "chessPieces" | "ludoBoards" | "ludoDice";
+
+/** Which shop: one per game (shown inside that game), plus avatar frames on the Tokens page. */
+export type ShopScope = "arrows" | "chess" | "ludo" | "frames";
+
+const SCOPES: Record<ShopScope, { title: string; sub: string; tabs: { id: Tab; label: string }[] }> = {
+  arrows: {
+    title: "Arrows shop",
+    sub: "Arrow styles, exit effects and hint / undo packs.",
+    tabs: [
+      { id: "skins", label: "Styles" },
+      { id: "fx", label: "Effects" },
+      { id: "boosters", label: "Boosters" },
+    ],
+  },
+  chess: {
+    title: "Chess shop",
+    sub: "Boards and piece sets. Yours to keep.",
+    tabs: [
+      { id: "chessBoards", label: "Boards" },
+      { id: "chessPieces", label: "Pieces" },
+    ],
+  },
+  ludo: {
+    title: "Ludo shop",
+    sub: "Boards, dice and token styles. Yours to keep.",
+    tabs: [
+      { id: "ludoBoards", label: "Boards" },
+      { id: "ludoDice", label: "Dice" },
+    ],
+  },
+  frames: {
+    title: "Avatar frames",
+    sub: "A frame around your picture, shown in every game and on leaderboards.",
+    tabs: [{ id: "frames", label: "Frames" }],
+  },
+};
+
+const GAME_NAMES: Record<string, string> = { chess: "Chess", ludo: "Ludo", arrows: "Arrows", carrom: "Carrom" };
 
 /* defaults when nothing is equipped in a slot */
 const SLOT_DEFAULT: Partial<Record<ShopSlot, string>> = {
@@ -147,13 +178,19 @@ function FramePreview({ id, uri }: { id: string; uri: string | null }) {
   );
 }
 
-/** Shop: arrow skins and effects, avatar frames, and booster packs, bought with tokens. */
-export default function ShopSection() {
+/**
+ * A shop for ONE game (or avatar frames), bought with tokens.
+ * `embedded`: shown inside a game's start screen: no page heading, links go to the Tokens page.
+ */
+export default function ShopSection({ scope, embedded = false }: { scope: ShopScope; embedded?: boolean }) {
   const shop = useShop();
   const { user } = useAuthContext();
   const { uri } = useAvatar(user);
   const { wallet } = useTokens();
-  const [tab, setTab] = useState<Tab>("skins");
+  const { pathname, hash } = useLocation();
+  const conf = SCOPES[scope];
+  const [tab, setTab] = useState<Tab>(conf.tabs[0].id);
+  const signInTo = `/login?next=${encodeURIComponent(pathname + hash)}`;
   const [armed, setArmed] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
@@ -190,7 +227,7 @@ export default function ShopSection() {
       return (
         <div className="shop-foot">
           <span className="shop-price">{price ? <><TokenIcon size={14} /> {formatTokens(price)}</> : "Free"}</span>
-          <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/login?next=/tokens%23shop">
+          <Link className="ac-btn ac-btn-sm ac-btn-ghost" to={signInTo}>
             Sign in
           </Link>
         </div>
@@ -216,7 +253,7 @@ export default function ShopSection() {
           <span className="shop-price">
             <TokenIcon size={14} /> {price === null ? "—" : formatTokens(price)}
           </span>
-          <span className="shop-lock">🔒 {need.game === "chess" ? "Chess" : "Ludo"} Lv {need.level}</span>
+          <span className="shop-lock">🔒 {GAME_NAMES[need.game ?? ""] ?? need.game} Lv {need.level}</span>
         </div>
       );
     }
@@ -244,7 +281,11 @@ export default function ShopSection() {
   function buyButton(id: string, price: number | null, done: string, equipSlot?: ShopSlot) {
     const short = price !== null && balance < price;
     if (short) {
-      return (
+      return embedded ? (
+        <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/tokens#buy">
+          Get tokens
+        </Link>
+      ) : (
         <a className="ac-btn ac-btn-sm ac-btn-ghost" href="#buy">
           Get tokens
         </a>
@@ -269,20 +310,26 @@ export default function ShopSection() {
   }
 
   return (
-    <section className="tw-section shop" id="shop">
+    <section className={`tw-section shop${embedded ? " shop-embedded" : ""}`} id={embedded ? undefined : "shop"}>
       <div className="ac-section-head">
         <div>
-          <h2 className="ac-h2">Shop</h2>
-          <p className="ac-sub">Spend tokens on looks and boosters. Styles and frames are yours to keep.</p>
+          {embedded ? null : <h2 className="ac-h2">{conf.title}</h2>}
+          <p className="ac-sub">{conf.sub}</p>
         </div>
+        {embedded && shop.signedIn ? (
+          <Link className="shop-wallet" to="/tokens#buy" title="Get more tokens">
+            <TokenIcon size={15} /> {wallet?.unlimited ? "∞" : formatTokens(wallet?.balance ?? 0)}
+          </Link>
+        ) : null}
       </div>
 
       {!shop.available ? (
         <p className="ac-sub">The shop isn't open yet.</p>
       ) : (
         <>
+          {conf.tabs.length > 1 ? (
           <div className="shop-tabs" role="tablist" aria-label="Shop sections">
-            {TABS.map((t) => (
+            {conf.tabs.map((t) => (
               <button
                 key={t.id}
                 type="button"
@@ -298,6 +345,7 @@ export default function ShopSection() {
               </button>
             ))}
           </div>
+          ) : null}
 
           {note ? (
             <p className={`tw-note${note.ok ? " ok" : " bad"}`} role="status">
@@ -331,9 +379,8 @@ export default function ShopSection() {
                   </li>
                 ))
               : null}
-            {tab === "chess"
-              ? [
-                  ...Object.entries(CHESS_BOARDS).map(([id, t]) => (
+            {tab === "chessBoards"
+              ? Object.entries(CHESS_BOARDS).map(([id, t]) => (
                     <li key={id} className="ac-card shop-card">
                       <div className="shop-preview">
                         <ChessBoardPreview id={id} />
@@ -342,8 +389,10 @@ export default function ShopSection() {
                       <p>{t.blurb}</p>
                       {cosmetic(id, "chess_board", `${t.name} board`)}
                     </li>
-                  )),
-                  ...Object.entries(CHESS_PIECES).map(([id, t]) => (
+                  ))
+              : null}
+            {tab === "chessPieces"
+              ? Object.entries(CHESS_PIECES).map(([id, t]) => (
                     <li key={id} className="ac-card shop-card">
                       <div className="shop-preview shop-preview-dark">
                         <ChessPiecesPreview id={id} />
@@ -352,12 +401,10 @@ export default function ShopSection() {
                       <p>{t.blurb}</p>
                       {cosmetic(id, "chess_pieces", `${t.name} pieces`)}
                     </li>
-                  )),
-                ]
+                  ))
               : null}
-            {tab === "ludo"
-              ? [
-                  ...Object.entries(LUDO_BOARDS).map(([id, t]) => (
+            {tab === "ludoBoards"
+              ? Object.entries(LUDO_BOARDS).map(([id, t]) => (
                     <li key={id} className="ac-card shop-card">
                       <div className="shop-preview">
                         <LudoBoardPreview id={id} />
@@ -366,8 +413,10 @@ export default function ShopSection() {
                       <p>{t.blurb}</p>
                       {cosmetic(id, "ludo_board", `${t.name} board`)}
                     </li>
-                  )),
-                  ...Object.entries(LUDO_DICE).map(([id, t]) => (
+                  ))
+              : null}
+            {tab === "ludoDice"
+              ? Object.entries(LUDO_DICE).map(([id, t]) => (
                     <li key={id} className="ac-card shop-card">
                       <div className="shop-preview">
                         <LudoDicePreview id={id} />
@@ -376,8 +425,7 @@ export default function ShopSection() {
                       <p>{t.blurb}</p>
                       {cosmetic(id, "ludo_dice", `${t.name} dice`)}
                     </li>
-                  )),
-                ]
+                  ))
               : null}
             {tab === "frames"
               ? Object.entries(FRAMES).map(([id, f]) => (
@@ -413,7 +461,7 @@ export default function ShopSection() {
                         {shop.signedIn ? (
                           buyButton(id, price, `Added ${b.name}.`)
                         ) : (
-                          <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/login?next=/tokens%23shop">
+                          <Link className="ac-btn ac-btn-sm ac-btn-ghost" to={signInTo}>
                             Sign in
                           </Link>
                         )}

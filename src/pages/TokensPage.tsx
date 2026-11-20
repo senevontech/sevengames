@@ -109,13 +109,6 @@ export default function TokensPage() {
     return () => cancelAnimationFrame(id);
   }, [location.hash, packs]);
 
-  // "/tokens#shop" (from the in-game booster panel) scrolls to the shop
-  useEffect(() => {
-    if (location.hash !== "#shop") return;
-    const id = requestAnimationFrame(() => document.getElementById("shop")?.scrollIntoView({ behavior: "smooth", block: "start" }));
-    return () => cancelAnimationFrame(id);
-  }, [location.hash]);
-
   // reload history whenever the balance changes
   const balance = wallet?.balance;
   useEffect(() => {
@@ -213,7 +206,7 @@ export default function TokensPage() {
             </Link>
           </div>
         </section>
-        <ShopSection />
+        <ShopSection scope="frames" />
       </div>
     );
   }
@@ -511,8 +504,8 @@ export default function TokensPage() {
         </div>
       </section>
 
-      {/* ---------- shop: arrow styles + effects, avatar frames, boosters ---------- */}
-      <ShopSection />
+      {/* ---------- avatar frames (game items are sold in each game's own shop) ---------- */}
+      <ShopSection scope="frames" />
 
       {/* ---------- earn + code ---------- */}
       <div className="tw-row">
@@ -654,7 +647,23 @@ export default function TokensPage() {
                   {busy ? "Processing…" : "Confirm test purchase"}
                 </button>
               ) : (
-                <p className="tk-muted">Payments are coming soon.</p>
+                <>
+                  <button type="button" className="tk-btn tk-btn-primary" disabled={busy} onClick={() => void confirmCheckout()}>
+                    {busy
+                      ? "Waiting for payment…"
+                      : `Pay ${
+                          checkout.kind === "plan"
+                            ? formatMoney((checkout.plan === "monthly" ? monthly : yearly) ?? 0, currency)
+                            : formatMoney(
+                                checkout.pack.prices[currency] ?? checkout.pack.prices.USD ?? 0,
+                                checkout.pack.prices[currency] !== undefined ? currency : "USD",
+                              )
+                        }`}
+                  </button>
+                  <p className="tk-muted">
+                    Secure payment by Razorpay · UPI, cards, netbanking{checkout.kind === "plan" ? " · renews automatically, cancel any time" : ""}
+                  </p>
+                </>
               )}
             </div>
           </div>

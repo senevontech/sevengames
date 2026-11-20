@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, Gamepad2, History, LogOut, Pencil, Trophy } from "lucide-react";
+import { ArrowRight, Gamepad2, History, LogOut, Pencil, ShieldCheck, Trophy } from "lucide-react";
+import { promptAdFree } from "../lib/adFreePromo";
 import TokenIcon from "../components/TokenIcon";
 import { useAuthContext } from "../context/AuthContext";
 import { useAvatar } from "../lib/avatar";
@@ -8,7 +9,7 @@ import AvatarLibrary from "../components/AvatarLibrary";
 import { GamePoster } from "../components/GamePoster";
 import { games, scoreLabel } from "../catalog";
 import { isLowerBetter, usePersonalScores } from "../lib/scores";
-import { useTokens } from "../lib/tokens";
+import { useShowAds, useTokens } from "../lib/tokens";
 import { PROGRESS_GAMES, useGameProgress } from "../lib/progress";
 import { formatTokens } from "../lib/currency";
 import "./account.css";
@@ -70,6 +71,7 @@ export default function Profile() {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const { uri: avatarUri } = useAvatar(user);
   const { wallet, loading: walletLoading } = useTokens();
+  const showAds = useShowAds();
   const location = useLocation();
 
   useEffect(() => {
@@ -172,6 +174,11 @@ export default function Profile() {
             <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/tokens">
               Wallet <ArrowRight size={14} aria-hidden="true" />
             </Link>
+            {showAds ? (
+              <button type="button" className="ac-btn ac-btn-sm ac-btn-ghost" onClick={() => promptAdFree("settings")}>
+                <ShieldCheck size={14} aria-hidden="true" /> Remove ads
+              </button>
+            ) : null}
           </div>
         </section>
 

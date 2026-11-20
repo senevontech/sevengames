@@ -3,6 +3,7 @@
    rating (supabase/chess.sql). Rules: engine.ts. CPU: ai.ts in a Web Worker. */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GameProps } from "../index";
+import ShopSection from "../../components/ShopSection";
 import Board from "./Board";
 import { PieceSvg } from "./pieces";
 import {
@@ -724,6 +725,7 @@ export default function ChessGame(_props: GameProps) {
         {/* Play → how to play → that mode's settings */}
         <PlayFlow
           id="chess"
+          shop={{ title: "Chess shop", content: <ShopSection scope="chess" embedded /> }}
           preview={
             <div className="pf-preview ch-preview" inert>
               <Board s={PREVIEW_STATE} moves={[]} canMove={false} flipped={false} lastMove={null} onMove={() => {}} theme={theme} pieces={pieceSet} />
@@ -856,8 +858,8 @@ export default function ChessGame(_props: GameProps) {
       : mode === "pass"
         ? `${result.winner === 1 ? "White" : "Black"} wins`
         : won
-          ? "You win! 🏆"
-          : "You lose";
+          ? "You won! 🏆"
+          : "You lost";
   const iAsked = online ? rematch.includes(online.room.clientId) : false;
   const theyAsked = online?.opp ? rematch.includes(online.opp.clientId) : false;
 

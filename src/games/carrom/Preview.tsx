@@ -1,8 +1,8 @@
 /* Carrom board, racked and ready, drawn with the player's equipped board / coins / striker.
    Shown behind the "Start game" bar on the game page before a premium play is paid for. */
 import { useEffect, useRef } from "react";
-import { SIZE, makeWorld } from "./engine";
-import { drawBoard, drawCoin, drawStriker, seatRingColor } from "./render";
+import { makeWorld } from "./engine";
+import { drawBoard, drawCoin, drawStriker, seatRingColor, setBoardView } from "./render";
 import { useCarromProgress } from "./progress";
 import { useAuthContext } from "../../context/AuthContext";
 import { tierOf } from "./stats";
@@ -27,7 +27,7 @@ export function BoardPreview() {
     });
     let raf = 0;
     const paint = () => {
-      ctx.setTransform(canvas.width / SIZE, 0, 0, canvas.width / SIZE, 0, 0);
+      setBoardView(ctx, canvas.width);
       drawBoard(ctx, board);
       for (const d of world.discs) if (d.alive && d.kind !== "striker") drawCoin(ctx, d, coinSet);
       // the striker waiting on your baseline, gently pulsing

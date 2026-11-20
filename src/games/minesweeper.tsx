@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GameProps } from "./index";
+import ResultBanner from "./ResultBanner";
 
 const SIZE = 8;
 const MINES = 10;
@@ -153,6 +154,14 @@ export default function Minesweeper({ onFinish }: GameProps) {
           );
         })}
       </div>
+      {status !== "playing" ? (
+        <ResultBanner
+          outcome={status === "won" ? "win" : "lose"}
+          detail={status === "won" ? "Every safe square cleared." : "You hit a mine."}
+          againLabel="New board"
+          onAgain={reset}
+        />
+      ) : null}
       {status === "playing" ? (
         <button
           type="button"

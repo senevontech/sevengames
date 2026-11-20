@@ -1,4 +1,4 @@
-/* Carrom CPU — always hard, and the same for every player (fixed CPU_STATS striker).
+/* Carrom CPU — strong but beatable, and the same for every player (fixed CPU_STATS striker).
 
    For every legal striker spot on its baseline it tries every target coin into every pocket:
    - direct shots (ghost-ball aim) and one-cushion bank shots (striker bounces off a wall first)
@@ -6,7 +6,7 @@
    - rejects blocked lines and shots where the striker would likely follow into a pocket
    - covers the queen when it must, and goes for the queen when it can cover it
    No pot available → a soft safety shot that leaves its own coins near pockets.
-   A tiny human-like aim error keeps it beatable. */
+   A human-like aim and power error keeps it beatable. */
 import {
   BASE_MAX,
   BASE_MIN,
@@ -235,13 +235,14 @@ export function planCpuShot(world: World): CpuPlan {
     plan = safetyShot(world, seat, ownCoins, top);
   }
 
-  // Hard CPU: small aim error, an occasional slightly worse shot.
+  // Human-like aim error: usually close, sometimes clearly off — so cut shots and long pots
+  // miss now and then instead of dropping every time.
   const gauss = (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
-  const err = gauss * (Math.random() < 0.06 ? 0.022 : 0.006);
+  const err = gauss * (Math.random() < 0.18 ? 0.04 : 0.014);
   const ca = Math.cos(err);
   const sa = Math.sin(err);
   plan.dir = { x: plan.dir.x * ca - plan.dir.y * sa, y: plan.dir.x * sa + plan.dir.y * ca };
-  plan.power = clamp(plan.power * (1 + gauss * 0.025), 0.05, 1);
+  plan.power = clamp(plan.power * (1 + gauss * 0.06), 0.05, 1);
   return plan;
 }
 

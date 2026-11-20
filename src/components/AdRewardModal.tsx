@@ -7,6 +7,7 @@ import { X } from "lucide-react";
 import TokenIcon from "./TokenIcon";
 import { useLiveAds, type Ad } from "../lib/ads";
 import { trackAd } from "../lib/track";
+import { promptAdFree } from "../lib/adFreePromo";
 import { tokenErrorText, useTokens } from "../lib/tokens";
 import "../pages/tokens.css";
 
@@ -198,6 +199,17 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
     }, 1000);
     return () => window.clearTimeout(t);
   }, [houseLeft]);
+
+  // After an ad paid out and the modal closes: offer "Go ad-free" (at most once a day)
+  const earned = useRef(false);
+  useEffect(() => {
+    if (stage.kind === "done") earned.current = true;
+  }, [stage.kind]);
+  useEffect(() => {
+    if (open || !earned.current) return;
+    earned.current = false;
+    promptAdFree("reward_ad", 400);
+  }, [open]);
 
   // Esc closes
   useEffect(() => {

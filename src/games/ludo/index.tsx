@@ -4,6 +4,7 @@
    broadcasts the state. Other players only send "roll" / "move". Random matches and invites are
    1-v-1; a room code takes 2–4 players, with CPUs in seats still empty at the start. */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ShopSection from "../../components/ShopSection";
 import type { GameProps } from "../index";
 import LudoBoard, { Die, useShownTokens } from "./Board";
 import { COLOR_KEYS, COLOR_NAMES, cpuPick, current, movable, move, newGame, pass, roll, type Color, type LudoState } from "./engine";
@@ -489,6 +490,7 @@ export default function LudoGame(_props: GameProps) {
         {/* Play → how to play → that mode's settings */}
         <PlayFlow
           id="ludo"
+          shop={{ title: "Ludo shop", content: <ShopSection scope="ludo" embedded /> }}
           preview={
             <div className="pf-preview lu-preview" inert>
               <div className="lu-board-wrap" style={{ "--lu-line": theme.line } as React.CSSProperties}>
@@ -615,7 +617,7 @@ export default function LudoGame(_props: GameProps) {
         <LudoBoard s={st} shown={shown} theme={theme} dice={diceStyle} choices={choices} onPick={myMove} labels={labels} rot={boardRot} />
         {st.phase === "over" || hostGone ? (
           <div className="lu-overlay">
-            <div className={`lu-card${iWon ? " is-win" : ""}`}>
+            <div className={`lu-card${iWon ? " is-win" : st.phase === "over" && mode !== "pass" && mySeat >= 0 ? " is-loss" : ""}`}>
               {hostGone ? (
                 <>
                   <h3>The host left</h3>
@@ -623,8 +625,8 @@ export default function LudoGame(_props: GameProps) {
                 </>
               ) : (
                 <>
-                  <h3>{mode === "pass" || mySeat < 0 ? `${seats[winnerSeat]?.name ?? COLOR_NAMES[st.winner!]} wins!` : iWon ? "You win! 🏆" : `${seats[winnerSeat]?.name ?? "Someone"} wins`}</h3>
-                  <p>All four tokens home.</p>
+                  <h3>{mode === "pass" || mySeat < 0 ? `${seats[winnerSeat]?.name ?? COLOR_NAMES[st.winner!]} wins!` : iWon ? "You won! 🏆" : "You lost"}</h3>
+                  <p>{mode !== "pass" && mySeat >= 0 && !iWon ? `${seats[winnerSeat]?.name ?? "Someone"} got all four tokens home first.` : "All four tokens home."}</p>
                   {xpGain ? <p className="lu-xp-gain">+{xpGain} XP</p> : null}
                 </>
               )}

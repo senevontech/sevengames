@@ -1,0 +1,213 @@
+/* "Go ad-free" popup (AdFreePromo.tsx), on top of the shared .tk-modal card */
+
+.afp-card {
+  display: grid;
+  gap: 14px;
+  width: min(420px, 100%);
+}
+
+.afp-head {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding-top: 4px;
+  text-align: center;
+}
+
+.afp-head h3 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.afp-head p {
+  margin: 0;
+  max-width: 32ch;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.afp-badge {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  color: #1f0c00;
+  background: linear-gradient(145deg, #ff9d52, #f26a0c);
+  box-shadow: 0 12px 28px -12px rgba(244, 96, 0, 0.9);
+}
+
+.afp-opt {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.afp-plus {
+  background: linear-gradient(160deg, rgba(255, 138, 61, 0.14), rgba(255, 138, 61, 0.03));
+  border-color: rgba(255, 138, 61, 0.38);
+}
+
+.afp-opt-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.afp-opt-top b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+}
+
+.afp-flag {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #1f0c00;
+  background: #ff9d52;
+}
+
+.afp-perks {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.afp-perks li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.afp-perks svg:first-child {
+  flex: none;
+  color: #4ade80;
+}
+
+.afp-plans {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.afp-plan {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.afp-plan span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.afp-plan b {
+  font-size: 15px;
+}
+
+.afp-plan i {
+  position: absolute;
+  top: -8px;
+  right: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 700;
+  color: #052e12;
+  background: #4ade80;
+}
+
+.afp-plan.is-on {
+  border-color: #ff8a3d;
+  background: rgba(255, 138, 61, 0.12);
+  box-shadow: inset 0 0 0 1px #ff8a3d;
+}
+
+.afp-plan:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.afp-cta {
+  width: 100%;
+  padding-block: 12px;
+}
+
+.afp-opt-sub {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.afp-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.afp-row .tk-btn {
+  flex: 1 1 auto;
+}
+
+.afp-hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.afp-hint a {
+  color: #ff9d52;
+}
+
+.afp-center {
+  text-align: center;
+}
+
+.afp-error {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #ffd2c4;
+  background: rgba(255, 138, 107, 0.12);
+}
+
+.afp-skip {
+  justify-self: center;
+  padding: 6px 12px;
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.5);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.afp-skip:hover {
+  color: rgba(255, 255, 255, 0.8);
+}

@@ -5,6 +5,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { supabase } from "../supabase";
 import { useAuthContext } from "../context/AuthContext";
+import { isNative } from "./native";
 
 export type Subscription = {
   id: string;
@@ -99,6 +100,14 @@ const TokensContext = createContext<Ctx | null>(null);
 /** Friendly text for the server's error codes. */
 export function tokenErrorText(err: unknown) {
   const msg = (err as { message?: string })?.message ?? String(err);
+  if (msg.includes("play_managed")) return "This subscription is billed by Google Play — cancel it in the Play Store app (Profile → Payments & subscriptions).";
+  if (msg.includes("payment_cancelled")) return "Payment cancelled — you haven't been charged.";
+  if (msg.includes("checkout_unavailable")) return "Couldn't open the payment window. Check your connection and try again.";
+  if (msg.includes("razorpay_not_configured")) return "Payments aren't set up on the server yet.";
+  if (msg.includes("bad_signature") || msg.includes("order_mismatch")) return "We couldn't verify that payment. If you were charged, contact support.";
+  if (msg.includes("payment_failed")) return "The payment didn't go through. You haven't been charged.";
+  if (msg.includes("no_subscription")) return "No active subscription to cancel.";
+  if (msg.includes("razorpay:")) return "The payment service had a problem. Please try again.";
   if (msg.includes("ad_no_fill") || msg.includes("ads_unavailable")) return "No ad is available right now. Please try again later.";
   if (msg.includes("ad_cap_reached")) return "You've reached today's ad limit — come back tomorrow.";
   if (msg.includes("ad_not_finished")) return "Watch the whole ad to earn tokens.";
@@ -230,10 +239,20 @@ export function TokensProvider({ children }: { children: ReactNode }) {
     setWallet(await rpc<Wallet>("claim_ad_reward", { p_view: viewId }));
   }, [rpc]);
 
+  // Website in live payments mode: real checkout through Razorpay (the Android app uses Google
+  // Play Billing from the Tokens page itself). Otherwise the test checkout.
+  const live = wallet?.payments_mode === "live" && !isNative;
+
   const subscribe = useCallback(async (plan: "monthly" | "yearly", currency: string) => {
-    setWallet(await rpc<Wallet>("mock_subscribe", { p_plan: plan, p_currency: currency }));
+    if (live) {
+      const rp = await import("./razorpay");
+      await rp.razorpaySubscribe(plan, currency);
+      setWallet(await rpc<Wallet>("token_wallet"));
+    } else {
+      setWallet(await rpc<Wallet>("mock_subscribe", { p_plan: plan, p_currency: currency }));
+    }
     void loadAdFree(); // subscribers are ad-free
-  }, [rpc, loadAdFree]);
+  }, [rpc, loadAdFree, live]);
 
   const buyAdFree = useCallback(async () => {
     setAdFree(await rpc<AdFree>("ad_free_buy"));
@@ -245,12 +264,26 @@ export function TokensProvider({ children }: { children: ReactNode }) {
   }, [rpc]);
 
   const buyPack = useCallback(async (pack: string, currency: string) => {
-    setWallet(await rpc<Wallet>("mock_buy_pack", { p_pack: pack, p_currency: currency }));
-  }, [rpc]);
+    if (live) {
+      const rp = await import("./razorpay");
+      await rp.razorpayBuyPack(pack, currency, `Token pack · ${pack}`);
+      setWallet(await rpc<Wallet>("token_wallet"));
+    } else {
+      setWallet(await rpc<Wallet>("mock_buy_pack", { p_pack: pack, p_currency: currency }));
+    }
+  }, [rpc, live]);
 
   const cancel = useCallback(async () => {
-    setWallet(await rpc<Wallet>("cancel_subscription"));
-  }, [rpc]);
+    // bought in the Android app: only Google Play can stop it renewing
+    if (wallet?.subscription?.provider === "google_play") throw new Error("play_managed");
+    if (wallet?.subscription?.provider === "razorpay") {
+      const rp = await import("./razorpay");
+      await rp.razorpayCancel();
+      setWallet(await rpc<Wallet>("token_wallet"));
+    } else {
+      setWallet(await rpc<Wallet>("cancel_subscription"));
+    }
+  }, [rpc, wallet?.subscription?.provider]);
 
   const redeem = useCallback(async (code: string) => {
     const res = await rpc<Wallet & { ok: boolean; reason?: string }>("redeem_code", { p_code: code });

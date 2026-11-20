@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { GameProps } from "./index";
 import { shuffle } from "./util";
+import ResultBanner from "./ResultBanner";
 
 const WORDS = [
   "pixel", "vector", "signal", "orbit", "nebula", "quartz", "zephyr", "cipher",
@@ -89,6 +90,13 @@ export default function HangmanGame({ onFinish }: GameProps) {
           );
         })}
       </div>
+      {done ? (
+        <ResultBanner
+          outcome={lives > 0 ? "win" : "lose"}
+          detail={lives > 0 ? `All ${words.length} words solved · ${score} points` : `The word was “${word}”.`}
+          onAgain={reset}
+        />
+      ) : null}
       {done ? (
         <button type="button" className="primary-btn" onClick={reset}>
           Play again

@@ -474,8 +474,8 @@ function BoosterPanel({ item, onClose }: { item: BoosterItem; onClose: () => voi
               })}
             </ul>
             {msg ? <p className="arw-shop-msg">{msg}</p> : null}
-            <Link className="arw-shop-more" to="/tokens#shop">
-              Open the shop
+            <Link className="arw-shop-more" to="/tokens#buy">
+              Get more tokens
             </Link>
           </>
         )}
