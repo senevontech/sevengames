@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#000000" />
     <meta name="color-scheme" content="dark" />
+    <!-- ===== Splash (once per session): inline so it paints before any app code loads.
+         Progress is driven by src/lib/splash.ts; Start opens a three-layer curtain. ===== -->
+    <script>
+      (function () {
+        var d = document.documentElement;
+        try {
+          if (sessionStorage.getItem("senevon:splash")) d.className += " sp-skip";
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="/splash.css" />
     <meta
       name="description"
       content="Senevon Game Studio — play instantly, discover new worlds, and be part of a global gaming universe."
@@ -24,6 +35,96 @@
     <title>Senevon Game Studio — A Universe of Games</title>
   </head>
   <body>
+    <div id="splash" role="dialog" aria-label="Senevon Games Studio">
+      <div class="sp-layer sp-grey"></div>
+      <div class="sp-layer sp-black"></div>
+      <div class="sp-layer sp-orange">
+        <div class="sp-word" aria-hidden="true">Reimagined</div>
+        <button type="button" class="sp-ring" id="sp-start" disabled aria-label="Loading">
+          <span class="sp-dial"><svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="47" pathLength="100" /></svg></span>
+          <span class="sp-pct" aria-hidden="true"><span id="sp-num">0</span>%</span>
+          <span class="sp-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6" /></svg></span>
+        </button>
+        <div class="sp-brand"><span>SENEVON</span><strong>Games Studio</strong></div>
+      </div>
+    </div>
+    <script>
+      /* Splash progress: real loading steps (window.__splash.step / .ready from the app),
+         eased so the number moves smoothly; never sits at 99%; Start appears at 100%. */
+      (function () {
+        var root = document.getElementById("splash");
+        if (!root || document.documentElement.className.indexOf("sp-skip") >= 0) {
+          window.__splash = { step: function () {}, ready: function () {} };
+          return;
+        }
+        var arc = root.querySelector("circle");
+        var num = document.getElementById("sp-num");
+        var btn = document.getElementById("sp-start");
+        var meta = document.querySelector('meta[name="theme-color"]');
+        var oldTheme = meta && meta.getAttribute("content");
+        if (meta) meta.setAttribute("content", "#ff6a00");
+        var t0 = performance.now();
+        var MIN_MS = 1100; // long enough to read, never longer than the real load needs
+        var target = 8, shown = 0, appReady = false, fontsReady = false, done = false;
+        var lastNum = -1, lastOff = -1;
+
+        function finished() { return appReady && fontsReady && performance.now() - t0 >= MIN_MS; }
+        function frame() {
+          var now = performance.now();
+          var goal = finished() ? 100 : Math.min(target, 96);
+          // ease towards the goal; between steps creep forward slowly so it never looks stuck
+          shown += (goal - shown) * 0.09;
+          if (!finished() && shown >= goal - 0.6 && shown < 94) {
+            target = Math.min(94, target + 0.05);
+          }
+          if (finished() && goal - shown < 0.4) shown = 100;
+          // touch the DOM only when something visible changed (whole % / ~0.25% of arc)
+          var v = Math.floor(shown);
+          if (v !== lastNum) { lastNum = v; num.textContent = v; }
+          var off = Math.round((100 - shown) * 4) / 4;
+          if (off !== lastOff) { lastOff = off; arc.style.strokeDashoffset = off; }
+          if (shown >= 100) return showStart();
+          requestAnimationFrame(frame);
+        }
+        function showStart() {
+          root.className += " sp-ready";
+          btn.disabled = false;
+          btn.setAttribute("aria-label", "Enter");
+          try { btn.focus({ preventScroll: true }); } catch (e) {}
+        }
+        function open() {
+          if (done) return;
+          done = true;
+          // paint the page under the still-closed curtain first, THEN slide — so the page's
+          // first (expensive) paint never lands in the middle of the animation
+          document.documentElement.className += " sp-reveal";
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              root.className += " sp-open";
+            });
+          });
+          try { sessionStorage.setItem("senevon:splash", "1"); } catch (e) {}
+          if (meta && oldTheme) meta.setAttribute("content", oldTheme);
+          window.dispatchEvent(new Event("splash:start"));
+          setTimeout(function () {
+            document.documentElement.className += " sp-gone";
+            if (root.parentNode) root.parentNode.removeChild(root);
+          }, 1300);
+        }
+        btn.addEventListener("click", open);
+        window.__splash = {
+          step: function (p) { if (p > target) target = p; },
+          ready: function () { appReady = true; },
+        };
+        // fonts (capped: a slow font never holds the app back)
+        var f = document.fonts && document.fonts.ready;
+        if (f) f.then(function () { fontsReady = true; window.__splash.step(30); });
+        setTimeout(function () { fontsReady = true; }, 2500);
+        // safety net: if the app never reports in, offer Start anyway
+        setTimeout(function () { appReady = true; }, 12000);
+        requestAnimationFrame(frame);
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

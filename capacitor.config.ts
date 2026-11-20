@@ -14,7 +14,7 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 2500,
       launchAutoHide: false, // hidden by the app once it has rendered (src/lib/native.ts)
-      backgroundColor: "#121212",
+      backgroundColor: "#FF6A00", // matches the web splash (index.html) it hands over to
       showSpinner: false,
       androidScaleType: "CENTER_INSIDE",
     },

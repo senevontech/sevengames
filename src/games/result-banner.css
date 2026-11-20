@@ -1,115 +1,169 @@
-/* Result card ("You won!" / "You lost" / draw) — fixed over the game, works in any layout. */
+/* Result card ("You won!" / "You lost" / draw) — fixed over the game, works in any layout.
+   Deliberately flat: no shadows, glows or neumorphism, and its own button classes so page themes don't restyle it. */
 .rb {
+  --rb-accent: #ffc94d;
   position: fixed;
   inset: 0;
   z-index: 70;
   display: grid;
   place-items: center;
   padding: 16px;
-  background: rgba(0, 0, 0, 0.5);
-  animation: rb-fade 0.25s ease both;
+  background: rgba(0, 0, 0, 0.55);
+  animation: rb-fade 0.2s ease both;
+}
+.rb-lose {
+  --rb-accent: #ff7a6b;
+}
+.rb-draw {
+  --rb-accent: #c9cbd6;
 }
 
 .rb-card {
-  position: relative;
   display: grid;
   justify-items: center;
-  gap: 10px;
-  width: min(320px, 100%);
-  padding: 26px 20px 20px;
-  border-radius: 22px;
+  gap: 8px;
+  width: min(300px, 100%);
+  padding: 24px 20px 20px;
+  border-radius: 18px;
   text-align: center;
   color: #f3f1f6;
-  background: rgba(24, 22, 30, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 30px 70px -26px rgba(0, 0, 0, 0.9);
-  animation: rb-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-.rb-icon {
-  display: grid;
-  place-items: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
+  background: #18161e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+  animation: rb-pop 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
 
 .rb-title {
-  margin: 0;
-  font-size: 28px;
-  font-weight: 900;
+  margin: 4px 0 0;
+  font-size: 26px;
+  font-weight: 800;
   letter-spacing: -0.01em;
+  color: var(--rb-accent);
 }
 
 .rb-detail {
   margin: 0;
   font-size: 14px;
-  opacity: 0.8;
+  opacity: 0.75;
 }
 
 .rb-actions {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
   gap: 10px;
-  margin-top: 6px;
+  width: 100%;
+  margin-top: 10px;
 }
 
-.rb-actions button {
+.rb .rb-btn {
+  flex: 1;
   margin: 0;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: none;
+  filter: none;
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+.rb .rb-btn:active {
+  transform: scale(0.97);
+}
+.rb .rb-btn-ghost {
+  color: #e9e9ee;
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.rb .rb-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.rb .rb-btn-main {
+  color: #1a0b02;
+  background: #ff8a3d;
+}
+.rb .rb-btn-main:hover {
+  background: #ff9a55;
 }
 
-/* win: gold */
-.rb-win .rb-card {
-  border-color: rgba(255, 200, 80, 0.4);
-  box-shadow:
-    0 30px 70px -26px rgba(0, 0, 0, 0.9),
-    0 0 60px -20px rgba(255, 190, 60, 0.55);
-}
-.rb-win .rb-icon {
-  color: #2a1a00;
-  background: linear-gradient(145deg, #ffe08a, #f5a623);
-  box-shadow: 0 8px 26px -8px rgba(245, 166, 35, 0.8);
-}
-.rb-win .rb-title {
-  color: #ffd166;
+/* ---------- animated icon ---------- */
+.rb-svg {
+  overflow: visible;
+  fill: none;
+  stroke: var(--rb-accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-/* lose: muted red */
-.rb-lose .rb-icon {
-  color: #ffd9d4;
-  background: linear-gradient(145deg, #c2392f, #6e1b16);
+.rb-ring,
+.rb-sym path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
 }
-.rb-lose .rb-title {
-  color: #ff7a6b;
+.rb-ring {
+  stroke-width: 2.5;
+  opacity: 0.35;
+  transform: rotate(-90deg);
+  transform-origin: 32px 32px;
+  animation: rb-draw 0.6s 0.1s ease-out forwards;
+}
+.rb-sym path {
+  animation: rb-draw 0.45s ease-out forwards;
+}
+.rb-sym path:nth-child(1) {
+  animation-delay: 0.45s;
+}
+.rb-sym path:nth-child(2) {
+  animation-delay: 0.7s;
+}
+.rb-sym path:nth-child(3) {
+  animation-delay: 0.8s;
+}
+.rb-sym path:nth-child(4) {
+  animation-delay: 0.95s;
 }
 
-/* draw: neutral */
-.rb-draw .rb-icon {
-  color: #e8e8f0;
-  background: linear-gradient(145deg, #6b6f80, #3a3d4a);
+/* win: trophy gives a little bounce once drawn, sparks burst from the ring */
+.rb-win .rb-sym {
+  transform-origin: 32px 46px;
+  animation: rb-bounce 0.5s 1.25s ease-out;
 }
-
-/* little rays behind the trophy */
-.rb-burst {
-  position: absolute;
-  top: 58px;
-  left: 50%;
-  width: 0;
-  height: 0;
-  pointer-events: none;
+.rb-sparks {
+  transform: translate(32px, 32px);
 }
-.rb-burst i {
-  position: absolute;
-  left: -2px;
-  top: -2px;
-  width: 4px;
-  height: 14px;
-  border-radius: 2px;
-  background: #ffd166;
-  transform: rotate(var(--a)) translateY(-44px);
+.rb-sparks line {
+  stroke-width: 2.5;
   opacity: 0;
-  animation: rb-ray 0.9s 0.15s ease-out both;
+  transform: rotate(var(--a)) translate(-32px, -38px);
+  animation: rb-spark 0.6s 1.2s ease-out forwards;
+}
+
+@keyframes rb-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes rb-bounce {
+  40% {
+    transform: scale(1.12);
+  }
+}
+
+@keyframes rb-spark {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--a)) translate(-32px, -30px);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translate(-32px, -42px);
+  }
 }
 
 @keyframes rb-fade {
@@ -121,30 +175,22 @@
 @keyframes rb-pop {
   from {
     opacity: 0;
-    transform: scale(0.7) translateY(12px);
-  }
-}
-
-@keyframes rb-ray {
-  0% {
-    opacity: 0;
-    transform: rotate(var(--a)) translateY(-30px) scaleY(0.4);
-  }
-  40% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: rotate(var(--a)) translateY(-62px) scaleY(1);
+    transform: scale(0.9);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .rb,
-  .rb-card {
+  .rb-card,
+  .rb-win .rb-sym {
     animation: none;
   }
-  .rb-burst {
+  .rb-ring,
+  .rb-sym path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .rb-sparks {
     display: none;
   }
 }

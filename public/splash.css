@@ -1,0 +1,192 @@
+/* Splash screen styles (see index.html). A plain file in public/, loaded before first paint.
+   Performance: everything that moves is a transform or opacity (GPU-composited), the page
+   behind stays unpainted until Start, and nothing loops once the splash is waiting. */
+.sp-skip #splash { display: none !important; }
+
+/* no page scrolling (or scrollbar) behind the splash, and don't paint the page under it:
+   the heavy home page is only drawn after Start, while the curtain still covers it */
+html:not(.sp-skip):not(.sp-gone),
+html:not(.sp-skip):not(.sp-gone) body { overflow: hidden; }
+html:not(.sp-skip):not(.sp-gone):not(.sp-reveal) #root { visibility: hidden; }
+
+#splash {
+  --sp-orange: #ff6a00;
+  --sp-ink: #ffe3cf;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  overflow: hidden;
+  contain: strict;
+  font-family: "Onest", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* ---------- the three curtain layers ---------- */
+.sp-layer {
+  position: absolute;
+  inset: 0;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.9s cubic-bezier(0.76, 0, 0.18, 1);
+}
+.sp-grey { background: #3a3a40; transition-delay: 0.28s; }
+.sp-black { background: #0c0c0e; transition-delay: 0.14s; }
+.sp-orange { background: var(--sp-orange); transition-delay: 0s; contain: strict; }
+/* promote to GPU layers only for the slide (not for the whole splash) */
+#splash.sp-open .sp-layer { will-change: transform; transform: translate3d(0, -101%, 0); }
+#splash.sp-open { pointer-events: none; }
+
+/* ---------- giant watermark word ---------- */
+.sp-word {
+  position: absolute;
+  left: -0.04em;
+  top: -0.2em;
+  font-size: 17.5vw;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  color: rgba(110, 35, 0, 0.09);
+  animation: sp-fade 0.9s ease both;
+}
+
+/* ---------- brand, bottom-left ---------- */
+.sp-brand {
+  position: absolute;
+  left: clamp(20px, 4vw, 48px);
+  bottom: clamp(20px, 5vh, 48px);
+  display: grid;
+  line-height: 1;
+  animation: sp-up 0.8s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.sp-brand span {
+  font-size: clamp(22px, 4.6vw, 44px);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #fff;
+}
+.sp-brand strong {
+  margin-top: 0.12em;
+  font-size: clamp(38px, 8.4vw, 82px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #0b0b0b;
+}
+
+/* ---------- loader ring → small arrow button ---------- */
+.sp-ring {
+  --size: min(40vh, 34vw);
+  position: absolute;
+  right: 9vw;
+  top: 50%;
+  width: var(--size);
+  height: var(--size);
+  margin-top: calc(var(--size) * -0.38);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--sp-ink);
+  font: inherit;
+  cursor: default;
+  outline: none;
+  animation: sp-fade 0.6s ease both;
+}
+/* the ring itself shrinks with a transform (composited), not by resizing the box */
+.sp-dial {
+  position: absolute;
+  inset: 0;
+  transform: scale(1);
+  transition: transform 0.7s cubic-bezier(0.65, 0, 0.25, 1);
+}
+.sp-dial svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform: rotate(180deg); /* the arc starts at 9 o'clock, like the reference */
+}
+.sp-dial circle {
+  fill: none;
+  stroke: var(--sp-ink);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  transition: stroke-width 0.7s ease;
+}
+.sp-pct {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--size) * 0.24);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: rgba(255, 227, 207, 0.62);
+  font-variant-numeric: tabular-nums;
+  transition: opacity 0.3s ease, transform 0.4s ease;
+}
+.sp-arrow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--size) * 0.2);
+  height: calc(var(--size) * 0.2);
+  margin: calc(var(--size) * -0.1) 0 0 calc(var(--size) * -0.1);
+  color: #fff;
+  opacity: 0;
+  transform: translate3d(-40%, 0, 0);
+  transition: opacity 0.35s 0.35s ease, transform 0.5s 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sp-arrow svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* loaded: % fades, ring closes and shrinks around the arrow */
+#splash.sp-ready .sp-ring { cursor: pointer; }
+#splash.sp-ready .sp-dial { transform: scale(0.42); }
+#splash.sp-ready .sp-dial circle { stroke-width: 6.5; }
+#splash.sp-ready .sp-pct { opacity: 0; transform: scale(0.8); }
+#splash.sp-ready .sp-arrow { opacity: 1; transform: none; }
+#splash.sp-ready .sp-ring:hover .sp-arrow,
+#splash.sp-ready .sp-ring:focus-visible .sp-arrow { transform: translate3d(12%, 0, 0); transition-delay: 0s; }
+#splash.sp-ready .sp-ring:focus-visible circle { stroke: #fff; }
+#splash.sp-ready .sp-ring:active .sp-dial { transform: scale(0.39); transition-duration: 0.15s; }
+
+/* ---------- portrait: word runs down the left edge, ring centred ---------- */
+@media (orientation: portrait) {
+  .sp-word {
+    writing-mode: vertical-rl;
+    top: -0.05em;
+    left: -0.16em;
+    font-size: 31vw;
+  }
+  .sp-ring {
+    --size: min(62vw, 46vh);
+    right: auto;
+    left: 50%;
+    top: 44%;
+    margin: calc(var(--size) * -0.5) 0 0 calc(var(--size) * -0.5);
+  }
+  .sp-brand strong { font-size: clamp(40px, 15vw, 82px); }
+  .sp-brand span { font-size: clamp(22px, 7vw, 44px); }
+}
+
+@keyframes sp-up { from { opacity: 0; transform: translate3d(0, 24px, 0); } }
+@keyframes sp-fade { from { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-word, .sp-brand, .sp-ring { animation: none; }
+  .sp-dial, .sp-arrow { transition: none; }
+  .sp-layer { transition: opacity 0.35s ease; transition-delay: 0s; }
+  #splash.sp-open .sp-layer { transform: none; opacity: 0; }
+}
