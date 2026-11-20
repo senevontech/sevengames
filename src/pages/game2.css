@@ -1145,3 +1145,142 @@
 .gs.g2 .gs-cats-menu li + li {
   margin-top: 2px;
 }
+
+/* ---------- Get the app + footer (soft, like the rest of the page) ---------- */
+.g2-getapp {
+  padding: 34px var(--g2-pad) 0;
+}
+
+.g2-getapp-title {
+  margin: 0;
+  font-size: clamp(40px, 7vw, 64px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.g2-getapp-title a {
+  color: color-mix(in srgb, var(--gs-ink) 42%, transparent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.g2-getapp-title a:hover {
+  color: var(--gs-ink);
+}
+
+.g2-getapp-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  margin-top: 18px;
+}
+
+.g2-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 22px 0 16px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+  color: var(--gs-ink) !important;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise-sm);
+  transition:
+    box-shadow 0.22s var(--neu-ease),
+    transform 0.45s var(--neu-spring),
+    color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .g2-pill:hover {
+    box-shadow: var(--neu-half);
+    transform: translateY(1px) scale(0.98);
+  }
+}
+
+.g2-pill:active {
+  box-shadow: var(--neu-press);
+  transform: scale(0.96);
+  transition:
+    box-shadow 0.08s ease-out,
+    transform 0.08s ease-out;
+}
+
+.g2-pill:focus-visible {
+  outline: 2px solid var(--neu-accent);
+  outline-offset: 3px;
+}
+
+.g2-pill-dl {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #fff;
+  background: #22b45a;
+}
+
+.g2-pill-sm {
+  min-height: 30px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.g2-getapp-note {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: var(--g2-muted);
+}
+
+.g2-foot {
+  position: relative;
+  overflow: hidden;
+  padding: 0 var(--g2-pad) 22px;
+}
+
+/* big faded wordmark, cut off by the bottom edge */
+.g2-foot-mark {
+  display: block;
+  margin: 8px 0 -0.42em;
+  font-size: clamp(64px, 15vw, 190px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--gs-ink) 6%, transparent);
+  user-select: none;
+  pointer-events: none;
+}
+
+.g2-foot-row {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.g2-foot-copy {
+  margin: 0;
+  font-size: 13px;
+  color: var(--g2-muted);
+}
+
+.g2-foot-links {
+  display: flex;
+  gap: 12px;
+}
+
+/* the header download button: phones already have it in the menu, keep the bar roomy */
+@media (max-width: 420px) {
+  .gs.g2 .g2-get-app {
+    display: none;
+  }
+}

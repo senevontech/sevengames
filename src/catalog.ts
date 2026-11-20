@@ -161,6 +161,20 @@ export const games: Game[] = [
     description: "Drive real metro, train, tram, bus and ferry routes in any city on Earth.",
   },
   {
+    id: "droiddoom",
+    title: "DroidDoom",
+    category: "Action",
+    kind: "iframe",
+    embedUrl: "https://droiddoom.onrender.com",
+    difficulty: "Hard",
+    minutes: 10,
+    accent: "#ff3b30",
+    // Cloudinary resizes it to 480px (about 32 KB instead of 183 KB)
+    poster:
+      "https://res.cloudinary.com/dr9cpy4uq/image/upload/f_auto,q_auto,w_480/v1795173878/Droiddoom_poster-webp_ikza1w.webp",
+    description: "AI has conquered the world. Pilot humanity's last war machine and blast the rogue bots to save mankind.",
+  },
+  {
     id: "pov-cricket",
     title: "POV Cricket",
     category: "Action",

@@ -1,5 +1,7 @@
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+import { rmSync } from "node:fs";
+import { resolve } from "node:path";
 
 /**
  * Google AdSense, only when VITE_ADSENSE_CLIENT (ca-pub-…) is set at build time:
@@ -45,12 +47,23 @@ function appViewport(isApp: boolean): Plugin {
   };
 }
 
+/** App build: drop public/download (the website's APK) so the app doesn't carry a copy of itself. */
+function dropDownloads(isApp: boolean): Plugin {
+  return {
+    name: "senevon-drop-downloads",
+    apply: "build",
+    closeBundle() {
+      if (isApp) rmSync(resolve("dist", "download"), { recursive: true, force: true });
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "VITE_");
   // the Android app ("--mode app") never loads AdSense (apps use AdMob instead)
   const client = mode === "app" ? "" : (env.VITE_ADSENSE_CLIENT ?? "").trim();
   return {
-    plugins: [react(), appViewport(mode === "app"), adsense(/^ca-pub-\d{10,20}$/.test(client) ? client : null)],
+    plugins: [react(), appViewport(mode === "app"), dropDownloads(mode === "app"), adsense(/^ca-pub-\d{10,20}$/.test(client) ? client : null)],
     build: {
       outDir: "dist",
       rollupOptions: {

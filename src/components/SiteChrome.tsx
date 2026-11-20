@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Coins, House, Menu, Moon, Sun, Trophy, UserRound, X } from "lucide-react";
+import { Coins, House, Menu, Moon, Smartphone, Sun, Trophy, UserRound, X } from "lucide-react";
 import { categories, games } from "../catalog";
 import { categoryIcon } from "../lib/categoryIcons";
 import NavAccount from "./NavAccount";
 import TokenPill from "./TokenPill";
 import { useGameTheme } from "../hooks/useGameTheme";
+import { isNative } from "../lib/native";
+import { GET_APP_PATH } from "../lib/appLinks";
 import "../pages/home3.css";
 import "./site-chrome.css";
 
@@ -97,6 +99,14 @@ function SiteMenu({ pathname }: { pathname: string }) {
             </span>
             Profile
           </Link>
+          {!isNative ? (
+            <Link to={GET_APP_PATH} className="site-menu-item">
+              <span className="site-menu-icon" aria-hidden="true">
+                <Smartphone size={16} />
+              </span>
+              Get the app
+            </Link>
+          ) : null}
           <div className="site-menu-foot">
             <span>© {new Date().getFullYear()} Senevon Game Studio</span>
             <Link to="/privacy">Privacy policy</Link>
@@ -207,6 +217,12 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
         <p>Play instantly, discover new worlds, and be part of a global gaming universe.</p>
         <p className="site-footer-copy">
           © {new Date().getFullYear()} Senevon Game Studio · <Link to="/privacy">Privacy policy</Link>
+          {!isNative ? (
+            <>
+              {" · "}
+              <Link to={GET_APP_PATH}>Get the app</Link>
+            </>
+          ) : null}
         </p>
       </footer>
     </div>

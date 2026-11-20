@@ -1,0 +1,346 @@
+/* "Get the app" page: soft (neumorphic) surfaces in the home page's light / dark theme.
+   Tokens (--neu-*, --gs-ink, --g2-muted) come from .g2 in game2.css. */
+.ga {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 96px 16px 40px;
+  color: var(--gs-ink);
+  display: grid;
+  gap: clamp(32px, 5vw, 60px);
+  min-width: 0;
+}
+
+/* ---------- hero ---------- */
+.ga-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  align-items: center;
+  gap: clamp(24px, 5vw, 64px);
+}
+
+.ga-kicker {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--neu-accent);
+}
+
+.ga-title {
+  margin: 0;
+  font-size: clamp(38px, 6.4vw, 68px);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  color: var(--gs-ink);
+}
+
+.ga-sub {
+  max-width: 34em;
+  margin: 18px 0 0;
+  font-size: clamp(15px, 1.6vw, 17px);
+  line-height: 1.55;
+  color: var(--g2-muted);
+}
+
+.ga-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 18px;
+  margin-top: 30px;
+}
+
+/* soft raised buttons, pressed in on tap */
+.ga-store {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 0 22px 0 18px;
+  border-radius: 18px;
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.1;
+  text-decoration: none;
+  color: var(--gs-ink) !important;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise);
+  transition:
+    box-shadow 0.22s var(--neu-ease),
+    transform 0.45s var(--neu-spring);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ga-store > span {
+  display: grid;
+  text-align: left;
+}
+
+.ga-store small {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--g2-muted);
+}
+
+@media (hover: hover) {
+  a.ga-store:hover {
+    box-shadow: var(--neu-half);
+    transform: translateY(1px) scale(0.98);
+  }
+}
+
+a.ga-store:active {
+  box-shadow: var(--neu-press);
+  transform: scale(0.96);
+  transition:
+    box-shadow 0.08s ease-out,
+    transform 0.08s ease-out;
+}
+
+a.ga-store:focus-visible {
+  outline: 2px solid var(--neu-accent);
+  outline-offset: 4px;
+}
+
+/* the APK: raised orange, like the home page's account button */
+.ga-store-apk {
+  color: #fff !important;
+  background: var(--neu-orange);
+  box-shadow: var(--neu-orange-raise);
+}
+
+.ga-store-apk small {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+@media (hover: hover) {
+  a.ga-store-apk:hover {
+    box-shadow: var(--neu-orange-raise);
+    filter: brightness(1.04);
+  }
+}
+
+a.ga-store-apk:active {
+  box-shadow: var(--neu-orange-press);
+}
+
+/* not out yet: sunk into the surface */
+.ga-store-soon {
+  box-shadow: var(--neu-well);
+  color: var(--g2-muted) !important;
+  cursor: default;
+}
+
+.ga-hint {
+  max-width: 36em;
+  margin: 18px 0 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--g2-muted);
+}
+
+/* ---------- phone mock-up: a soft raised body around the orange splash ---------- */
+.ga-phone {
+  justify-self: center;
+  width: min(250px, 70vw);
+  aspect-ratio: 9 / 19;
+  padding: 6px;
+  border-radius: 38px;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-panel);
+}
+
+.ga-phone-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 32px;
+  background: #ff6a00;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.ga-phone-word {
+  position: absolute;
+  top: -0.05em;
+  left: -0.14em;
+  writing-mode: vertical-rl;
+  font-size: 72px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: rgba(110, 35, 0, 0.1);
+}
+
+.ga-phone-ring {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border-radius: 50%;
+  border: 3px solid #ffe3cf;
+  color: #fff;
+}
+
+.ga-phone-brand {
+  position: absolute;
+  left: 16px;
+  bottom: 18px;
+  display: grid;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #0b0b0b;
+}
+
+.ga-phone-brand small {
+  margin-bottom: 4px;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+
+/* ---------- features: raised cards, icon in a sunk well ---------- */
+.ga-features {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px;
+}
+
+.ga-feature {
+  padding: 22px;
+  border-radius: 24px;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise);
+}
+
+.ga-feature-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  color: var(--neu-accent);
+  background: var(--neu-bg);
+  box-shadow: var(--neu-well);
+}
+
+.ga-feature h2 {
+  margin: 16px 0 6px;
+  font-size: 16px;
+  font-weight: 650;
+  color: var(--gs-ink);
+}
+
+.ga-feature p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--g2-muted);
+}
+
+/* ---------- APK install steps ---------- */
+.ga-steps {
+  border-radius: 24px;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise);
+}
+
+.ga-steps summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 22px;
+  font-size: 16px;
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 24px;
+}
+
+.ga-steps summary::-webkit-details-marker {
+  display: none;
+}
+
+.ga-steps summary:focus-visible {
+  outline: 2px solid var(--neu-accent);
+  outline-offset: 3px;
+}
+
+.ga-steps summary svg {
+  flex: none;
+  box-sizing: content-box;
+  padding: 7px;
+  border-radius: 50%;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise-sm);
+  transition:
+    transform 0.25s var(--neu-ease),
+    box-shadow 0.2s ease;
+}
+
+.ga-steps[open] summary svg {
+  transform: rotate(180deg);
+  box-shadow: var(--neu-well);
+  color: var(--neu-accent);
+}
+
+.ga-steps ol {
+  margin: 0;
+  padding: 0 22px 4px 44px;
+  display: grid;
+  gap: 10px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--g2-muted);
+}
+
+.ga-steps-note {
+  margin: 14px 22px 22px;
+  font-size: 13px;
+  color: var(--g2-muted);
+}
+
+/* ---------- small screens ---------- */
+@media (max-width: 860px) {
+  .ga-features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .ga {
+    padding-top: 88px;
+  }
+  .ga-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ga-phone {
+    display: none;
+  }
+  .ga-store {
+    flex: 1 1 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .ga-features {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ga-store,
+  .ga-steps summary svg {
+    transition: none;
+  }
+}

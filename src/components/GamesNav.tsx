@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LayoutGrid, Menu, X } from "lucide-react";
+import { LayoutGrid, Menu, Smartphone, X } from "lucide-react";
+import { isNative } from "../lib/native";
+import { GET_APP_PATH } from "../lib/appLinks";
 import { categories, games, type Game } from "../catalog";
 import { categoryIcon } from "../lib/categoryIcons";
 import NavAccount from "./NavAccount";
@@ -188,6 +190,16 @@ function MobileMenu({ onPick }: { onPick: (g: Game) => void }) {
                     <span className="gs-cats-name">Leaderboards</span>
                   </Link>
                 </li>
+                {!isNative ? (
+                  <li>
+                    <Link to={GET_APP_PATH} onClick={close}>
+                      <span className="gs-cats-icon" aria-hidden="true">
+                        <Smartphone size={16} />
+                      </span>
+                      <span className="gs-cats-name">Get the app</span>
+                    </Link>
+                  </li>
+                ) : null}
               </ul>
               <p className="gs-burger-label">Categories</p>
               <ul className="gs-burger-list">

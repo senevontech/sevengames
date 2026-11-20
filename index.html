@@ -90,7 +90,12 @@
           root.className += " sp-ready";
           btn.disabled = false;
           btn.setAttribute("aria-label", "Enter");
-          try { btn.focus({ preventScroll: true }); } catch (e) {}
+          // keyboard/desktop only: on touch WebViews a programmatic focus draws a blue focus box
+          try {
+            if (window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+              btn.focus({ preventScroll: true });
+            }
+          } catch (e) {}
         }
         function open() {
           if (done) return;

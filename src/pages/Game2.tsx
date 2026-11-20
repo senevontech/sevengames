@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Crown, Moon, Play, Sun } from "lucide-react";
+import { Crown, Download, Moon, Play, Sun } from "lucide-react";
+import { isNative } from "../lib/native";
+import { APK_URL, GET_APP_PATH, PLAY_STORE_URL } from "../lib/appLinks";
+import { PlayGlyph } from "../components/StoreGlyphs";
 import { games, getGame, scoreLabel, type Game, type GameCategory } from "../catalog";
 import { categoryIcon } from "../lib/categoryIcons";
 import { useRecent } from "../lib/recent";
@@ -13,6 +16,7 @@ import DiskCarousel from "../components/DiskCarousel";
 import GameDisk from "../components/GameDisk";
 import PlayerAvatar from "../components/PlayerAvatar";
 import TokenPill from "../components/TokenPill";
+import SoftFooter from "../components/SoftFooter";
 import { useLiveAds, type Ad } from "../lib/ads";
 import { useSiteSettings } from "../lib/siteSettings";
 import { useShowAds } from "../lib/tokens";
@@ -28,7 +32,7 @@ import "./game2.css";
  */
 
 // Page surface + text colour per theme (same soft surfaces as the game pages).
-const THEMES = {
+export const THEMES = {
   light: { bg: "#e3e5ea", ink: "#17181b" },
   dark: { bg: "#2c2e33", ink: "#eceef2" },
 } as const;
@@ -304,6 +308,11 @@ export default function Game2() {
       onPointerOver={prefetchFromEvent}
     >
       <GamesNav mobileMenu>
+        {!isNative ? (
+          <Link to={GET_APP_PATH} className="gs-icon-btn g2-get-app" aria-label="Get the app" title="Get the app">
+            <Download size={19} strokeWidth={1.8} aria-hidden="true" />
+          </Link>
+        ) : null}
         <TokenPill variant="solid" />
         <button
           type="button"
@@ -432,7 +441,31 @@ export default function Game2() {
             <p className="g2-empty">No ranked players yet. Finish a round to get on the board.</p>
           )}
         </section>
+
+        {/* 6. Get the app (website only) */}
+        {!isNative ? (
+          <section className="g2-getapp" aria-labelledby="g2-getapp">
+            <h2 className="g2-getapp-title" id="g2-getapp">
+              <Link to={GET_APP_PATH}>Get the app</Link>
+            </h2>
+            <div className="g2-getapp-btns">
+              <a className="g2-pill" href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer">
+                <PlayGlyph size={20} />
+                Play store
+              </a>
+              <a className="g2-pill" href={APK_URL} download>
+                <span className="g2-pill-dl" aria-hidden="true">
+                  <Download size={13} strokeWidth={2.6} />
+                </span>
+                Apk download
+              </a>
+            </div>
+            <p className="g2-getapp-note">*The app is safe to install and doesn't collect any sensitive user data.</p>
+          </section>
+        ) : null}
       </main>
+
+      <SoftFooter />
     </div>
   );
 }

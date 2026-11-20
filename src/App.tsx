@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, type ReactNode } from "react";
 import { syncPlayPurchases } from "./lib/playBilling";
 import { isNative } from "./lib/native";
 import { useOnline } from "./lib/online";
@@ -15,15 +15,18 @@ const Login = lazy(() => import("./pages/Login"));
 const Profile = lazy(() => import("./pages/Profile"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const Privacy = lazy(() => import("./pages/Privacy"));
+const About = lazy(() => import("./pages/About"));
 const Admin = lazy(() => import("./pages/admin/Admin"));
 const TokensPage = lazy(() => import("./pages/TokensPage"));
 const Leaderboards = lazy(() => import("./pages/Leaderboards"));
 const PlayerPage = lazy(() => import("./pages/PlayerPage"));
+const GetApp = lazy(() => import("./pages/GetApp"));
 const AdFreePromo = lazy(() => import("./components/AdFreePromo"));
 import { TokensProvider } from "./lib/tokens";
 import { ShopProvider } from "./lib/shop";
 import { startOfflineSync } from "./lib/offlineQueue";
 import OfflineBanner from "./components/OfflineBanner";
+import AppBanner from "./components/AppBanner";
 
 import { trackPageview } from "./lib/track";
 
@@ -43,6 +46,15 @@ function Landing() {
   );
 }
 
+/** Pages outside the Shell still count page views. */
+function Tracked({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  useEffect(() => {
+    trackPageview(location.pathname);
+  }, [location.pathname]);
+  return <>{children}</>;
+}
+
 /** Every page except the home page, framed in the new UI (nav, glass sidebar, island backdrop). */
 function Shell() {
   const location = useLocation();
@@ -59,6 +71,7 @@ function Shell() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/about" element={<About />} />
         <Route path="/tokens" element={<TokensPage />} />
         <Route path="/leaderboards" element={<Leaderboards />} />
         <Route path="/player/:id" element={<PlayerPage />} />
@@ -90,6 +103,7 @@ export default function App() {
   return (
     <AuthProvider>
       <OfflineBanner />
+      <AppBanner />
       <TokensProvider>
       <OfflineSync />
       <Suspense fallback={null}>
@@ -106,6 +120,17 @@ export default function App() {
           }
         />
         <Route path="/" element={<Landing />} />
+        {/* website only (GetApp sends the app back home); soft page with its own nav like the home page */}
+        <Route
+          path="/app"
+          element={
+            <Suspense fallback={<div style={{ minHeight: "100vh" }} />}>
+              <Tracked>
+                <GetApp />
+              </Tracked>
+            </Suspense>
+          }
+        />
         {/* Old home page addresses land on the new one */}
         <Route path="/home3" element={<Navigate to="/" replace />} />
         <Route path="/game2" element={<Navigate to="/" replace />} />
