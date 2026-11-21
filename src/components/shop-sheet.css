@@ -1,0 +1,166 @@
+/* Full-screen shop sheet (ShopSheet.tsx). Uses the game page's neumorphic theme when present. */
+
+.ss {
+  --ss-accent: #ff8a3d;
+  --ss-bg: var(--neu-bg, #1d1e24);
+  --ss-text: var(--text, #f4f4f6);
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 3vw, 32px);
+  background: rgba(6, 4, 8, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: ss-fade 0.2s ease both;
+}
+
+.ss-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(1040px, 100%);
+  height: min(860px, 100%);
+  overflow: hidden;
+  border-radius: 28px;
+  color: var(--ss-text);
+  background: var(--ss-bg);
+  /* a strip of the game's colour along the top */
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--ss-accent) 18%, transparent), transparent 140px);
+  box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.8);
+  outline: none;
+  animation: ss-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ss-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-height: 60px;
+  padding: 10px 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ss-text) 10%, transparent);
+}
+
+.ss-head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.ss-back {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  translate: 0 -50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 38px;
+  padding: 0 14px 0 8px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: inherit;
+  background: color-mix(in srgb, var(--ss-text) 8%, transparent);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ss-back:hover {
+  background: color-mix(in srgb, var(--ss-text) 14%, transparent);
+}
+
+.ss-back:focus-visible {
+  outline: 2px solid var(--ss-accent);
+  outline-offset: 2px;
+}
+
+.ss-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 18px clamp(14px, 3vw, 28px) 32px;
+}
+
+/* the shop inside uses the account page styles: let it fill the sheet */
+.ss-body > .acct {
+  max-width: none;
+  padding: 0;
+}
+
+.ss-body .shop-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+}
+
+.ss-loading {
+  display: grid;
+  place-items: center;
+  min-height: 200px;
+  color: color-mix(in srgb, var(--ss-text) 60%, transparent);
+}
+
+/* phones: a sheet that slides up and fills the screen */
+@media (max-width: 640px) {
+  .ss {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .ss-panel {
+    width: 100%;
+    height: calc(100dvh - 24px);
+    border-radius: 24px 24px 0 0;
+    animation-name: ss-up;
+  }
+
+  .ss-head h2 {
+    font-size: 16px;
+  }
+
+  .ss-body {
+    padding: 14px 16px calc(24px + env(safe-area-inset-bottom));
+  }
+}
+
+@keyframes ss-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes ss-pop {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+}
+
+@keyframes ss-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ss,
+  .ss-panel {
+    animation: none;
+  }
+}
+
+/* "Shop" buttons on result / end screens (GameShopButton) */
+.gs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}

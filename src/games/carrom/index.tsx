@@ -62,6 +62,8 @@ import ResultBanner, { type Outcome } from "../ResultBanner";
 import { matchXp, useCarromProgress } from "./progress";
 import { CPU_STATS, FAIR_STATS, isPremiumStriker, playStats, tierOf, turnBonusSeconds, type StrikerStats } from "./stats";
 import CarromLocker, { LevelBar } from "./Locker";
+import ShopSheet from "../../components/ShopSheet";
+import { useCustomGameShop } from "../gameShop";
 import { BoardPreview } from "./Preview";
 import PlayFlow, { HelpLine } from "../PlayFlow";
 import { Bot, Globe, Users } from "lucide-react";
@@ -166,6 +168,17 @@ export default function CarromGame({ onFinish }: GameProps) {
   const tallyRef = useRef({ coins: 0, queen: false, combos: 0, streak: 0 });
 
   const [screen, setScreen] = useState<Phase>("menu");
+  // the Carrom shop as a full-screen sheet (game page); the old locker screen is the fallback
+  const gameShop = useCustomGameShop();
+  const closeShop = gameShop?.close;
+  useEffect(() => closeShop?.(), [screen, closeShop]);
+  const openShop = () => (gameShop ? gameShop.open() : setPhase("locker"));
+  const shopSheet =
+    gameShop?.isOpen ? (
+      <ShopSheet title="Carrom shop" accent={gameShop.accent} onClose={gameShop.close}>
+        <CarromLocker prog={prog} signedIn={Boolean(auth.user)} onBack={gameShop.close} bare />
+      </ShopSheet>
+    ) : null;
   const [message, setMessage] = useState("Pick a mode.");
   const [potted, setPotted] = useState({ white: 0, black: 0 });
   const [queenText, setQueenText] = useState("in play");
@@ -1130,9 +1143,9 @@ export default function CarromGame({ onFinish }: GameProps) {
               id="carrom"
               preview={<BoardPreview />}
               corner={
-                <button type="button" className="pf-chip" onClick={() => setPhase("locker")} title="Carrom shop: strikers, coins, boards and upgrades">
-                  <span className="pf-chip-badge" title={`Carrom level ${prog.level}`}>{prog.level}</span>
-                  Shop
+                <button type="button" className="pf-chip" onClick={openShop} title="Your Carrom level · open the shop">
+                  <span className="pf-chip-badge" aria-hidden="true">{prog.level}</span>
+                  Level {prog.level}
                 </button>
               }
               modes={[
@@ -1318,6 +1331,7 @@ export default function CarromGame({ onFinish }: GameProps) {
             </button>
           </form>
         )}
+        {shopSheet}
       </div>
     );
   }
@@ -1553,7 +1567,7 @@ export default function CarromGame({ onFinish }: GameProps) {
         <button
           type="button"
           className="ghost-btn"
-          onClick={() => (isOnline ? leaveNet() : between ? startLocal(modeRef.current as "cpu" | "local2" | "local4") : setPhase("locker"))}
+          onClick={() => (isOnline ? leaveNet() : between ? startLocal(modeRef.current as "cpu" | "local2" | "local4") : openShop())}
         >
           {isOnline ? "Leave" : between ? "Restart match" : "Shop"}
         </button>
@@ -1574,6 +1588,7 @@ export default function CarromGame({ onFinish }: GameProps) {
         Slide to place the striker (or A / D) · drag on the board to aim (pull back like a slingshot, or point
         where you want it to go) · release to shoot · {TURN_SECONDS}s per turn · arrow keys fine-tune, space shoots
       </HelpLine>
+      {shopSheet}
     </div>
   );
 }

@@ -401,3 +401,52 @@
 .shop-embedded .tw-note.bad {
   color: var(--ac-bad);
 }
+
+/* ---------- Tokens page: every game's shop, picked by game (ShopHub) ---------- */
+.shop-hub-picker {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 4px 2px 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.shop-hub-picker::-webkit-scrollbar {
+  display: none;
+}
+
+.shop-hub-picker button {
+  flex: none;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ac-text);
+  background: var(--ac-bg);
+  box-shadow: var(--ac-raise-sm);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.shop-hub-picker button.active {
+  color: #fff;
+  background: linear-gradient(145deg, #ff9d52, #ec5f00);
+  box-shadow: 0 8px 18px -10px rgba(236, 95, 0, 0.8);
+}
+
+.shop-hub-picker button:focus-visible {
+  outline: 2px solid var(--ac-accent);
+  outline-offset: 2px;
+}
+
+/* Carrom's locker is drawn in the game's own style: give it the game's surface */
+.shop-hub-game {
+  padding: clamp(14px, 2.4vw, 22px);
+  border-radius: 22px;
+  color: var(--text, #f4f4f6);
+  background: var(--neu-bg, #202127);
+  box-shadow: var(--ac-raise-sm);
+}

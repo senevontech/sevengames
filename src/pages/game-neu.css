@@ -27,7 +27,7 @@
 }
 
 /* The game screen is always dark (the games are designed for it): its own dark soft surface */
-.site[data-gtheme] .gp-stage {
+.site[data-gtheme] :is(.gp-stage, .ss-panel, .shop-hub-game) {
   --neu-bg: #202127;
   --neu-hi: #2d2f36;
   --neu-lo: #121317;
@@ -35,7 +35,7 @@
 }
 
 /* Light mode: the game screen is a light soft surface too */
-.site.site[data-gtheme="light"] .gp-stage {
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-panel, .shop-hub-game) {
   --neu-bg: #e3e5ea;
   --neu-hi: #ffffff;
   --neu-lo: #b6bac3;
@@ -113,12 +113,12 @@
 .site[data-gtheme] .gp-guest-x,
 .site[data-gtheme] .gp-modes > button,
 .site[data-gtheme] .gp-modes > a,
-.site[data-gtheme] .gp-stage .ghost-btn,
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .ghost-btn,
 .site[data-gtheme] .gp-stage .exit-full,
-.site[data-gtheme] .gp-stage .carrom-profile,
-.site[data-gtheme] .gp-stage .carrom-mute,
-.site[data-gtheme] .gp-stage .carrom-tabs button,
-.site[data-gtheme] .gp-stage .carrom-item {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-profile,
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-mute,
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-tabs button,
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-item {
   border: 0;
   background: var(--neu-bg);
   box-shadow: var(--neu-raise-sm);
@@ -129,14 +129,14 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.site[data-gtheme] .gp-stage .ghost-btn,
-.site[data-gtheme] .gp-stage .carrom-profile,
-.site[data-gtheme] .gp-stage .carrom-item {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .ghost-btn,
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-profile,
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-item {
   box-shadow: var(--neu-raise);
 }
 
 /* Orange primaries */
-.site[data-gtheme] .gp-stage .primary-btn,
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .primary-btn,
 .site[data-gtheme] .h3-nav .h3-account {
   border: 0;
   color: #1f0c00;
@@ -154,12 +154,12 @@
   .site[data-gtheme] .gp-guest-x:hover,
   .site[data-gtheme] .gp-modes > button:not(.active):hover,
   .site[data-gtheme] .gp-modes > a:hover,
-  .site[data-gtheme] .gp-stage .ghost-btn:not(.active):hover,
+  .site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .ghost-btn:not(.active):hover,
   .site[data-gtheme] .gp-stage .exit-full:hover,
-  .site[data-gtheme] .gp-stage .carrom-mute:hover,
-  .site[data-gtheme] .gp-stage .carrom-tabs button:not(.on):hover,
-  .site[data-gtheme] .gp-stage .carrom-profile:hover,
-  .site[data-gtheme] .gp-stage .carrom-item:not(.is-on):not(.is-locked):hover {
+  .site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-mute:hover,
+  .site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-tabs button:not(.on):hover,
+  .site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-profile:hover,
+  .site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-item:not(.is-on):not(.is-locked):hover {
     box-shadow: var(--neu-half);
     transform: translateY(1px) scale(0.985);
     color: var(--neu-accent);
@@ -169,7 +169,7 @@
       color 0.2s ease;
   }
 
-  .site[data-gtheme] .gp-stage .carrom-profile:hover {
+  .site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-profile:hover {
     color: inherit;
   }
 
@@ -182,7 +182,7 @@
       transform 0.14s ease-out;
   }
 
-  .site[data-gtheme] .gp-stage .primary-btn:hover:not(:disabled),
+  .site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .primary-btn:hover:not(:disabled),
   .site[data-gtheme] .h3-nav .h3-account:hover {
     box-shadow: var(--neu-orange-half);
     transform: translateY(1px) scale(0.985);
@@ -199,18 +199,18 @@
 .site[data-gtheme] .h3-theme-toggle:active,
 .site[data-gtheme] .gp-guest-x:active,
 .site[data-gtheme] .gp-modes > *:active,
-.site[data-gtheme] .gp-stage .ghost-btn:active,
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .ghost-btn:active,
 .site[data-gtheme] .gp-stage .exit-full:active,
-.site[data-gtheme] .gp-stage .carrom-profile:active,
-.site[data-gtheme] .gp-stage .carrom-mute:active,
-.site[data-gtheme] .gp-stage .carrom-tabs button:active,
-.site[data-gtheme] .gp-stage .carrom-item:not(.is-locked):active {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-profile:active,
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-mute:active,
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-tabs button:active,
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-item:not(.is-locked):active {
   box-shadow: var(--neu-press);
   transform: translateY(2px) scale(0.96);
   transition-duration: 0.07s;
 }
 
-.site[data-gtheme] .gp-stage .primary-btn:active:not(:disabled),
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .primary-btn:active:not(:disabled),
 .site[data-gtheme] .h3-nav .h3-account:active {
   box-shadow: var(--neu-orange-press);
   transform: translateY(2px) scale(0.96);
@@ -220,16 +220,16 @@
 
 /* Toggles that are ON stay pressed in, with orange ink */
 .site[data-gtheme] .gp-modes > .active,
-.site[data-gtheme] .gp-stage .ghost-btn.active,
-.site[data-gtheme] .gp-stage .carrom-tabs button.on,
-.site[data-gtheme] .gp-stage .carrom-item.is-on {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .ghost-btn.active,
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-tabs button.on,
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-item.is-on {
   color: var(--neu-accent);
   background: var(--neu-bg);
   box-shadow: var(--neu-press);
   transform: none;
 }
 
-.site[data-gtheme] .gp-stage .primary-btn:disabled {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .primary-btn:disabled {
   box-shadow: var(--neu-flat);
   filter: saturate(0.4);
 }
@@ -435,13 +435,13 @@
 .site.site[data-gtheme="light"] .gp-stage,
 .site.site[data-gtheme="light"] .gp-stage .game-status,
 .site.site[data-gtheme="light"] .gp-stage .game-prompt,
-.site.site[data-gtheme="light"] .gp-stage .ghost-btn,
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .ghost-btn,
 .site.site[data-gtheme="light"] .gp-stage .exit-full,
-.site.site[data-gtheme="light"] .gp-stage .carrom-mute,
-.site.site[data-gtheme="light"] .gp-stage .carrom-chip,
-.site.site[data-gtheme="light"] .gp-stage .carrom-code-input,
-.site.site[data-gtheme="light"] .gp-stage .carrom-locker-head h3,
-.site.site[data-gtheme="light"] .gp-stage .carrom-item {
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-mute,
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-chip,
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-code-input,
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-locker-head h3,
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-item {
   color: var(--text);
 }
 
@@ -453,37 +453,37 @@
 }
 
 .site.site[data-gtheme="light"] .gp-stage .game-hint,
-.site.site[data-gtheme="light"] .gp-stage .carrom-hint,
-.site.site[data-gtheme="light"] .gp-stage .carrom-level-top small,
-.site.site[data-gtheme="light"] .gp-stage .carrom-code-hint,
-.site.site[data-gtheme="light"] .gp-stage .carrom-tabs button,
-.site.site[data-gtheme="light"] .gp-stage .carrom-item-tag {
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-hint,
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-level-top small,
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-code-hint,
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-tabs button,
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-item-tag {
   color: var(--text-secondary);
 }
 
-.site.site[data-gtheme="light"] .gp-stage .carrom-profile-cta,
-.site.site[data-gtheme="light"] .gp-stage .carrom-code,
-.site.site[data-gtheme="light"] .gp-stage .carrom-reward > b {
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-profile-cta,
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-code,
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-reward > b {
   color: var(--neu-accent);
 }
 
-.site.site[data-gtheme="light"] .gp-stage .carrom-unlocked {
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-unlocked {
   color: #0f9a55;
 }
 
-.site.site[data-gtheme="light"] .gp-stage .carrom-power {
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-power {
   background: var(--neu-bg);
   box-shadow: var(--neu-well-sm);
 }
 
-.site.site[data-gtheme="light"] .gp-stage .carrom-reward {
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-reward {
   background: var(--neu-bg);
   border: 0;
   box-shadow: var(--neu-raise);
 }
 
 /* The board keeps its own art; soften its frame shadow for the light screen */
-.site.site[data-gtheme="light"] .gp-stage .carrom-stage {
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-stage {
   box-shadow: 10px 10px 24px var(--neu-lo), -10px -10px 24px var(--neu-hi);
 }
 
@@ -539,7 +539,7 @@
   box-shadow: var(--neu-well);
 }
 
-.site[data-gtheme] .gp-stage .ghost-btn {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .ghost-btn {
   color: #e9e9ee;
 }
 
@@ -555,11 +555,11 @@
 }
 
 /* ---------- Carrom menus ---------- */
-.site[data-gtheme] .gp-stage .carrom-menu {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-menu {
   gap: 14px;
 }
 
-.site[data-gtheme] .gp-stage .carrom-menu-sep {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-menu-sep {
   height: 3px;
   margin: 6px 4px;
   border-radius: 3px;
@@ -567,12 +567,12 @@
   box-shadow: var(--neu-well-sm);
 }
 
-.site[data-gtheme] .gp-stage .carrom-profile {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-profile {
   border-radius: 18px;
   padding: 14px 16px;
 }
 
-.site[data-gtheme] .gp-stage .carrom-level-badge {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-level-badge {
   box-shadow:
     3px 3px 8px var(--neu-lo),
     -3px -3px 8px var(--neu-hi),
@@ -580,13 +580,13 @@
     inset -2px -2px 5px rgba(150, 45, 0, 0.35);
 }
 
-.site[data-gtheme] .gp-stage .carrom-level-track {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-level-track {
   height: 8px;
   background: var(--neu-bg);
   box-shadow: var(--neu-well-sm);
 }
 
-.site[data-gtheme] .gp-stage .carrom-chip {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-chip {
   border: 0;
   background: var(--neu-bg);
   box-shadow: var(--neu-well-sm);
@@ -594,94 +594,94 @@
 }
 
 /* Whose turn: that chip rises out of the surface */
-.site[data-gtheme] .gp-stage .carrom-chip.active {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-chip.active {
   color: var(--neu-accent);
   background: var(--neu-bg);
   box-shadow: 3px 3px 8px var(--neu-lo), -3px -3px 8px var(--neu-hi);
 }
 
-.site[data-gtheme] .gp-stage .carrom-mute {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-mute {
   color: #e9e9ee;
 }
 
-.site[data-gtheme] .gp-stage .carrom-code-input,
-.site[data-gtheme] .gp-stage .carrom-roster li {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-code-input,
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-roster li {
   border: 0;
   background: var(--neu-bg);
   box-shadow: var(--neu-well);
 }
 
-.site[data-gtheme] .gp-stage .carrom-tabs {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-tabs {
   gap: 10px;
   padding: 4px;
   background: none;
 }
 
-.site[data-gtheme] .gp-stage .carrom-tabs button {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-tabs button {
   color: rgba(255, 255, 255, 0.72);
 }
 
-.site[data-gtheme] .gp-stage .carrom-items {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-items {
   gap: 14px;
   padding: 4px;
 }
 
-.site[data-gtheme] .gp-stage .carrom-item {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-item {
   border-radius: 18px;
   color: #eee;
 }
 
-.site[data-gtheme] .gp-stage .carrom-item.is-on {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-item.is-on {
   outline: 1.5px solid var(--neu-accent);
   outline-offset: -1.5px;
 }
 
-.site[data-gtheme] .gp-stage .carrom-item-tag {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-item-tag {
   background: var(--neu-bg);
   box-shadow: var(--neu-well-sm);
 }
 
-.site[data-gtheme] .gp-stage .carrom-item-tag.on {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-item-tag.on {
   color: #1f0c00;
   background: var(--neu-orange);
   box-shadow: none;
 }
 
 /* Striker slider: a sunken groove with a raised striker thumb */
-.site[data-gtheme] .gp-stage .carrom-place input[type="range"]::-webkit-slider-runnable-track {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-place input[type="range"]::-webkit-slider-runnable-track {
   background: var(--neu-bg);
   box-shadow: var(--neu-well-sm);
 }
 
-.site[data-gtheme] .gp-stage .carrom-place input[type="range"]::-moz-range-track {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-place input[type="range"]::-moz-range-track {
   background: var(--neu-bg);
   box-shadow: var(--neu-well-sm);
 }
 
-.site[data-gtheme] .gp-stage .carrom-place input[type="range"]::-webkit-slider-thumb {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-place input[type="range"]::-webkit-slider-thumb {
   box-shadow: 3px 3px 8px var(--neu-lo), -3px -3px 8px var(--neu-hi);
 }
 
-.site[data-gtheme] .gp-stage .carrom-place input[type="range"]:active::-webkit-slider-thumb {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-place input[type="range"]:active::-webkit-slider-thumb {
   transform: scale(0.94);
   box-shadow: 1px 1px 3px var(--neu-lo), -1px -1px 3px var(--neu-hi);
 }
 
 /* Turn clock: sunken pill */
-.site[data-gtheme] .gp-stage .carrom-timer {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-timer {
   background: var(--neu-bg);
   box-shadow: var(--neu-well-sm);
 }
 
-.site.site[data-gtheme="light"] .gp-stage .carrom-timer {
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-timer {
   color: var(--text);
 }
 
-.site.site[data-gtheme="light"] .gp-stage .carrom-timer.warn {
+.site.site[data-gtheme="light"] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-timer.warn {
   color: #d63a1f;
 }
 
-.site[data-gtheme] .gp-stage .carrom-pro-card {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-pro-card {
   border: 0;
   box-shadow: var(--neu-raise), inset 0 0 0 1px rgba(255, 200, 80, 0.3);
 }
@@ -735,20 +735,20 @@
 }
 
 /* In-game menus emboss in each time a menu screen opens */
-.site[data-gtheme] .gp-stage .carrom-menu > * {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-menu > * {
   animation: neu-emboss 0.55s var(--neu-ease) backwards;
 }
 
-.site[data-gtheme] .gp-stage .carrom-menu > :nth-child(1) { animation-delay: 0.04s; }
-.site[data-gtheme] .gp-stage .carrom-menu > :nth-child(2) { animation-delay: 0.09s; }
-.site[data-gtheme] .gp-stage .carrom-menu > :nth-child(3) { animation-delay: 0.14s; }
-.site[data-gtheme] .gp-stage .carrom-menu > :nth-child(4) { animation-delay: 0.19s; }
-.site[data-gtheme] .gp-stage .carrom-menu > :nth-child(5) { animation-delay: 0.24s; }
-.site[data-gtheme] .gp-stage .carrom-menu > :nth-child(6) { animation-delay: 0.29s; }
-.site[data-gtheme] .gp-stage .carrom-menu > :nth-child(7) { animation-delay: 0.34s; }
-.site[data-gtheme] .gp-stage .carrom-menu > :nth-child(n + 8) { animation-delay: 0.39s; }
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-menu > :nth-child(1) { animation-delay: 0.04s; }
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-menu > :nth-child(2) { animation-delay: 0.09s; }
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-menu > :nth-child(3) { animation-delay: 0.14s; }
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-menu > :nth-child(4) { animation-delay: 0.19s; }
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-menu > :nth-child(5) { animation-delay: 0.24s; }
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-menu > :nth-child(6) { animation-delay: 0.29s; }
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-menu > :nth-child(7) { animation-delay: 0.34s; }
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-menu > :nth-child(n + 8) { animation-delay: 0.39s; }
 
-.site[data-gtheme] .gp-stage .carrom-item {
+.site[data-gtheme] :is(.gp-stage, .ss-body, .shop-hub-game) .carrom-item {
   animation: neu-emboss 0.5s var(--neu-ease) backwards;
 }
 

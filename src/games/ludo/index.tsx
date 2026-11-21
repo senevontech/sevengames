@@ -4,7 +4,6 @@
    broadcasts the state. Other players only send "roll" / "move". Random matches and invites are
    1-v-1; a room code takes 2–4 players, with CPUs in seats still empty at the start. */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ShopSection from "../../components/ShopSection";
 import type { GameProps } from "../index";
 import LudoBoard, { Die, useShownTokens } from "./Board";
 import { COLOR_KEYS, COLOR_NAMES, cpuPick, current, movable, move, newGame, pass, roll, type Color, type LudoState } from "./engine";
@@ -17,6 +16,7 @@ import { useCarromLobby, type LobbyApi, type Matched } from "../carrom/matchmaki
 import { OnlineMenu, RoomWaiting, SignInToPlay } from "../../components/OnlineLobby";
 import PlayerAvatar from "../../components/PlayerAvatar";
 import "./ludo.css";
+import { GameShopButton } from "../gameShop";
 import PlayFlow from "../PlayFlow";
 import { Bot, Globe, Users } from "lucide-react";
 
@@ -490,7 +490,6 @@ export default function LudoGame(_props: GameProps) {
         {/* Play → how to play → that mode's settings */}
         <PlayFlow
           id="ludo"
-          shop={{ title: "Ludo shop", content: <ShopSection scope="ludo" embedded /> }}
           preview={
             <div className="pf-preview lu-preview" inert>
               <div className="lu-board-wrap" style={{ "--lu-line": theme.line } as React.CSSProperties}>
@@ -649,6 +648,7 @@ export default function LudoGame(_props: GameProps) {
                     <button type="button" className="ghost-btn" onClick={() => setScreen("menu")}>
                       Menu
                     </button>
+                    <GameShopButton />
                     <button type="button" className="primary-btn" onClick={() => startLocal(mode, st.colors.length)}>
                       Play again
                     </button>

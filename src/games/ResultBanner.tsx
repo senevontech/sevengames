@@ -3,6 +3,7 @@
    Tapping "See board" (or the backdrop) hides it so the final position stays visible. */
 import { useState, type ReactNode } from "react";
 import "./result-banner.css";
+import { GameShopButton } from "./gameShop";
 
 export type Outcome = "win" | "lose" | "draw";
 
@@ -67,6 +68,7 @@ export default function ResultBanner({
           <button type="button" className="rb-btn rb-btn-ghost" onClick={() => setHidden(true)}>
             See board
           </button>
+          <GameShopButton className="rb-btn rb-btn-ghost" onOpen={() => setHidden(true)} />
           {onAgain ? (
             <button
               type="button"

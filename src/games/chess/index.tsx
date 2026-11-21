@@ -3,7 +3,6 @@
    rating (supabase/chess.sql). Rules: engine.ts. CPU: ai.ts in a Web Worker. */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GameProps } from "../index";
-import ShopSection from "../../components/ShopSection";
 import Board from "./Board";
 import { PieceSvg } from "./pieces";
 import {
@@ -40,6 +39,7 @@ import { Bot, Globe, Users } from "lucide-react";
 import PlayerAvatar from "../../components/PlayerAvatar";
 import { parseAvatar, type AvatarChoice } from "../../lib/avatar";
 import "./chess.css";
+import { GameShopButton } from "../gameShop";
 
 type Mode = "cpu" | "pass" | "online";
 type Result = { winner: Color | null; reason: string };
@@ -725,7 +725,6 @@ export default function ChessGame(_props: GameProps) {
         {/* Play → how to play → that mode's settings */}
         <PlayFlow
           id="chess"
-          shop={{ title: "Chess shop", content: <ShopSection scope="chess" embedded /> }}
           preview={
             <div className="pf-preview ch-preview" inert>
               <Board s={PREVIEW_STATE} moves={[]} canMove={false} flipped={false} lastMove={null} onMove={() => {}} theme={theme} pieces={pieceSet} />
@@ -934,6 +933,7 @@ export default function ChessGame(_props: GameProps) {
                     <button type="button" className="ghost-btn" onClick={() => setScreen("menu")}>
                       Menu
                     </button>
+                    <GameShopButton />
                     <button type="button" className="primary-btn" onClick={() => (mode === "cpu" ? startCpu() : startPass())}>
                       Play again
                     </button>

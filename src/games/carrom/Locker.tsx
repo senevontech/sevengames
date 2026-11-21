@@ -21,6 +21,7 @@ import { MAX_LEVEL, carromErrorText, xpForLevel, type useCarromProgress } from "
 import { STATS, STAT_MAX, tierOf, upgradeCost, upgradeGate, type StatKey } from "./stats";
 import { carromAudio } from "./audio";
 import TokenIcon from "../../components/TokenIcon";
+import "./carrom.css";
 
 type Prog = ReturnType<typeof useCarromProgress>;
 
@@ -141,7 +142,18 @@ function SpendButton({
   );
 }
 
-export default function CarromLocker({ prog, signedIn, onBack }: { prog: Prog; signedIn: boolean; onBack: () => void }) {
+/** `bare`: inside a sheet / the Tokens page, which has its own title and Back: no header row. */
+export default function CarromLocker({
+  prog,
+  signedIn,
+  onBack,
+  bare = false,
+}: {
+  prog: Prog;
+  signedIn: boolean;
+  onBack?: () => void;
+  bare?: boolean;
+}) {
   const [tab, setTab] = useState<ShopKind>("striker");
   const [focus, setFocus] = useState<string>(prog.striker.id);
   const [busy, setBusy] = useState(false);
@@ -245,11 +257,15 @@ export default function CarromLocker({ prog, signedIn, onBack }: { prog: Prog; s
 
   return (
     <div className="carrom-locker">
-      <div className="carrom-locker-head">
-        <button type="button" className="ghost-btn" onClick={onBack}>
-          ‹ Back
-        </button>
-        <h3>Carrom shop</h3>
+      <div className={`carrom-locker-head${bare ? " is-bare" : ""}`}>
+        {bare ? null : (
+          <>
+            <button type="button" className="ghost-btn" onClick={onBack}>
+              ‹ Back
+            </button>
+            <h3>Carrom shop</h3>
+          </>
+        )}
         {signedIn ? (
           <Link to="/tokens" className="carrom-wallet" title="Get more tokens">
             <TokenIcon size={16} /> {wallet?.unlimited ? "∞" : formatTokens(wallet?.balance ?? 0)}

@@ -24,7 +24,7 @@ import { tokenErrorText, usePlanPrices, useTokenPacks, useTokens, type LedgerRow
 import { formatMoney, formatTokens, pickCurrency } from "../lib/currency";
 import { getGame } from "../catalog";
 import AdRewardModal from "../components/AdRewardModal";
-import ShopSection from "../components/ShopSection";
+import ShopHub from "../components/ShopHub";
 import "./tokens.css";
 import "./account.css";
 import "./tokens-page.css";
@@ -206,7 +206,7 @@ export default function TokensPage() {
             </Link>
           </div>
         </section>
-        <ShopSection scope="frames" />
+        <ShopHub />
       </div>
     );
   }
@@ -504,8 +504,8 @@ export default function TokensPage() {
         </div>
       </section>
 
-      {/* ---------- avatar frames (game items are sold in each game's own shop) ---------- */}
-      <ShopSection scope="frames" />
+      {/* ---------- shop: every game's items (also sold in each game's own Shop) + avatar frames ---------- */}
+      <ShopHub />
 
       {/* ---------- earn + code ---------- */}
       <div className="tw-row">

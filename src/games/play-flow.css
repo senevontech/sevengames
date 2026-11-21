@@ -625,14 +625,56 @@
   }
 }
 
-/* ---------- a game's own shop (PlayFlow `shop`) ---------- */
-.pf-step-wide {
-  width: min(760px, 100%);
+/* ---------- this game's shop: a big button next to Play (opens ShopSheet) ---------- */
+.pf-shop-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 20px 0 16px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text, inherit);
+  background: var(--pf-bg);
+  box-shadow: var(--pf-raise);
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* the shop reuses the account-page cards; drop the page padding inside a game */
-.pf-shop.acct {
-  max-width: none;
-  padding: 0;
-  gap: 12px;
+.pf-shop-btn svg {
+  color: var(--pf-accent);
+}
+
+@media (hover: hover) {
+  .pf-shop-btn:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.pf-shop-btn:active {
+  box-shadow: var(--pf-press);
+  transform: scale(0.96);
+}
+
+.pf-shop-btn:focus-visible {
+  outline: 2px solid var(--pf-accent);
+  outline-offset: 3px;
+}
+
+/* the row may wrap on narrow screens rather than squeeze the buttons */
+.pf-actions {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (max-width: 600px) {
+  .pf-shop-btn {
+    height: 48px;
+    padding: 0 16px 0 12px;
+    font-size: 15px;
+  }
 }

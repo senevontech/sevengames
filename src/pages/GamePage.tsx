@@ -25,6 +25,7 @@ import "./game-fit.css";
 import FitBox from "../components/FitBox";
 import StartAd from "../components/StartAd";
 import { GateShort, PlayGateContext, type PlayGateApi } from "../games/PlayFlow";
+import { GameShopProvider } from "../games/gameShop";
 
 /** The game as it looks before you start: a custom preview, or its own start screen made inert. */
 function GatePreview({ game }: { game: NonNullable<ReturnType<typeof getGame>> }) {
@@ -398,9 +399,11 @@ export default function GamePage() {
             ) : game.kind === "builtin" ? (
               <FitBox maxScale={1.5}>
               <div className="gp-play-wrap">
-                <PlayGateContext.Provider value={gateApi}>
-                  <GameRunner key={paidPlay} gameId={game.engine} onScore={handleFinish} />
-                </PlayGateContext.Provider>
+                <GameShopProvider engine={game.engine} accent={game.accent}>
+                  <PlayGateContext.Provider value={gateApi}>
+                    <GameRunner key={paidPlay} gameId={game.engine} onScore={handleFinish} />
+                  </PlayGateContext.Provider>
+                </GameShopProvider>
                 {premium && locked ? (
                   <PlayGate
                     gameId={game.id}

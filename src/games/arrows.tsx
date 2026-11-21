@@ -26,6 +26,7 @@ import { formatTokens } from "../lib/currency";
 import { BOOSTERS, fxIdOf, skinOf, type BoosterItem } from "../lib/shopCatalog";
 import TokenIcon from "../components/TokenIcon";
 import "./arrows.css";
+import { GameShopButton } from "./gameShop";
 
 type Dir = 0 | 1 | 2 | 3; // up, right, down, left
 const DX = [0, 1, 0, -1];
@@ -1141,9 +1142,12 @@ export function ArrowsPlay({ onFinish, match, onMatchProgress, onMatchEnd, match
               <p>
                 Bonus <b>+{50 * level + lives * 20}</b> · Best combo ×{Math.max(1, bestCombo)}
               </p>
-              <button type="button" className="primary-btn" onClick={nextLevel} autoFocus>
-                Next level
-              </button>
+              <div className="arw-confirm-actions">
+                <GameShopButton />
+                <button type="button" className="primary-btn" onClick={nextLevel} autoFocus>
+                  Next level
+                </button>
+              </div>
             </div>
           </div>
         ) : null}
@@ -1188,9 +1192,12 @@ export function ArrowsPlay({ onFinish, match, onMatchProgress, onMatchEnd, match
                   <small>Combo</small>
                 </span>
               </div>
-              <button type="button" className="primary-btn" onClick={restart} autoFocus>
-                Retry level {level}
-              </button>
+              <div className="arw-confirm-actions">
+                <GameShopButton />
+                <button type="button" className="primary-btn" onClick={restart} autoFocus>
+                  Retry level {level}
+                </button>
+              </div>
             </div>
           </div>
         ) : null}

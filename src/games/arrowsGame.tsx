@@ -6,7 +6,6 @@ import type { GameProps } from "./index";
 import { ArrowsPlay } from "./arrows";
 import ArrowsOnline from "./arrowsOnline";
 import PlayFlow from "./PlayFlow";
-import ShopSection from "../components/ShopSection";
 
 export default function ArrowsGame({ onFinish }: GameProps) {
   const [mode, setMode] = useState<"solo" | "online" | null>(null);
@@ -17,7 +16,6 @@ export default function ArrowsGame({ onFinish }: GameProps) {
       <div className="arw-shell">
         <PlayFlow
           id="arrows"
-          shop={{ title: "Arrows shop", content: <ShopSection scope="arrows" embedded /> }}
           preview={
             <div className="pf-preview arw-preview" inert>
               <ArrowsPlay onFinish={() => {}} />

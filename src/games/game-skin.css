@@ -63,7 +63,7 @@
 }
 
 /* ---------- Buttons ---------- */
-.gp-stage .primary-btn {
+:is(.gp-stage, .ss-body, .shop-hub-game) .primary-btn {
   position: relative;
   min-width: 140px;
   padding: 12px 28px;
@@ -80,7 +80,7 @@
   transition: transform 0.18s var(--sk-ease), box-shadow 0.18s ease;
 }
 
-.gp-stage .primary-btn:active:not(:disabled) {
+:is(.gp-stage, .ss-body, .shop-hub-game) .primary-btn:active:not(:disabled) {
   transform: translateY(2px) scale(0.98);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
@@ -88,7 +88,7 @@
     0 4px 12px -6px rgba(255, 110, 20, 0.7);
 }
 
-.gp-stage .ghost-btn {
+:is(.gp-stage, .ss-body, .shop-hub-game) .ghost-btn {
   border-radius: 999px;
   border: 1px solid var(--sk-line);
   background: rgba(255, 255, 255, 0.05);
@@ -96,11 +96,11 @@
   transition: transform 0.15s var(--sk-ease), background 0.2s ease;
 }
 
-.gp-stage .ghost-btn:active {
+:is(.gp-stage, .ss-body, .shop-hub-game) .ghost-btn:active {
   transform: scale(0.96);
 }
 
-.gp-stage .ghost-btn.active {
+:is(.gp-stage, .ss-body, .shop-hub-game) .ghost-btn.active {
   background: rgba(255, 122, 26, 0.18);
   border-color: rgba(255, 122, 26, 0.5);
   color: #ffb36b;
