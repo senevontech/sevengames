@@ -51,7 +51,7 @@ import {
   setBoardView,
   setViewAngle,
 } from "./render";
-import { CarromNet, type NetStatus, type RosterEntry } from "./online";
+import { CarromNet, type NetStatus, type RosterEntry, type StartCfg } from "./online";
 import { useCarromLobby, type LobbyApi, type Matched } from "./matchmaking";
 import { useAvatar } from "../../lib/avatar";
 import PlayerAvatar from "../../components/PlayerAvatar";
@@ -64,6 +64,7 @@ import { CPU_STATS, FAIR_STATS, isPremiumStriker, playStats, tierOf, turnBonusSe
 import CarromLocker, { LevelBar } from "./Locker";
 import ShopSheet from "../../components/ShopSheet";
 import { useCustomGameShop } from "../gameShop";
+import { MatchRewardLine, newMatchId, useMatchReport } from "../../lib/matchReport";
 import { BoardPreview } from "./Preview";
 import PlayFlow, { HelpLine } from "../PlayFlow";
 import { Bot, Globe, Users } from "lucide-react";
@@ -143,6 +144,11 @@ export default function CarromGame({ onFinish }: GameProps) {
   const auth = useAuthContext();
   const netOnline = useOnline();
   const prog = useCarromProgress(auth.user);
+  // online match results (server): this match's id + each seat's account id
+  const netMatchRef = useRef<{ mid: string; uids: Array<string | null> }>({ mid: "", uids: [] });
+  const matchReport = useMatchReport("carrom", prog.syncXp);
+  const matchReportRef = useRef(matchReport);
+  matchReportRef.current = matchReport;
   const progRef = useRef(prog);
   progRef.current = prog;
   const [muted, setMuted] = useState(carromAudio.muted);
@@ -266,10 +272,20 @@ export default function CarromGame({ onFinish }: GameProps) {
     if (world.queen.state === "owned" && world.queen.color === myColor) tallyRef.current.queen = true;
   }, []);
 
-  /** XP for the local player at the end of a match (vs CPU and online only). */
-  const awardXp = useCallback((won: boolean) => {
+  /** XP for the local player at the end of a match (vs CPU and online only). Online: the server
+   *  applies it (+100 / −40) plus the confirmed-win token (supabase/matches.sql). */
+  const awardXp = useCallback((won: boolean, winColor?: string | null) => {
     const mode = modeRef.current;
     if (mode === "local2" || mode === "local4") return;
+    if (mode.startsWith("host") || mode === "join") {
+      const world = worldRef.current;
+      const m = netMatchRef.current;
+      if (world && m.mid) {
+        const winners = winColor ? world.players.map((p, i) => (p.color === winColor ? m.uids[i] : null)) : [];
+        void matchReportRef.current.report(m.mid, m.uids, winners);
+      }
+      return;
+    }
     const t = tallyRef.current;
     const xp = matchXp(t.coins, t.queen, won, t.combos);
     const res = progRef.current.addXp(xp);
@@ -342,7 +358,7 @@ export default function CarromGame({ onFinish }: GameProps) {
       if (!finishedRef.current) {
         finishedRef.current = true;
         onFinish(scoreForSeat(world, mySeatRef.current) + (formatRef.current === "match" ? matchRef.current[myColor ?? "white"] * 5 : 0));
-        awardXp(winColor === myColor);
+        awardXp(winColor === myColor, winColor);
       }
       return;
     }
@@ -636,9 +652,11 @@ export default function CarromGame({ onFinish }: GameProps) {
           }
         }
       },
-      onStart: (cfg: { seats: Seats; players: Array<{ name: string; kind: "human" | "cpu" }> }) => {
+      onStart: (cfg: StartCfg) => {
         finishedRef.current = false;
         setReward(null);
+        netMatchRef.current = { mid: typeof cfg.mid === "string" ? cfg.mid.slice(0, 60) : "", uids: (cfg.uids ?? []).map((u) => (typeof u === "string" ? u : null)) };
+        matchReportRef.current.reset();
         // a guest's seat comes from the host's roster (the host is always seat 0)
         if (modeRef.current === "join" && netRef.current) mySeatRef.current = netRef.current.mySeatIndex;
         // online: equal strikers for everyone, so upgrades never decide a match
@@ -683,7 +701,7 @@ export default function CarromGame({ onFinish }: GameProps) {
             finishedRef.current = true;
             onFinish(score);
             tallyBoard(world);
-            awardXp(world.players[mySeatRef.current]?.color === snap.winner);
+            awardXp(world.players[mySeatRef.current]?.color === snap.winner, snap.winner);
           }
           return;
         }
@@ -715,7 +733,7 @@ export default function CarromGame({ onFinish }: GameProps) {
     setPhase("net-lobby");
     setNetStatus("connecting");
     setNetNote(null);
-    const net = CarromNet.createHost(match ? myName : "You", seats, netEvents());
+    const net = CarromNet.createHost(match ? myName : "You", seats, netEvents(), auth.user?.id ?? "");
     netRef.current = net;
     setRoomCode(net.roomCode);
   }
@@ -733,7 +751,7 @@ export default function CarromGame({ onFinish }: GameProps) {
     setPhase("net-lobby");
     setNetStatus("connecting");
     setNetNote(null);
-    const net = CarromNet.createGuest(match ? myName : "You", match ? match.code : joinCode, netEvents());
+    const net = CarromNet.createGuest(match ? myName : "You", match ? match.code : joinCode, netEvents(), auth.user?.id ?? "");
     netRef.current = net;
     setRoomCode(net.roomCode);
   }
@@ -747,7 +765,9 @@ export default function CarromGame({ onFinish }: GameProps) {
       kind: "human",
     }));
     while (players.length < seats) players.push({ name: "CPU", kind: "cpu" });
-    const cfg = { seats, players };
+    const uids = net.rosterList.map((entry) => entry.userId ?? null);
+    while (uids.length < seats) uids.push(null);
+    const cfg: StartCfg = { seats, players, mid: newMatchId(), uids };
     net.broadcastStart(cfg);
     netEvents().onStart(cfg);
   }
@@ -791,6 +811,14 @@ export default function CarromGame({ onFinish }: GameProps) {
   }, [lobby.note]);
 
   function leaveNet() {
+    // leaving a match in progress is a loss (and confirms the other side's win)
+    const world = worldRef.current;
+    const m = netMatchRef.current;
+    if (m.mid && world && !finishedRef.current && screen !== "menu" && screen !== "net-lobby") {
+      finishedRef.current = true;
+      const myColor = world.players[mySeatRef.current]?.color;
+      void matchReportRef.current.report(m.mid, m.uids, world.players.map((p, i) => (p.color !== myColor ? m.uids[i] : null)));
+    }
     hostMatchRef.current = null;
     autoStartRef.current = false;
     setMatchWith(null);
@@ -1491,6 +1519,12 @@ export default function CarromGame({ onFinish }: GameProps) {
           <b>+{reward.xp} XP</b>
           {reward.combos > 0 ? <span className="carrom-combo">Combo bonus ×{reward.combos}</span> : null}
           {reward.after > reward.before ? <span className="carrom-levelup">Level up! Level {reward.after}</span> : null}
+          <LevelBar level={prog.level} xp={prog.xp} pro={prog.pro} />
+        </div>
+      ) : null}
+      {screen === "over" && matchReport.reward ? (
+        <div className="carrom-reward" role="status">
+          <MatchRewardLine reward={matchReport.reward} />
           <LevelBar level={prog.level} xp={prog.xp} pro={prog.pro} />
         </div>
       ) : null}

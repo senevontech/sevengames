@@ -23,7 +23,7 @@
 -- token ledger: allow 'shop' (keep this list in sync with tokens.sql, adfree.sql and carrom.sql)
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
-  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop'));
+  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match'));
 
 -- 1) Catalog ---------------------------------------------------------
 create table if not exists public.shop_items (
@@ -62,8 +62,13 @@ on conflict (item_id) do nothing;
 -- Chess + Ludo cosmetics (added later): which game's level unlocks them
 alter table public.shop_items drop constraint if exists shop_items_kind_check;
 alter table public.shop_items add constraint shop_items_kind_check
-  check (kind in ('arrow_skin', 'arrow_fx', 'frame', 'booster', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice'));
-alter table public.shop_items add column if not exists game text check (game in ('chess', 'ludo'));
+  -- dd_*: DroidDoom (embedded game) unlocks, see droiddoom.sql
+  check (kind in ('arrow_skin', 'arrow_fx', 'arrow_board', 'arrow_head', 'frame', 'booster', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice',
+                  'dd_levels', 'dd_skin', 'dd_weapon'));
+alter table public.shop_items add column if not exists game text;
+-- which game's level unlocks an item: chess / ludo (game XP) or arrows (puzzle level reached)
+alter table public.shop_items drop constraint if exists shop_items_game_check;
+alter table public.shop_items add constraint shop_items_game_check check (game in ('chess', 'ludo', 'arrows'));
 alter table public.shop_items add column if not exists min_level integer not null default 1 check (min_level between 1 and 30);
 
 insert into public.shop_items (item_id, kind, price, sort, game, min_level) values
@@ -84,6 +89,32 @@ insert into public.shop_items (item_id, kind, price, sort, game, min_level) valu
   ('ldice:gem', 'ludo_dice', 900, 1, 'ludo', 2),
   ('ldice:neon', 'ludo_dice', 1400, 2, 'ludo', 5),
   ('ldice:gold', 'ludo_dice', 2200, 3, 'ludo', 10)
+on conflict (item_id) do nothing;
+
+-- Arrows: more styles + effects, board themes and arrowhead shapes (Arrows level = puzzle level reached)
+insert into public.shop_items (item_id, kind, price, sort, game, min_level) values
+  ('skin:ink', 'arrow_skin', 600, 5, 'arrows', 1),
+  ('skin:ice', 'arrow_skin', 1000, 6, 'arrows', 5),
+  ('skin:chalk', 'arrow_skin', 1200, 7, 'arrows', 5),
+  ('skin:lava', 'arrow_skin', 1600, 8, 'arrows', 10),
+  ('skin:rainbow', 'arrow_skin', 2600, 9, 'arrows', 20),
+  ('fx:bubbles', 'arrow_fx', 700, 4, 'arrows', 1),
+  ('fx:petals', 'arrow_fx', 1000, 5, 'arrows', 5),
+  ('fx:confetti', 'arrow_fx', 1300, 6, 'arrows', 5),
+  ('fx:lightning', 'arrow_fx', 1800, 7, 'arrows', 10),
+  ('fx:fireworks', 'arrow_fx', 2600, 8, 'arrows', 20),
+  ('board:classic', 'arrow_board', 0, 0, 'arrows', 1),
+  ('board:paper', 'arrow_board', 600, 1, 'arrows', 1),
+  ('board:blueprint', 'arrow_board', 1000, 2, 'arrows', 5),
+  ('board:wood', 'arrow_board', 1400, 3, 'arrows', 10),
+  ('board:sunset', 'arrow_board', 1800, 4, 'arrows', 10),
+  ('board:space', 'arrow_board', 2600, 5, 'arrows', 20),
+  ('head:classic', 'arrow_head', 0, 0, 'arrows', 1),
+  ('head:chevron', 'arrow_head', 600, 1, 'arrows', 1),
+  ('head:dot', 'arrow_head', 800, 2, 'arrows', 1),
+  ('head:bold', 'arrow_head', 1000, 3, 'arrows', 5),
+  ('head:diamond', 'arrow_head', 1600, 4, 'arrows', 10),
+  ('head:star', 'arrow_head', 2200, 5, 'arrows', 20)
 on conflict (item_id) do nothing;
 
 alter table public.shop_items enable row level security;
@@ -117,6 +148,8 @@ alter table public.player_cosmetics add column if not exists chess_board text;
 alter table public.player_cosmetics add column if not exists chess_pieces text;
 alter table public.player_cosmetics add column if not exists ludo_board text;
 alter table public.player_cosmetics add column if not exists ludo_dice text;
+alter table public.player_cosmetics add column if not exists arrow_board text;
+alter table public.player_cosmetics add column if not exists arrow_head text;
 
 -- XP per game (chess, ludo). Carrom keeps its own (carrom.sql).
 create table if not exists public.game_xp (
@@ -153,6 +186,25 @@ create or replace function public._game_xp(p_user uuid, p_game text)
 returns integer language sql stable security definer set search_path = public as $$
   select coalesce((select xp from game_xp where user_id = p_user and game = p_game), 0)
 $$;
+-- A player's level in a game, for level-locked items. Arrows: the puzzle level reached
+-- (game_progress, progress.sql); chess / ludo: from game XP.
+create or replace function public._shop_level(p_user uuid, p_game text)
+returns integer language plpgsql stable security definer set search_path = public as $$
+declare
+  v integer;
+begin
+  if p_game = 'arrows' then
+    begin
+      select level into v from game_progress where user_id = p_user and game_id = 'arrows';
+    exception when undefined_table then
+      v := null; -- progress.sql not run yet
+    end;
+    return greatest(1, coalesce(v, 1));
+  end if;
+  return _game_level(_game_xp(p_user, p_game));
+end;
+$$;
+
 create or replace function public._shop_free(p_user uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from token_unlimited where user_id = p_user)
@@ -175,10 +227,12 @@ returns jsonb language sql stable security definer set search_path = public as $
     'equipped', coalesce((
       select jsonb_build_object(
         'frame', frame, 'arrow_skin', arrow_skin, 'arrow_fx', arrow_fx,
-        'chess_board', chess_board, 'chess_pieces', chess_pieces, 'ludo_board', ludo_board, 'ludo_dice', ludo_dice
+        'chess_board', chess_board, 'chess_pieces', chess_pieces, 'ludo_board', ludo_board, 'ludo_dice', ludo_dice,
+        'arrow_board', arrow_board, 'arrow_head', arrow_head
       ) from player_cosmetics where user_id = p_user
     ), '{}'::jsonb),
-    'xp', jsonb_build_object('chess', _game_xp(p_user, 'chess'), 'ludo', _game_xp(p_user, 'ludo')),
+    'xp', jsonb_build_object('chess', _game_xp(p_user, 'chess'), 'ludo', _game_xp(p_user, 'ludo'), 'arrows', _game_xp(p_user, 'arrows')),
+    'levels', jsonb_build_object('arrows', _shop_level(p_user, 'arrows')),
     'free', _shop_free(p_user),
     'tokens', coalesce((select balance from token_wallets where user_id = p_user), 0)
   )
@@ -207,7 +261,7 @@ begin
   select * into r from shop_items where item_id = p_item and active;
   if not found then raise exception 'bad_item'; end if;
   if r.kind <> 'booster' and _shop_owns(v_user, p_item) then return _shop_state(v_user); end if;
-  if r.game is not null and _game_level(_game_xp(v_user, r.game)) < r.min_level then raise exception 'level_required'; end if;
+  if r.game is not null and _shop_level(v_user, r.game) < r.min_level then raise exception 'level_required'; end if;
   if r.price > 0 and not _shop_free(v_user) then
     perform token_wallet(); -- wallet exists, signup bonus in
     perform _tok_credit(v_user, -r.price, 'shop', p_item); -- raises insufficient_tokens
@@ -230,7 +284,7 @@ declare
   v_kind text;
 begin
   if v_user is null then raise exception 'not_signed_in'; end if;
-  if p_slot not in ('frame', 'arrow_skin', 'arrow_fx', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice') then
+  if p_slot not in ('frame', 'arrow_skin', 'arrow_fx', 'arrow_board', 'arrow_head', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice') then
     raise exception 'bad_slot';
   end if;
   if p_item is not null then
@@ -243,6 +297,8 @@ begin
     frame = case when p_slot = 'frame' then p_item else frame end,
     arrow_skin = case when p_slot = 'arrow_skin' then p_item else arrow_skin end,
     arrow_fx = case when p_slot = 'arrow_fx' then p_item else arrow_fx end,
+    arrow_board = case when p_slot = 'arrow_board' then p_item else arrow_board end,
+    arrow_head = case when p_slot = 'arrow_head' then p_item else arrow_head end,
     chess_board = case when p_slot = 'chess_board' then p_item else chess_board end,
     chess_pieces = case when p_slot = 'chess_pieces' then p_item else chess_pieces end,
     ludo_board = case when p_slot = 'ludo_board' then p_item else ludo_board end,
@@ -293,6 +349,7 @@ revoke all on function public._game_xp(uuid, text) from public, anon, authentica
 revoke all on function public.award_game_xp(text, integer) from public, anon;
 grant execute on function public.award_game_xp(text, integer) to authenticated;
 revoke all on function public._shop_free(uuid) from public, anon, authenticated;
+revoke all on function public._shop_level(uuid, text) from public, anon, authenticated;
 revoke all on function public._shop_owns(uuid, text) from public, anon, authenticated;
 revoke all on function public._shop_state(uuid) from public, anon, authenticated;
 revoke all on function public.shop_state() from public, anon;

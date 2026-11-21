@@ -140,6 +140,9 @@ export function useCarromProgress(user: User | null) {
   );
   const strikerStats = useMemo(() => statsFor(striker), [statsFor, striker]);
 
+  /** The server's XP after an online match report (match_report). */
+  const syncXp = useCallback((xp: number) => setServer((s) => (s ? { ...s, xp } : s)), []);
+
   /** Adds match XP; returns the levels before and after. */
   const addXp = useCallback(
     (amount: number) => {
@@ -202,6 +205,7 @@ export function useCarromProgress(user: User | null) {
   );
 
   return {
+    syncXp,
     xp,
     level,
     pro,

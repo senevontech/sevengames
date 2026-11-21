@@ -450,3 +450,232 @@
   background: var(--neu-bg, #202127);
   box-shadow: var(--ac-raise-sm);
 }
+
+/* ---------- Arrows: new skins, effects, boards, heads (previews) ---------- */
+.shop-skin.arw-skin-ink .shop-skin-line {
+  stroke-width: 4.2;
+}
+.shop-skin.arw-skin-ice .shop-skin-line {
+  stroke-width: 2.6;
+}
+.shop-skin.arw-skin-ice .shop-skin-halo {
+  opacity: 0.22;
+  stroke-width: 7;
+}
+.shop-skin.arw-skin-chalk .shop-skin-line {
+  stroke-width: 3.4;
+  opacity: 0.9;
+}
+.shop-skin.arw-skin-chalk .shop-skin-halo {
+  opacity: 0.4;
+  stroke-width: 6;
+  stroke-dasharray: 1.5 4;
+}
+.shop-skin.arw-skin-lava .shop-skin-line {
+  stroke-width: 3.8;
+}
+.shop-skin.arw-skin-lava .shop-skin-halo {
+  opacity: 0.3;
+  stroke-width: 12;
+}
+.shop-skin.arw-skin-rainbow .shop-skin-halo {
+  opacity: 0.16;
+}
+
+/* board tiles */
+.shop-aboard {
+  display: block;
+  width: min(150px, 90%);
+  aspect-ratio: 3 / 2;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.shop-aboard.is-classic {
+  color: var(--ac-text);
+  background: var(--ac-bg);
+  box-shadow: var(--ac-well);
+}
+.shop-aboard svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* arrowheads */
+.shop-ahead {
+  width: 96px;
+  height: 80px;
+  color: #f1f1f5;
+}
+
+/* new exit effects */
+.shop-fx-bubbles i {
+  width: 14px;
+  height: 14px;
+  margin: 0 0 -7px -7px;
+  border: 2px solid #74c0fc;
+  background: rgba(116, 192, 252, 0.15);
+  animation: shop-rise 1.8s ease-out infinite;
+}
+.shop-fx-bubbles i:nth-child(1) {
+  --sx: -26px;
+}
+.shop-fx-bubbles i:nth-child(2) {
+  --sx: 6px;
+  animation-delay: 0.4s;
+}
+.shop-fx-bubbles i:nth-child(3) {
+  --sx: 30px;
+  animation-delay: 0.8s;
+}
+
+.shop-fx-petals i {
+  width: 14px;
+  height: 8px;
+  margin: 0 0 -4px -7px;
+  border-radius: 50% 50% 50% 0;
+  background: #ffa8c5;
+  animation: shop-petal 2s ease-in-out infinite;
+}
+.shop-fx-petals i:nth-child(1) {
+  --sx: -40px;
+}
+.shop-fx-petals i:nth-child(2) {
+  --sx: 10px;
+  background: #ffe0ec;
+  animation-delay: 0.5s;
+}
+.shop-fx-petals i:nth-child(3) {
+  --sx: 44px;
+  background: #f783ac;
+  animation-delay: 1s;
+}
+
+.shop-fx-confetti i {
+  width: 8px;
+  height: 12px;
+  margin: 0 0 -6px -4px;
+  border-radius: 1px;
+  background: #fcc419;
+  animation: shop-confetti 1.2s cubic-bezier(0.2, 0.8, 0.4, 1) infinite;
+}
+.shop-fx-confetti i:nth-child(1) {
+  --sx: -44px;
+  background: #ff5c5c;
+}
+.shop-fx-confetti i:nth-child(2) {
+  --sx: 4px;
+  background: #51cf66;
+  animation-delay: 0.15s;
+}
+.shop-fx-confetti i:nth-child(3) {
+  --sx: 46px;
+  background: #339af0;
+  animation-delay: 0.3s;
+}
+
+.shop-fx-lightning i:first-child {
+  left: 50%;
+  bottom: 0;
+  width: 34px;
+  height: 78px;
+  margin: 0 0 0 -17px;
+  border-radius: 0;
+  background: #ffe066;
+  clip-path: polygon(55% 0, 20% 52%, 46% 52%, 30% 100%, 82% 40%, 54% 40%, 72% 0);
+  filter: drop-shadow(0 0 6px #ffd43b);
+  animation: shop-flash 1.4s steps(1) infinite;
+}
+
+.shop-fx-fireworks i {
+  width: 6px;
+  height: 6px;
+  margin: 0 0 -3px -3px;
+  background: #ff6b6b;
+  box-shadow:
+    0 -14px #ffd43b,
+    10px -10px #ff6b6b,
+    14px 0 #ffd43b,
+    10px 10px #ff6b6b,
+    0 14px #ffd43b,
+    -10px 10px #ff6b6b,
+    -14px 0 #ffd43b,
+    -10px -10px #ff6b6b;
+  animation: shop-firework 1.6s ease-out infinite;
+}
+.shop-fx-fireworks i:nth-child(2),
+.shop-fx-fireworks i:nth-child(3) {
+  display: none;
+}
+
+@keyframes shop-rise {
+  from {
+    transform: translate(0, 0) scale(0.6);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  to {
+    transform: translate(var(--sx), -72px) scale(1.15);
+    opacity: 0;
+  }
+}
+
+@keyframes shop-petal {
+  from {
+    transform: translate(0, -78px) rotate(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  to {
+    transform: translate(var(--sx), -8px) rotate(260deg);
+    opacity: 0;
+  }
+}
+
+@keyframes shop-confetti {
+  from {
+    transform: translate(0, 0) rotate(0);
+    opacity: 1;
+  }
+  55% {
+    transform: translate(calc(var(--sx) * 0.8), -64px) rotate(200deg);
+    opacity: 1;
+  }
+  to {
+    transform: translate(var(--sx), -30px) rotate(420deg) scaleY(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes shop-flash {
+  0%,
+  8%,
+  16% {
+    opacity: 1;
+  }
+  4%,
+  12%,
+  40%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes shop-firework {
+  0% {
+    transform: translateY(0) scale(0.2);
+    opacity: 1;
+  }
+  35% {
+    transform: translateY(-50px) scale(0.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-50px) scale(2.4);
+    opacity: 0;
+  }
+}

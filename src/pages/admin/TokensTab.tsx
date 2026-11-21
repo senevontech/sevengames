@@ -3,7 +3,7 @@ import { adminCall } from "../../lib/adminApi";
 import { games } from "../../catalog";
 import { loadGamePrices } from "../../lib/tokens";
 import { loadShopPrices } from "../../lib/shop";
-import { ARROW_FX, ARROW_SKINS, BOOSTERS, CHESS_BOARDS, CHESS_PIECES, FRAMES, LUDO_BOARDS, LUDO_DICE } from "../../lib/shopCatalog";
+import { ARROW_BOARDS, ARROW_FX, ARROW_HEADS, ARROW_SKINS, BOOSTERS, CHESS_BOARDS, CHESS_PIECES, FRAMES, LUDO_BOARDS, LUDO_DICE } from "../../lib/shopCatalog";
 
 type Config = {
   game_prices: { game_id: string; cost: number }[];
@@ -538,6 +538,8 @@ type ShopItemRow = { item_id: string; kind: string; price: number; grants: strin
 const SHOP_KIND_LABEL: Record<string, string> = {
   arrow_skin: "Arrows · style",
   arrow_fx: "Arrows · effect",
+  arrow_board: "Arrows · board",
+  arrow_head: "Arrows · head",
   frame: "Avatar frame",
   booster: "Booster pack",
   chess_board: "Chess · board",
@@ -549,6 +551,8 @@ const SHOP_KIND_LABEL: Record<string, string> = {
 const shopItemName = (id: string) =>
   ARROW_SKINS[id]?.name ??
   ARROW_FX[id]?.name ??
+  ARROW_BOARDS[id]?.name ??
+  ARROW_HEADS[id]?.name ??
   FRAMES[id]?.name ??
   BOOSTERS[id]?.name ??
   CHESS_BOARDS[id]?.name ??

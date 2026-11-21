@@ -25,10 +25,10 @@
   height: min(860px, 100%);
   overflow: hidden;
   border-radius: 28px;
+  /* read the theme here (the panel gets the game screen's light / dark tokens) */
+  --ss-text: var(--text, #f4f4f6);
   color: var(--ss-text);
-  background: var(--ss-bg);
-  /* a strip of the game's colour along the top */
-  background-image: linear-gradient(180deg, color-mix(in srgb, var(--ss-accent) 18%, transparent), transparent 140px);
+  background: var(--neu-bg, #1d1e24);
   box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.8);
   outline: none;
   animation: ss-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;

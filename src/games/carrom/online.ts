@@ -15,14 +15,22 @@ export function newRoomCode() {
   return code;
 }
 
-export type RosterEntry = { clientId: string; name: string; seat: number; isHost: boolean };
+/** How an online match starts. `mid`: the match id; `uids`: each seat's account id (results). */
+export type StartCfg = {
+  seats: Seats;
+  players: Array<{ name: string; kind: "human" | "cpu" }>;
+  mid?: string;
+  uids?: Array<string | null>;
+};
+
+export type RosterEntry = { clientId: string; name: string; seat: number; isHost: boolean; userId?: string };
 
 export type NetStatus = "idle" | "connecting" | "lobby" | "playing" | "error";
 
 export type NetEvents = {
   onStatus: (status: NetStatus, note?: string) => void;
   onRoster: (roster: RosterEntry[], seats: Seats) => void;
-  onStart: (cfg: { seats: Seats; players: Array<{ name: string; kind: "human" | "cpu" }> }) => void;
+  onStart: (cfg: StartCfg) => void;
   onSnapshot: (snap: Snap) => void;
   onLive: (positions: LivePos[]) => void;
   onMessage: (text: string) => void;
@@ -44,6 +52,8 @@ export class CarromNet {
   private events: NetEvents;
   private mySeat = 0;
   private left = false;
+  /** this player's account id (signed in), shared through presence for match results */
+  private userId = "";
 
   private constructor(isHost: boolean, events: NetEvents) {
     this.isHostClient = isHost;
@@ -66,14 +76,16 @@ export class CarromNet {
     return isSupabaseConfigured && supabase !== null;
   }
 
-  static createHost(name: string, seats: Seats, events: NetEvents): CarromNet {
+  static createHost(name: string, seats: Seats, events: NetEvents, userId = ""): CarromNet {
     const net = new CarromNet(true, events);
+    net.userId = userId;
     void net.host(name, seats);
     return net;
   }
 
-  static createGuest(name: string, code: string, events: NetEvents): CarromNet {
+  static createGuest(name: string, code: string, events: NetEvents, userId = ""): CarromNet {
     const net = new CarromNet(false, events);
+    net.userId = userId;
     void net.guest(name, code);
     return net;
   }
@@ -104,8 +116,8 @@ export class CarromNet {
 
     ch.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
-        await ch.track({ name });
-        this.roster = [{ clientId: this.clientId, name, seat: 0, isHost: true }];
+        await ch.track({ name, userId: this.userId });
+        this.roster = [{ clientId: this.clientId, name, seat: 0, isHost: true, userId: this.userId || undefined }];
         this.joinedOrder = [this.clientId];
         this.events.onStatus("lobby");
         this.events.onRoster([...this.roster], seats);
@@ -134,7 +146,7 @@ export class CarromNet {
 
     ch.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
-        await ch.track({ name });
+        await ch.track({ name, userId: this.userId });
         // If no host roster arrives shortly, the room does not exist.
         this.joinAckTimer = window.setTimeout(() => {
           if (this.events && this.mySeat === 0 && this.roster.length === 0) {
@@ -150,7 +162,7 @@ export class CarromNet {
   private wirePresence(ch: RealtimeChannel, _name: string) {
     ch.on("presence", { event: "sync" }, () => {
       if (!this.isHostClient) return;
-      const state = ch.presenceState<{ name: string }>();
+      const state = ch.presenceState<{ name: string; userId?: string }>();
       const keys = Object.keys(state);
       // new keys (ignoring ones we already know) join after existing roster
       for (const key of keys) {
@@ -168,6 +180,7 @@ export class CarromNet {
           name: key === this.clientId ? name : name,
           seat,
           isHost: key === this.clientId,
+          userId: typeof meta?.userId === "string" && meta.userId ? meta.userId.slice(0, 64) : undefined,
         });
         seat += 1;
         if (seat >= this.seats) break;
@@ -204,7 +217,7 @@ export class CarromNet {
       this.events.onStatus("error", "That room is full.");
     });
     ch.on("broadcast", { event: "start" }, ({ payload }) => {
-      const p = payload as { seats: Seats; players: Array<{ name: string; kind: "human" | "cpu" }> };
+      const p = payload as StartCfg;
       this.events.onStatus("playing");
       this.events.onStart(p);
     });
@@ -251,7 +264,7 @@ export class CarromNet {
     this.send("roster", { roster: this.roster, seats: this.seats, started });
   }
 
-  broadcastStart(cfg: { seats: Seats; players: Array<{ name: string; kind: "human" | "cpu" }> }) {
+  broadcastStart(cfg: StartCfg) {
     this.send("start", cfg);
   }
 

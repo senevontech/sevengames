@@ -23,10 +23,23 @@ import { useGameProgress } from "../lib/progress";
 import { useShop } from "../lib/shop";
 import { useTokens } from "../lib/tokens";
 import { formatTokens } from "../lib/currency";
-import { BOOSTERS, fxIdOf, skinOf, type BoosterItem } from "../lib/shopCatalog";
+import { ARROW_BOARDS, BOOSTERS, boardIdOf, fxIdOf, headIdOf, skinOf, type BoosterItem } from "../lib/shopCatalog";
 import TokenIcon from "../components/TokenIcon";
 import "./arrows.css";
 import { GameShopButton } from "./gameShop";
+
+/** Is the game page in light mode? (SiteChrome sets data-gtheme on .site) */
+function useLightBoard() {
+  const read = () => typeof document !== "undefined" && document.querySelector(".site")?.getAttribute("data-gtheme") === "light";
+  const [light, setLight] = useState(read);
+  useEffect(() => {
+    const mo = new MutationObserver(() => setLight(read()));
+    mo.observe(document.documentElement, { attributes: true, subtree: true, attributeFilter: ["data-gtheme"] });
+    setLight(read());
+    return () => mo.disconnect();
+  }, []);
+  return light;
+}
 
 type Dir = 0 | 1 | 2 | 3; // up, right, down, left
 const DX = [0, 1, 0, -1];
@@ -334,12 +347,57 @@ const COMBO_MS = 1700;
 /** Seconds to decide whether to undo the bump that cost the last life. */
 const CHANCE_S = 6;
 
+/** The arrow's tip in the equipped head style (shop: Heads). `end` = the head cell's centre. */
+function HeadShape({ head, end, ang }: { head: string; end: Pt; ang: number }) {
+  const cos = Math.cos(ang);
+  const sin = Math.sin(ang);
+  const along = (d: number, side = 0) => ({ x: end.x + cos * d - sin * side, y: end.y + sin * d + cos * side });
+  const pts = (list: Pt[]) => list.map((q) => `${q.x.toFixed(1)},${q.y.toFixed(1)}`).join(" ");
+  const wing = (tipD: number, hs: number, spread: number) => {
+    const tip = along(tipD);
+    return [
+      { x: tip.x - Math.cos(ang - spread) * hs, y: tip.y - Math.sin(ang - spread) * hs },
+      tip,
+      { x: tip.x - Math.cos(ang + spread) * hs, y: tip.y - Math.sin(ang + spread) * hs },
+    ];
+  };
+  switch (head) {
+    case "head:chevron":
+      return <polyline className="arw-head arw-head-open" points={pts(wing(4, 11, 0.66))} />;
+    case "head:dot": {
+      const c = along(1.5);
+      return <circle className="arw-head" cx={c.x} cy={c.y} r={4.6} />;
+    }
+    case "head:bold": {
+      const [l, tip, r] = wing(5, 13.5, 0.62);
+      return <polygon className="arw-head" points={pts([tip, l, r])} />;
+    }
+    case "head:diamond":
+      return <polygon className="arw-head" points={pts([along(7), along(1, 5), along(-4), along(1, -5)])} />;
+    case "head:star": {
+      // five points, one facing forward
+      const list: Pt[] = [];
+      for (let i = 0; i < 10; i++) {
+        const a = (i * Math.PI) / 5;
+        const rr = i % 2 ? 3.1 : 7.4;
+        list.push(along(2 + Math.cos(a) * rr, Math.sin(a) * rr));
+      }
+      return <polygon className="arw-head" points={pts(list)} />;
+    }
+    default: {
+      const [l, tip, r] = wing(3, 9.5, 0.5);
+      return <polygon className="arw-head" points={pts([tip, l, r])} />;
+    }
+  }
+}
+
 type ArrowViewProps = {
   a: Arrow;
   idx: number;
   pts: Pt[];
   color: string;
   tint: boolean;
+  head: string;
   spawned: boolean;
   anim: Anim | undefined;
   now: number;
@@ -350,7 +408,7 @@ type ArrowViewProps = {
 
 /** One arrow. Memoised: arrows at rest don't re-render while others move. */
 const ArrowView = memo(
-  function ArrowView({ a, idx, pts, color, tint, spawned, anim: an, now, blocker, hinted, onTap }: ArrowViewProps) {
+  function ArrowView({ a, idx, pts, color, tint, head, spawned, anim: an, now, blocker, hinted, onTap }: ArrowViewProps) {
     const len = a.cells.length - 1;
     let off = 0;
     let fade = 1;
@@ -370,10 +428,6 @@ const ArrowView = memo(
     const end = { x: px(seg[seg.length - 1].x), y: px(seg[seg.length - 1].y) };
     const prev = { x: px(seg[seg.length - 2].x), y: px(seg[seg.length - 2].y) };
     const ang = Math.atan2(end.y - prev.y, end.x - prev.x);
-    const tip = { x: end.x + Math.cos(ang) * 3, y: end.y + Math.sin(ang) * 3 };
-    const hs = 9.5;
-    const l = { x: tip.x - Math.cos(ang - 0.5) * hs, y: tip.y - Math.sin(ang - 0.5) * hs };
-    const r = { x: tip.x - Math.cos(ang + 0.5) * hs, y: tip.y - Math.sin(ang + 0.5) * hs };
     // motion trail while leaving
     const trail = an?.kind === "exit" && off > 0.2 ? pathD(slice(pts, Math.max(0, off - 2.4), off + 0.2)) : null;
     const cls = [
@@ -398,7 +452,7 @@ const ArrowView = memo(
         <path className="arw-hit" d={d} />
         <path className="arw-halo" d={d} />
         <path className="arw-line" d={d} pathLength={1} />
-        <polygon className="arw-head" points={`${tip.x},${tip.y} ${l.x},${l.y} ${r.x},${r.y}`} />
+        <HeadShape head={head} end={end} ang={ang} />
       </g>
     );
   },
@@ -408,6 +462,7 @@ const ArrowView = memo(
     p.idx === n.idx &&
     p.color === n.color &&
     p.tint === n.tint &&
+    p.head === n.head &&
     p.spawned === n.spawned &&
     p.anim === n.anim &&
     p.blocker === n.blocker &&
@@ -525,7 +580,17 @@ export function ArrowsPlay({ onFinish, match, onMatchProgress, onMatchEnd, match
   const shop = useShop();
   const skin = skinOf(shop.arrowSkin);
   const fxStyle = fxIdOf(shop.arrowFx) as FxStyle;
-  const colorOf = useCallback((a: Arrow, lv: number) => skin.palette[(a.id * 7 + lv * 3) % skin.palette.length], [skin]);
+  // light mode: the skin's deeper colours, so pale / bright ones stay readable on the grey board
+  // board theme (shop: Boards): a light or dark board picks the matching arrow colours
+  const boardId = boardIdOf(shop.equippedIn("arrow_board"));
+  const boardTone = ARROW_BOARDS[boardId].tone;
+  const headId = headIdOf(shop.equippedIn("arrow_head"));
+  const lightTheme = useLightBoard();
+  const lightBoard = boardTone === "auto" ? lightTheme : boardTone === "light";
+  const palette = lightBoard ? skin.paletteLight : skin.palette;
+  // the effects canvas reads the board's ink colour: repaint the dots when the board changes
+  useEffect(() => fx.current?.refresh(), [boardId, lightBoard]);
+  const colorOf = useCallback((a: Arrow, lv: number) => palette[(a.id * 7 + lv * 3) % palette.length], [palette]);
 
   const [level, setLevel] = useState(() => (!match ? 1 : infinite ? INF_SIZE_LEVEL : RACE_LEVEL));
   const [seed, setSeed] = useState(() => match?.seed ?? (Math.random() * 2 ** 31) | 0);
@@ -777,7 +842,7 @@ export function ArrowsPlay({ onFinish, match, onMatchProgress, onMatchEnd, match
     if (infinite || state !== "play" || !arrows.length || removed.size !== arrows.length) return;
     sfx.clear();
     // confetti from the top of the board
-    for (let i = 0; i < 6; i++) fx.current?.burst(px(Math.random() * cols), px(-0.5), skin.palette[(i * 2) % skin.palette.length], 14, 220);
+    for (let i = 0; i < 6; i++) fx.current?.burst(px(Math.random() * cols), px(-0.5), palette[(i * 2) % palette.length], 14, 220);
     if (online) {
       endMatchRun("finish");
       return;
@@ -1063,8 +1128,12 @@ export function ArrowsPlay({ onFinish, match, onMatchProgress, onMatchEnd, match
       </div>
 
       {/* Board */}
-      <div className={`arw-board-wrap${state !== "play" ? " is-dim" : ""}${skin.tinted ? " arw-tinted" : ""} ${skin.className}`}>
-        <div className="arw-shake" ref={shakeRef}>
+      <div
+        className={`arw-board-wrap${state !== "play" ? " is-dim" : ""}${skin.tinted ? " arw-tinted" : ""} ${skin.className} arw-theme-${boardId.slice(6)} ${
+          lightBoard ? "arw-tone-light" : "arw-tone-dark"
+        }`}
+      >
+        <div className={`arw-shake${boardId === "board:classic" ? "" : ` arw-bg-${boardId.slice(6)}`}`} ref={shakeRef}>
           <div className="arw-stack" ref={stackRef}>
             {/* background panel + glow, behind the canvas effects */}
             <svg className="arw-bgsvg" viewBox={`${-CELL * 0.5} ${-CELL * 0.5} ${W + CELL} ${H + CELL}`} aria-hidden="true">
@@ -1087,6 +1156,12 @@ export function ArrowsPlay({ onFinish, match, onMatchProgress, onMatchEnd, match
               aria-label={`Arrow board, ${left} arrows left`}
             >
               <defs>
+                {/* Rainbow skin: one spectrum across the whole board */}
+                <linearGradient id="arw-rainbow" gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={W} y2={H}>
+                  {palette.map((c, i) => (
+                    <stop key={i} offset={`${(i / Math.max(1, palette.length - 1)) * 100}%`} stopColor={c} />
+                  ))}
+                </linearGradient>
                 <clipPath id="arw-clip">
                   <rect x={-CELL * 0.4} y={-CELL * 0.4} width={W + CELL * 0.8} height={H + CELL * 0.8} rx={16} />
                 </clipPath>
@@ -1102,6 +1177,7 @@ export function ArrowsPlay({ onFinish, match, onMatchProgress, onMatchEnd, match
                       pts={paths[idx]}
                       color={colorOf(a, level)}
                       tint={skin.tinted}
+                      head={headId}
                       spawned={a.id >= firstSpawn}
                       anim={anims.get(a.id)}
                       now={now}

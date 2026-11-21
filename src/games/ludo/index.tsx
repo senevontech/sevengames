@@ -17,6 +17,7 @@ import { OnlineMenu, RoomWaiting, SignInToPlay } from "../../components/OnlineLo
 import PlayerAvatar from "../../components/PlayerAvatar";
 import "./ludo.css";
 import { GameShopButton } from "../gameShop";
+import { MatchRewardLine, newMatchId, useMatchReport } from "../../lib/matchReport";
 import PlayFlow from "../PlayFlow";
 import { Bot, Globe, Users } from "lucide-react";
 
@@ -98,6 +99,7 @@ export default function LudoGame(_props: GameProps) {
   const [deadline, setDeadline] = useState(0);
   const [xpGain, setXpGain] = useState<number | null>(null);
   const awarded = useRef(false);
+  const matchReport = useMatchReport("ludo", () => void shop.refresh());
   const { shown, animating } = useShownTokens(st);
 
   // online
@@ -127,8 +129,11 @@ export default function LudoGame(_props: GameProps) {
   const choices = myTurn && st.phase === "move" ? movable(st) : [];
 
   /* ----- applying actions (authority) ----- */
+  // online: this match's id (the host makes it and sends it with every state) + who played
+  const matchIdRef = useRef("");
+  const playersRef = useRef<string[]>([]);
   const broadcast = useCallback((s: LudoState, seatList: Seat[], timeLeft: number) => {
-    roomRef.current?.send("state", { st: s, seats: seatList, timeLeft });
+    roomRef.current?.send("state", { st: s, seats: seatList, timeLeft, mid: matchIdRef.current });
   }, []);
 
   const commit = useCallback(
@@ -241,11 +246,19 @@ export default function LudoGame(_props: GameProps) {
     awarded.current = true;
     const myColor = mySeat >= 0 ? st.colors[mySeat] : null;
     const won = myColor !== null && st.winner === myColor;
-    const table = mode === "cpu" ? XP.cpu : XP.online;
+    if (mode === "online") {
+      // the server applies XP (+100 / −40) and the confirmed-win token
+      const w = st.winner ? seats[st.colors.indexOf(st.winner)] : null;
+      const winnerId = w && w.userId && playersRef.current.includes(w.userId) && !w.name.endsWith("(left)") ? w.userId : null;
+      if (matchIdRef.current) void matchReport.report(matchIdRef.current, playersRef.current, [winnerId]);
+      return;
+    }
+    const table = XP.cpu;
     const bonus = st.colors.length >= 4 && won ? 1.25 : 1;
     const amount = Math.round((won ? table.win : table.loss) * bonus);
     setXpGain(amount);
     void shop.awardXp("ludo", amount);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [st, mode, mySeat, user, shop]);
 
   /* ----- local games ----- */
@@ -278,6 +291,11 @@ export default function LudoGame(_props: GameProps) {
         if (!s || !Array.isArray(s.tokens)) return;
         const list = (msg.seats as Seat[]) ?? [];
         setMode("online");
+        if (typeof msg.mid === "string" && msg.mid !== matchIdRef.current) {
+          matchIdRef.current = msg.mid.slice(0, 60);
+          playersRef.current = list.filter((x) => x.kind === "human" && x.userId).map((x) => x.userId!);
+          matchReport.reset();
+        }
         if (stRef.current.phase === "over" && s.phase !== "over") {
           awarded.current = false;
           setXpGain(null);
@@ -321,6 +339,9 @@ export default function LudoGame(_props: GameProps) {
     setMode("online");
     setSeats(list);
     seatsRef.current = list;
+    matchIdRef.current = newMatchId();
+    playersRef.current = list.filter((x) => x.kind === "human" && x.userId).map((x) => x.userId!);
+    matchReport.reset();
     const s = newGame(n);
     stRef.current = s;
     setSt(s);
@@ -397,6 +418,11 @@ export default function LudoGame(_props: GameProps) {
     setScreen("room");
   }
   function leaveOnline() {
+    // leaving a game in progress is a loss
+    if (mode === "online" && screen === "game" && stRef.current.phase !== "over" && !awarded.current && matchIdRef.current) {
+      awarded.current = true;
+      void matchReport.report(matchIdRef.current, playersRef.current, []);
+    }
     roomRef.current?.leave();
     roomRef.current = null;
     hostMatch.current = null;
@@ -626,7 +652,7 @@ export default function LudoGame(_props: GameProps) {
                 <>
                   <h3>{mode === "pass" || mySeat < 0 ? `${seats[winnerSeat]?.name ?? COLOR_NAMES[st.winner!]} wins!` : iWon ? "You won! 🏆" : "You lost"}</h3>
                   <p>{mode !== "pass" && mySeat >= 0 && !iWon ? `${seats[winnerSeat]?.name ?? "Someone"} got all four tokens home first.` : "All four tokens home."}</p>
-                  {xpGain ? <p className="lu-xp-gain">+{xpGain} XP</p> : null}
+                  {mode === "online" ? <MatchRewardLine reward={matchReport.reward} /> : xpGain ? <p className="lu-xp-gain">+{xpGain} XP</p> : null}
                 </>
               )}
               <div className="lu-actions">

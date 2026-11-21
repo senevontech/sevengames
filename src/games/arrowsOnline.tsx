@@ -13,6 +13,9 @@ import { ArrowsNet, type MatchMode, type MatchResult, type NetStatus, type Peer,
 import { ArrowsPlay, MATCH_LIVES } from "./arrows";
 import { useOnline } from "../lib/online";
 import { OfflineNotice } from "../components/OnlineLobby";
+import { useShop } from "../lib/shop";
+import { levelForXp } from "../lib/shopCatalog";
+import { MatchRewardLine, useMatchReport } from "../lib/matchReport";
 
 const MODES: { id: MatchMode; label: string; blurb: string }[] = [
   { id: "race", label: "Race", blurb: "Same board for both. First to clear it wins — 3 lives." },
@@ -78,6 +81,22 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
   const lobbyRef = useRef<LobbyApi | null>(null);
 
   useEffect(() => onBusy(phase !== "menu"), [phase, onBusy]);
+
+  /* ---------- online results (server): +100 / −40 Arrows rank XP, +1 token for a confirmed win ---------- */
+  const shop = useShop();
+  const matchReport = useMatchReport("arrows", () => void shop.refresh());
+  const matchKey = round && roomCode ? `${roomCode}-${round.seed}-${round.round}` : "";
+  const matchPlayers = () => [user?.id, ...peers.map((p) => p.userId)];
+  useEffect(() => {
+    const net = netRef.current;
+    if (!result || !matchKey || !net) return;
+    const winnerPeer = result.winner ? peers.find((p) => p.clientId === result.winner) : null;
+    const winnerId = result.winner === net.clientId ? user?.id : winnerPeer?.userId;
+    void matchReport.report(matchKey, matchPlayers(), result.winner ? [winnerId] : [], result.winner === null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, matchKey]);
+  useEffect(() => matchReport.reset(), [matchKey, matchReport.reset]);
+  const rankXp = shop.state?.xp?.arrows ?? 0;
 
   const events = useCallback(
     () => ({
@@ -156,6 +175,12 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
   }
 
   function leave() {
+    // leaving a race in progress is a loss (and confirms the other player's win)
+    const net = netRef.current;
+    if (phase === "match" && !result && matchKey && net) {
+      const other = peers.find((p) => p.clientId !== net.clientId);
+      if (other) void matchReport.report(matchKey, matchPlayers(), [other.userId]);
+    }
     hostMatchRef.current = null;
     autoStart.current = false;
     netRef.current?.leave();
@@ -263,6 +288,8 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
         <div className={`arw-card arw-result${won ? " is-win" : draw ? "" : " is-loss"}`}>
           <h3 id="arw-result-title">{won ? "You won! 🏆" : draw ? "It's a draw" : "You lost"}</h3>
           <p>{detail}</p>
+          <MatchRewardLine reward={matchReport.reward} />
+          {matchReport.reward ? <p className="arw-rank">Arrows rank · Lv {levelForXp(rankXp)}</p> : null}
           <div className="arw-confirm-actions">
             <button type="button" className="ghost-btn" onClick={leave}>
               Leave

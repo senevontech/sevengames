@@ -1,7 +1,16 @@
 /* What the shop sells: names, looks and pack sizes. Prices come from the server (shop_items in
    supabase/shop.sql, editable in Admin → Tokens). Keep the item ids in sync with shop.sql. */
 
-export type ShopSlot = "arrow_skin" | "arrow_fx" | "frame" | "chess_board" | "chess_pieces" | "ludo_board" | "ludo_dice";
+export type ShopSlot =
+  | "arrow_skin"
+  | "arrow_fx"
+  | "arrow_board"
+  | "arrow_head"
+  | "frame"
+  | "chess_board"
+  | "chess_pieces"
+  | "ludo_board"
+  | "ludo_dice";
 export type BoosterItem = "arrows_hint" | "arrows_undo";
 
 export type ArrowSkin = {
@@ -9,6 +18,8 @@ export type ArrowSkin = {
   blurb: string;
   /** Colours arrows take (at rest when `tinted`, otherwise only while leaving). */
   palette: string[];
+  /** The same look for the light board (light mode): deeper tones that stay readable on grey. */
+  paletteLight: string[];
   /** Arrows show their colour on the board, not just when they leave. */
   tinted: boolean;
   /** Extra CSS class on the board for line weight / glow. */
@@ -20,6 +31,7 @@ export const ARROW_SKINS: Record<string, ArrowSkin> = {
     name: "Classic",
     blurb: "Clean lines that light up as they leave.",
     palette: ["#ff5c5c", "#ff922b", "#f5b700", "#40c057", "#12b886", "#22b8cf", "#339af0", "#5c7cfa", "#9775fa", "#cc5de8", "#f06595"],
+    paletteLight: ["#e03131", "#e8590c", "#c98a00", "#2f9e44", "#0c8599", "#1098ad", "#1c7ed6", "#4263eb", "#7048e8", "#ae3ec9", "#d6336c"],
     tinted: false,
     className: "",
   },
@@ -27,6 +39,7 @@ export const ARROW_SKINS: Record<string, ArrowSkin> = {
     name: "Pastel",
     blurb: "Soft candy colours, always on.",
     palette: ["#ffadad", "#ffd6a5", "#fdffb6", "#caffbf", "#9bf6ff", "#a0c4ff", "#bdb2ff", "#ffc6ff"],
+    paletteLight: ["#ec7f7f", "#eb9c4f", "#c9a62a", "#5fb872", "#3fadc0", "#5f8fe6", "#8c7ced", "#d672cf"],
     tinted: true,
     className: "arw-skin-pastel",
   },
@@ -34,6 +47,7 @@ export const ARROW_SKINS: Record<string, ArrowSkin> = {
     name: "Neon",
     blurb: "Glowing electric tubes.",
     palette: ["#39ff14", "#00f0ff", "#ff2bd6", "#fff01f", "#ff6b00", "#8a5cff"],
+    paletteLight: ["#16a300", "#009fb8", "#d10f95", "#b89a00", "#e85a00", "#6a35e8"],
     tinted: true,
     className: "arw-skin-neon",
   },
@@ -41,6 +55,7 @@ export const ARROW_SKINS: Record<string, ArrowSkin> = {
     name: "Midnight",
     blurb: "Deep blues and violets with a moonlit edge.",
     palette: ["#4cc9f0", "#4895ef", "#4361ee", "#3f37c9", "#7209b7", "#b5179e"],
+    paletteLight: ["#1a8fc0", "#2f6fd6", "#3346d8", "#3a2fb5", "#6a0dad", "#a3127f"],
     tinted: true,
     className: "arw-skin-midnight",
   },
@@ -48,8 +63,49 @@ export const ARROW_SKINS: Record<string, ArrowSkin> = {
     name: "Gold",
     blurb: "Polished gold, thick and shiny.",
     palette: ["#ffd700", "#ffc53d", "#f0b429", "#e9a23b", "#ffe08a"],
+    paletteLight: ["#b8860b", "#c48a0a", "#a87412", "#946016", "#cf9a12"],
     tinted: true,
     className: "arw-skin-gold",
+  },
+  "skin:ink": {
+    name: "Ink",
+    blurb: "Bold single-colour strokes: white on dark, black on light.",
+    palette: ["#f4f4f6", "#dcdde3"],
+    paletteLight: ["#17181b", "#34363d"],
+    tinted: true,
+    className: "arw-skin-ink",
+  },
+  "skin:ice": {
+    name: "Ice",
+    blurb: "Thin frosty blues with a cold shimmer.",
+    palette: ["#e7f5ff", "#a5d8ff", "#74c0fc", "#99e9f2", "#c5f6fa"],
+    paletteLight: ["#1971c2", "#1c7ed6", "#0b7285", "#1098ad", "#4dabf7"],
+    tinted: true,
+    className: "arw-skin-ice",
+  },
+  "skin:chalk": {
+    name: "Chalk",
+    blurb: "Hand-drawn chalk lines with a dusty edge.",
+    palette: ["#f1f3f5", "#ffd8a8", "#b2f2bb", "#a5d8ff", "#fcc2d7"],
+    paletteLight: ["#495057", "#c2410c", "#2b8a3e", "#1864ab", "#a61e4d"],
+    tinted: true,
+    className: "arw-skin-chalk",
+  },
+  "skin:lava": {
+    name: "Lava",
+    blurb: "Molten reds and oranges that glow hot.",
+    palette: ["#ff3b30", "#ff6b00", "#ff9500", "#ffcc00", "#ff2d55"],
+    paletteLight: ["#c92a2a", "#d9480f", "#e8590c", "#b35c00", "#c2255c"],
+    tinted: true,
+    className: "arw-skin-lava",
+  },
+  "skin:rainbow": {
+    name: "Rainbow",
+    blurb: "A full spectrum sweeps across the whole board.",
+    palette: ["#ff5c5c", "#ff922b", "#fcc419", "#51cf66", "#22b8cf", "#4c6ef5", "#be4bdb"],
+    paletteLight: ["#e03131", "#e8590c", "#c98a00", "#2f9e44", "#0c8599", "#3b5bdb", "#9c36b5"],
+    tinted: true,
+    className: "arw-skin-rainbow",
   },
 };
 
@@ -60,7 +116,46 @@ export const ARROW_FX: Record<string, ArrowFx> = {
   "fx:pulse": { name: "Neon pulse", blurb: "A bright glowing ring bursts outward." },
   "fx:ink": { name: "Ink bloom", blurb: "A drop of colour blooms and melts away." },
   "fx:starburst": { name: "Starburst", blurb: "A ring of stars flies out from the edge." },
+  "fx:bubbles": { name: "Bubbles", blurb: "A stream of bubbles floats up and pops." },
+  "fx:petals": { name: "Petals", blurb: "Soft petals drift down and twirl away." },
+  "fx:confetti": { name: "Confetti", blurb: "A pop of party confetti." },
+  "fx:lightning": { name: "Lightning", blurb: "A bolt cracks across the board." },
+  "fx:fireworks": { name: "Fireworks", blurb: "A firework bursts in a shower of sparks." },
 };
+
+/* ---------- Arrows: board themes + arrowhead shapes ---------- */
+
+export type ArrowBoard = {
+  name: string;
+  blurb: string;
+  /** "auto" follows light / dark mode; otherwise the board is always this tone (arrow colours follow it). */
+  tone: "auto" | "light" | "dark";
+};
+
+export const ARROW_BOARDS: Record<string, ArrowBoard> = {
+  "board:classic": { name: "Classic", blurb: "The soft standard board, light or dark with the site.", tone: "auto" },
+  "board:paper": { name: "Paper", blurb: "Warm notebook paper with faint ruled lines.", tone: "light" },
+  "board:blueprint": { name: "Blueprint", blurb: "Engineer's blue with a crisp white grid.", tone: "dark" },
+  "board:wood": { name: "Wood", blurb: "A polished wooden tabletop.", tone: "dark" },
+  "board:sunset": { name: "Sunset", blurb: "Peach, rose and violet sky.", tone: "dark" },
+  "board:space": { name: "Space", blurb: "Deep space with twinkling stars.", tone: "dark" },
+};
+
+export type ArrowHead = { name: string; blurb: string };
+
+export const ARROW_HEADS: Record<string, ArrowHead> = {
+  "head:classic": { name: "Classic", blurb: "The standard pointed tip." },
+  "head:chevron": { name: "Chevron", blurb: "An open, sharp V." },
+  "head:dot": { name: "Dot", blurb: "A round bead at the tip." },
+  "head:bold": { name: "Bold", blurb: "A big, wide triangle you can't miss." },
+  "head:diamond": { name: "Diamond", blurb: "A cut-gem tip." },
+  "head:star": { name: "Star", blurb: "A five-point star leads the way." },
+};
+
+export const DEFAULT_BOARD = "board:classic";
+export const DEFAULT_HEAD = "head:classic";
+export const boardIdOf = (id: string | null | undefined) => (id && ARROW_BOARDS[id] ? id : DEFAULT_BOARD);
+export const headIdOf = (id: string | null | undefined) => (id && ARROW_HEADS[id] ? id : DEFAULT_HEAD);
 
 export type Frame = { name: string; blurb: string };
 
@@ -91,6 +186,8 @@ export const frameClass = (id: string | null | undefined) => (id && FRAMES[id] ?
 /* ---------------- Chess + Ludo cosmetics ---------------- */
 
 export type BoardGame = "chess" | "ludo";
+/** Games whose level can unlock shop items (Arrows: the puzzle level reached). */
+export type LevelGame = BoardGame | "arrows";
 
 /** Total XP for `level` (level 1 = 0): 100, 300, 600 … — same curve as Carrom and the server. */
 export const xpForLevel = (level: number) => 50 * level * (level - 1);

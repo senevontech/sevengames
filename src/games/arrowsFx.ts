@@ -5,7 +5,18 @@
    map the viewBox the same way the SVG does (preserveAspectRatio "xMidYMid meet"). The loop
    only runs while something is moving; at rest the dots are drawn once. */
 
-export type FxStyle = "fx:wave" | "fx:pulse" | "fx:ink" | "fx:starburst";
+export type FxStyle =
+  | "fx:wave"
+  | "fx:pulse"
+  | "fx:ink"
+  | "fx:starburst"
+  | "fx:bubbles"
+  | "fx:petals"
+  | "fx:confetti"
+  | "fx:lightning"
+  | "fx:fireworks";
+
+type Shape = "dot" | "star" | "rect" | "bubble" | "petal";
 
 type Particle = {
   x: number;
@@ -16,14 +27,42 @@ type Particle = {
   max: number;
   r: number;
   color: string;
-  star?: boolean;
+  shape?: Shape;
   rot?: number;
   vr?: number;
+  /** wobble phase (bubbles / petals) */
+  ph?: number;
 };
 
-type Effect = { style: FxStyle; x: number; y: number; t0: number; dur: number; color: string; maxR: number };
+type Effect = {
+  style: FxStyle;
+  x: number;
+  y: number;
+  t0: number;
+  dur: number;
+  color: string;
+  maxR: number;
+  /** lightning: the bolt's points (and a branch) */
+  bolt?: { x: number; y: number }[][];
+  /** fireworks: where the shell bursts, and whether it has */
+  tx?: number;
+  ty?: number;
+  burst?: boolean;
+};
 
-const DUR: Record<FxStyle, number> = { "fx:wave": 1150, "fx:pulse": 850, "fx:ink": 1300, "fx:starburst": 700 };
+const DUR: Record<FxStyle, number> = {
+  "fx:wave": 1150,
+  "fx:pulse": 850,
+  "fx:ink": 1300,
+  "fx:starburst": 700,
+  "fx:bubbles": 500,
+  "fx:petals": 500,
+  "fx:confetti": 450,
+  "fx:lightning": 650,
+  "fx:fireworks": 1100,
+};
+const CONFETTI = ["#ff5c5c", "#fcc419", "#51cf66", "#339af0", "#cc5de8", "#ff922b"];
+const PETALS = ["#ffc6d9", "#ffa8c5", "#ffe0ec", "#f783ac"];
 const MAX_EFFECTS = 8;
 const MAX_PARTICLES = 260;
 const easeOut3 = (t: number) => 1 - Math.pow(1 - t, 3);
@@ -150,6 +189,68 @@ export class ArrowsFx {
     const now = performance.now();
     this.effects.push({ style, x, y, t0: now, dur: DUR[style], color, maxR });
     if (this.effects.length > MAX_EFFECTS) this.effects.shift();
+    const back = Math.atan2(-dy, -dx); // the way back over the board
+    const e = this.effects[this.effects.length - 1];
+    if (style === "fx:bubbles") {
+      for (let i = 0; i < 14; i++) {
+        const ang = back + (Math.random() - 0.5) * 1.6;
+        const v = 30 + Math.random() * 70;
+        const life = 1.1 + Math.random() * 0.8;
+        this.particles.push({ x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, life, max: life, r: 3 + Math.random() * 5, color, shape: "bubble", ph: Math.random() * 6 });
+      }
+    } else if (style === "fx:petals") {
+      for (let i = 0; i < 12; i++) {
+        const ang = back + (Math.random() - 0.5) * 1.8;
+        const v = 60 + Math.random() * 90;
+        const life = 1.3 + Math.random() * 0.8;
+        this.particles.push({
+          x,
+          y,
+          vx: Math.cos(ang) * v,
+          vy: Math.sin(ang) * v,
+          life,
+          max: life,
+          r: 4 + Math.random() * 3,
+          color: i % 3 === 0 ? color : PETALS[i % PETALS.length],
+          shape: "petal",
+          rot: Math.random() * Math.PI,
+          vr: (Math.random() - 0.5) * 5,
+          ph: Math.random() * 6,
+        });
+      }
+    } else if (style === "fx:confetti") {
+      for (let i = 0; i < 26; i++) {
+        const ang = back + (Math.random() - 0.5) * 1.4;
+        const v = 160 + Math.random() * 200;
+        const life = 0.9 + Math.random() * 0.6;
+        this.particles.push({
+          x,
+          y,
+          vx: Math.cos(ang) * v,
+          vy: Math.sin(ang) * v,
+          life,
+          max: life,
+          r: 2.6 + Math.random() * 2,
+          color: i % 4 === 0 ? color : CONFETTI[i % CONFETTI.length],
+          shape: "rect",
+          rot: Math.random() * Math.PI,
+          vr: (Math.random() - 0.5) * 14,
+        });
+      }
+    } else if (style === "fx:lightning") {
+      // a jagged bolt from the exit point back across the board, with one branch
+      const len = Math.max(this.cols, this.rows) * c * 0.75;
+      const main = this.boltPath(x, y, back, len, 9);
+      const fork = main[Math.floor(main.length * 0.45)];
+      const branch = this.boltPath(fork.x, fork.y, back + (Math.random() < 0.5 ? -0.7 : 0.7), len * 0.4, 5);
+      e.bolt = [main, branch];
+      this.burst(x, y, color, 8, 160);
+    } else if (style === "fx:fireworks") {
+      // a shell flies in from the edge, then bursts (in tick)
+      const d = Math.min(this.cols, this.rows) * c * 0.42;
+      e.tx = x + Math.cos(back) * d;
+      e.ty = y + Math.sin(back) * d;
+    }
     if (style === "fx:starburst") {
       // stars fly back over the board, fanned around the way in
       const base = Math.atan2(-dy, -dx);
@@ -166,7 +267,7 @@ export class ArrowsFx {
           max: life,
           r: 4 + Math.random() * 3,
           color: i % 3 === 0 ? "#fff6c8" : color,
-          star: true,
+          shape: "star",
           rot: Math.random() * Math.PI,
           vr: (Math.random() - 0.5) * 8,
         });
@@ -174,6 +275,21 @@ export class ArrowsFx {
       this.trim();
     }
     this.start();
+  }
+
+  /** A jagged line of `n` segments from (x, y) heading at `ang`. */
+  private boltPath(x: number, y: number, ang: number, len: number, n: number) {
+    const pts = [{ x, y }];
+    const step = len / n;
+    let cx = x;
+    let cy = y;
+    for (let i = 1; i <= n; i++) {
+      const a = ang + (Math.random() - 0.5) * 1.1;
+      cx += Math.cos(a) * step;
+      cy += Math.sin(a) * step;
+      pts.push({ x: cx, y: cy });
+    }
+    return pts;
   }
 
   private trim() {
@@ -190,15 +306,45 @@ export class ArrowsFx {
   private tick = (now: number) => {
     const dt = Math.min(0.05, (now - this.last) / 1000);
     this.last = now;
+    // fireworks: the shell bursts once it arrives
+    for (const e of this.effects) {
+      if (e.style !== "fx:fireworks" || e.burst || now - e.t0 < e.dur * 0.3) continue;
+      e.burst = true;
+      for (let i = 0; i < 34; i++) {
+        const ang = (i / 34) * Math.PI * 2 + Math.random() * 0.1;
+        const v = 110 + Math.random() * 60;
+        const life = 0.8 + Math.random() * 0.5;
+        this.particles.push({ x: e.tx!, y: e.ty!, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, life, max: life, r: 1.6 + Math.random() * 1.4, color: i % 4 === 0 ? "#fff6c8" : e.color });
+      }
+      this.trim();
+    }
     for (const p of this.particles) {
       p.life -= dt;
-      if (p.star) {
-        p.vx *= 0.93;
-        p.vy *= 0.93;
-        p.rot! += p.vr! * dt;
-      } else {
-        p.vx *= 0.9;
-        p.vy = p.vy * 0.9 + 60 * dt;
+      switch (p.shape) {
+        case "star":
+          p.vx *= 0.93;
+          p.vy *= 0.93;
+          p.rot! += p.vr! * dt;
+          break;
+        case "rect": // confetti: thrown, then flutters down
+          p.vx *= 0.94;
+          p.vy = p.vy * 0.94 + 260 * dt;
+          p.rot! += p.vr! * dt;
+          break;
+        case "bubble": // floats up, wobbling
+          p.ph! += dt * 5;
+          p.vx = p.vx * 0.95 + Math.sin(p.ph!) * 30 * dt;
+          p.vy = p.vy * 0.95 - 50 * dt;
+          break;
+        case "petal": // drifts down, swaying and twirling
+          p.ph! += dt * 3;
+          p.vx = p.vx * 0.95 + Math.cos(p.ph!) * 40 * dt;
+          p.vy = p.vy * 0.95 + 28 * dt;
+          p.rot! += p.vr! * dt;
+          break;
+        default:
+          p.vx *= 0.9;
+          p.vy = p.vy * 0.9 + 60 * dt;
       }
       p.x += p.vx * dt;
       p.y += p.vy * dt;
@@ -353,6 +499,73 @@ export class ArrowsFx {
         }
         break;
       }
+      case "fx:lightning": {
+        if (!e.bolt) break;
+        // flickers: bright, dim, bright, then fades
+        const flick = p < 0.12 ? 1 : p < 0.2 ? 0.35 : p < 0.32 ? 0.95 : Math.pow(1 - (p - 0.32) / 0.68, 2);
+        ctx.save();
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+        e.bolt.forEach((pts, bi) => {
+          for (const [w, a] of [
+            [10, 0.12],
+            [4.5, 0.35],
+            [1.8, 1],
+          ] as const) {
+            ctx.strokeStyle = a === 1 ? `rgba(255,255,255,${(0.9 * flick).toFixed(3)})` : hexA(e.color, a * flick);
+            ctx.lineWidth = w * (bi ? 0.6 : 1);
+            ctx.beginPath();
+            pts.forEach((q, i) => (i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)));
+            ctx.stroke();
+          }
+        });
+        if (p < 0.2) {
+          // a flash over the board
+          ctx.fillStyle = hexA(e.color, 0.1 * (1 - p / 0.2));
+          ctx.fillRect(-this.cell, -this.cell, this.cols * this.cell + this.cell * 2, this.rows * this.cell + this.cell * 2);
+        }
+        ctx.restore();
+        break;
+      }
+      case "fx:fireworks": {
+        const fly = Math.min(1, p / 0.3);
+        if (fly < 1) {
+          // the shell's trail on its way in
+          const hx = e.x + (e.tx! - e.x) * easeOut3(fly);
+          const hy = e.y + (e.ty! - e.y) * easeOut3(fly);
+          const tx = e.x + (e.tx! - e.x) * easeOut3(Math.max(0, fly - 0.25));
+          const ty = e.y + (e.ty! - e.y) * easeOut3(Math.max(0, fly - 0.25));
+          ctx.strokeStyle = hexA(e.color, 0.8);
+          ctx.lineWidth = 2;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(tx, ty);
+          ctx.lineTo(hx, hy);
+          ctx.stroke();
+        } else {
+          // a soft glow where it burst
+          const q = (p - 0.3) / 0.7;
+          const g = ctx.createRadialGradient(e.tx!, e.ty!, 0, e.tx!, e.ty!, 70);
+          g.addColorStop(0, hexA(e.color, 0.28 * (1 - q)));
+          g.addColorStop(1, hexA(e.color, 0));
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(e.tx!, e.ty!, 70, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      }
+      case "fx:bubbles":
+      case "fx:petals":
+      case "fx:confetti": {
+        // a small puff where it left; the particles do the rest
+        const r = 6 + 22 * easeOut3(p);
+        ctx.fillStyle = hexA(e.color, 0.16 * (1 - p));
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, r, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
       case "fx:starburst": {
         const r = e.maxR * 0.35 * easeOut3(p);
         ctx.strokeStyle = hexA(e.color, 0.6 * (1 - p));
@@ -376,7 +589,39 @@ export class ArrowsFx {
       const k = p.life / p.max;
       ctx.globalAlpha = Math.min(1, k * 1.4);
       ctx.fillStyle = p.color;
-      if (p.star) {
+      if (p.shape === "rect") {
+        // confetti flips as it spins: its height shrinks and grows
+        const flip = Math.abs(Math.cos(p.rot! * 1.7));
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot!);
+        ctx.fillRect(-p.r, -p.r * 0.55 * flip, p.r * 2, p.r * 1.1 * flip + 0.4);
+        ctx.restore();
+      } else if (p.shape === "bubble") {
+        const s = p.r * (k < 0.12 ? 1 + (0.12 - k) * 6 : 1); // pops: swells as it ends
+        const a = Math.min(1, k * 2);
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 1.2;
+        ctx.globalAlpha = a * 0.9;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, s, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = a * 0.2;
+        ctx.fill();
+        ctx.globalAlpha = a;
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(p.x - s * 0.35, p.y - s * 0.35, s * 0.22, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (p.shape === "petal") {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot!);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.r, p.r * 0.5 * (0.4 + 0.6 * Math.abs(Math.sin(p.ph!))), 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else if (p.shape === "star") {
         const s = p.r * (0.5 + 0.5 * k);
         ctx.save();
         ctx.translate(p.x, p.y);

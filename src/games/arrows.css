@@ -728,6 +728,148 @@
   stroke-width: 11;
 }
 
+/* light board: glows are softer (a wide halo reads as a smudge on grey), lines a touch bolder */
+.arw-tone-light.arw-skin-pastel .arw-line {
+  stroke-width: 3.8;
+}
+.arw-tone-light.arw-skin-pastel .arw-halo,
+.arw-tone-light.arw-skin-midnight .arw-halo {
+  opacity: 0.08;
+}
+.arw-tone-light.arw-skin-neon .arw-halo {
+  opacity: 0.1;
+  stroke-width: 8;
+}
+.arw-tone-light.arw-skin-gold .arw-halo {
+  opacity: 0.1;
+  stroke-width: 9;
+}
+
+/* ---------- new arrow skins (shop) ---------- */
+.arw-skin-ink .arw-line {
+  stroke-width: 4.2;
+}
+.arw-skin-ink .arw-head {
+  stroke-width: 2.2;
+}
+
+.arw-skin-ice .arw-line {
+  stroke-width: 2.6;
+}
+.arw-skin-ice .arw-halo {
+  opacity: 0.22;
+  stroke-width: 7;
+}
+
+/* chalk: a dusty dashed halo around a slightly see-through line */
+.arw-skin-chalk .arw-line {
+  stroke-width: 3.4;
+  opacity: 0.9;
+}
+.arw-skin-chalk .arw-halo {
+  opacity: 0.4;
+  stroke-width: 6;
+  stroke-dasharray: 1.5 4;
+}
+
+.arw-skin-lava .arw-line {
+  stroke-width: 3.8;
+}
+.arw-skin-lava .arw-halo {
+  opacity: 0.3;
+  stroke-width: 12;
+}
+
+/* rainbow: one gradient across the board (bump / blocker / hint keep their warning colours) */
+.arw-skin-rainbow .arw-arrow:not(.is-bump):not(.is-blocker):not(.is-hint) .arw-line,
+.arw-skin-rainbow .arw-arrow:not(.is-bump):not(.is-blocker):not(.is-hint) .arw-halo {
+  stroke: url(#arw-rainbow);
+}
+.arw-skin-rainbow .arw-arrow:not(.is-bump):not(.is-blocker):not(.is-hint) .arw-head {
+  stroke: url(#arw-rainbow);
+  fill: url(#arw-rainbow);
+}
+.arw-skin-rainbow .arw-line {
+  stroke-width: 3.6;
+}
+.arw-skin-rainbow .arw-halo {
+  opacity: 0.16;
+  stroke-width: 9;
+}
+
+.arw-tone-light.arw-skin-ice .arw-halo,
+.arw-tone-light.arw-skin-lava .arw-halo,
+.arw-tone-light.arw-skin-rainbow .arw-halo {
+  opacity: 0.1;
+}
+
+/* ---------- arrowhead shapes (shop) ---------- */
+.arw-head-open {
+  fill: none !important;
+  stroke-width: 3;
+  stroke-linecap: round;
+  animation: none !important;
+}
+
+/* ---------- board themes (shop) ----------
+   .arw-bg-<name> goes on the board panel (.arw-shake) and on the shop preview tile; !important
+   beats the game page's soft-panel style.
+   --arw-ink: the colour of plain arrows and of the dots, to suit the board. */
+.arw-tone-light {
+  --arw-ink: #17181b;
+}
+.arw-tone-dark {
+  --arw-ink: #f1f1f5;
+}
+
+.arw-bg-paper {
+  background:
+    repeating-linear-gradient(180deg, transparent 0 23px, rgba(70, 110, 180, 0.14) 23px 24px),
+    linear-gradient(90deg, transparent 0 26px, rgba(226, 80, 80, 0.22) 26px 27px, transparent 27px),
+    #f8f3e9 !important;
+  box-shadow: inset 0 2px 10px rgba(80, 60, 30, 0.16), 0 6px 18px -10px rgba(0, 0, 0, 0.35) !important;
+}
+
+.arw-bg-blueprint {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px) 0 0 / 22px 22px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.09) 1px, transparent 1px) 0 0 / 22px 22px,
+    radial-gradient(circle at 50% 30%, #2a64ad, #173f75) !important;
+  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.35), 0 6px 18px -10px rgba(0, 0, 0, 0.45) !important;
+}
+
+.arw-bg-wood {
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(255, 220, 170, 0.18), transparent 60%),
+    repeating-linear-gradient(94deg, #7a4a2a 0 14px, #87542f 14px 22px, #6f4225 22px 31px, #7d4c2b 31px 40px) !important;
+  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.4), 0 6px 18px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+.arw-bg-sunset {
+  background: linear-gradient(165deg, #ffb27a 0%, #e9667f 45%, #6a3f96 80%, #3a2a6b 100%) !important;
+  box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.25), 0 6px 18px -10px rgba(0, 0, 0, 0.45) !important;
+}
+
+.arw-bg-space {
+  background:
+    radial-gradient(1px 1px at 12% 18%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 68% 12%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 82% 64%, #cfe1ff 50%, transparent 51%),
+    radial-gradient(1px 1px at 34% 78%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 52% 42%, #fff4d6 50%, transparent 51%),
+    radial-gradient(1px 1px at 90% 30%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 22% 52%, #e5dbff 50%, transparent 51%),
+    radial-gradient(ellipse at 70% 80%, rgba(124, 92, 255, 0.28), transparent 55%),
+    radial-gradient(ellipse at 20% 15%, rgba(34, 184, 207, 0.18), transparent 50%),
+    #0b0d1e !important;
+  box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.6), 0 6px 18px -10px rgba(0, 0, 0, 0.55) !important;
+}
+
+/* themed boards: no orange glow on top (it muddies their colours) */
+.arw-board-wrap:not(.arw-theme-classic) .arw-bgsvg {
+  display: none;
+}
+
 /* ---------- undo / last chance ---------- */
 .arw-actions .arw-undo-ready {
   border-color: #ff8a3d;

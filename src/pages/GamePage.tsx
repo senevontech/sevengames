@@ -2,8 +2,10 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type React
 import { gameFinishedAd } from "../lib/admob";
 import { promptAdFree } from "../lib/adFreePromo";
 import { isNative, openExternal } from "../lib/native";
+import { asksForApp, openGameApp, openGameWeb } from "../lib/externalGames";
+import { openExternalGame } from "../components/ExternalGamePrompt";
 import { Link, useParams } from "react-router-dom";
-import { ChevronLeft, ExternalLink, Info, Maximize, Minimize, Minimize2, Store, Trophy, X } from "lucide-react";
+import { ChevronLeft, ExternalLink, Info, Maximize, Minimize, Minimize2, Smartphone, Store, Trophy, X } from "lucide-react";
 import { GamePoster } from "../components/GamePoster";
 import { getGame, scoreLabel } from "../catalog";
 import { engines, previews } from "../games";
@@ -25,7 +27,7 @@ import "./game-fit.css";
 import FitBox from "../components/FitBox";
 import StartAd from "../components/StartAd";
 import { GateShort, PlayGateContext, type PlayGateApi } from "../games/PlayFlow";
-import { GameShopProvider } from "../games/gameShop";
+import { GameShopProvider, useGameShop } from "../games/gameShop";
 
 /** The game as it looks before you start: a custom preview, or its own start screen made inert. */
 function GatePreview({ game }: { game: NonNullable<ReturnType<typeof getGame>> }) {
@@ -63,6 +65,25 @@ function GameRunner({ gameId, onScore }: { gameId: string; onScore: (score: numb
   );
 }
 
+/** Header storefront icon: this game's shop when it has one, otherwise the Tokens page. */
+function HeaderShop() {
+  const shop = useGameShop();
+  if (shop) {
+    return (
+      <button type="button" className="gp-shop" onClick={shop.open} aria-label={shop.title} title={shop.title}>
+        <Store size={15} />
+        <span>Shop</span>
+      </button>
+    );
+  }
+  return (
+    <Link to="/tokens#buy" className="gp-shop" aria-label="Get tokens" title="Get tokens">
+      <Store size={15} />
+      <span>Tokens</span>
+    </Link>
+  );
+}
+
 export default function GamePage() {
   const { id } = useParams();
   const game = getGame(id);
@@ -97,13 +118,6 @@ export default function GamePage() {
   }, [playing]);
   // a new game page starts out of play mode
   useEffect(() => setPlaying(false), [id]);
-
-  // Web games (they run another site in a frame) play best in their own window: ask first.
-  // "ask" → overlay; "opened" → opened elsewhere (frame not loaded); "here" → play in the frame.
-  // (embed-only games skip the question and always play here)
-  const embedOnly = game?.kind === "iframe" && Boolean(game.embedOnly);
-  const [extMode, setExtMode] = useState<"ask" | "opened" | "here">(embedOnly ? "here" : "ask");
-  useEffect(() => setExtMode(embedOnly ? "here" : "ask"), [id, embedOnly]);
 
   // Two-step start for games with modes: their Play button pays (if needed) and starts
   const selfGated = game?.kind === "builtin" && SELF_GATED.has(game.engine);
@@ -202,19 +216,6 @@ export default function GamePage() {
     if (user) setNudge(false);
   }, [user]);
 
-  // Web games: clicks inside the iframe never reach the page, but focus moves into it
-  useEffect(() => {
-    const onBlur = () => {
-      window.setTimeout(() => {
-        if (document.activeElement?.tagName === "IFRAME" && stageRef.current?.contains(document.activeElement)) {
-          setPlaying(true);
-        }
-      }, 0);
-    };
-    window.addEventListener("blur", onBlur);
-    return () => window.removeEventListener("blur", onBlur);
-  }, []);
-
   // "F" toggles full screen (ignored while typing or when a game input has focus).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -270,6 +271,8 @@ export default function GamePage() {
   );
 
   return (
+    // this game's shop (if it has one): opened from the header's shop icon and result screens
+    <GameShopProvider engine={game.kind === "builtin" ? game.engine : ""} accent={game.accent}>
     <div className="page game-page gp" style={{ "--accent": game.accent } as React.CSSProperties}>
       {/* One slim row: back, picture, title + details (the game gets the rest of the screen) */}
       <header className="game-header gp-top">
@@ -306,10 +309,7 @@ export default function GamePage() {
             <Maximize size={15} />
             <span>Full screen</span>
           </button>
-          <Link to="/tokens#buy" className="gp-shop" aria-label="Get tokens" title="Get tokens">
-            <Store size={15} />
-            <span>Tokens</span>
-          </Link>
+          <HeaderShop />
           {/* phones: the leaderboard opens as a panel over the game */}
           <button
             type="button"
@@ -320,10 +320,10 @@ export default function GamePage() {
           >
             <Trophy size={15} />
           </button>
-          {game.kind === "iframe" && !game.embedOnly ? (
-            <a href={game.embedUrl} target="_blank" rel="noopener noreferrer" aria-label="Open original site" title="Original site">
+          {game.kind === "iframe" ? (
+            <button type="button" onClick={() => openExternalGame(game)} aria-label={`Open ${game.title}`} title={`Open ${game.title}`}>
               <ExternalLink size={15} />
-            </a>
+            </button>
           ) : null}
         </div>
       </header>
@@ -338,8 +338,8 @@ export default function GamePage() {
             onPointerDownCapture={() => {
               // free games start on the first touch; paid ones when "Start game" is paid
               // (not while the "new window" question is up for a web game)
-              const asking = game.kind === "iframe" && extMode !== "here";
-              if (!playing && !asking && cost !== null && !selfGated && !(premium && (paidPlay === 0 || locked))) setPlaying(true);
+              // (web games never play here: they open on their own site)
+              if (!playing && game.kind !== "iframe" && cost !== null && !selfGated && !(premium && (paidPlay === 0 || locked))) setPlaying(true);
             }}
           >
             {playing ? (
@@ -399,11 +399,9 @@ export default function GamePage() {
             ) : game.kind === "builtin" ? (
               <FitBox maxScale={1.5}>
               <div className="gp-play-wrap">
-                <GameShopProvider engine={game.engine} accent={game.accent}>
-                  <PlayGateContext.Provider value={gateApi}>
-                    <GameRunner key={paidPlay} gameId={game.engine} onScore={handleFinish} />
-                  </PlayGateContext.Provider>
-                </GameShopProvider>
+                <PlayGateContext.Provider value={gateApi}>
+                  <GameRunner key={paidPlay} gameId={game.engine} onScore={handleFinish} />
+                </PlayGateContext.Provider>
                 {premium && locked ? (
                   <PlayGate
                     gameId={game.id}
@@ -420,48 +418,38 @@ export default function GamePage() {
                 ) : null}
               </div>
               </FitBox>
-            ) : extMode !== "here" ? (
-              <div className="gp-ext" role="dialog" aria-labelledby="gp-ext-title">
+            ) : (
+              // web games play on their own site (or app): this card is for direct visits to the page
+              <div className="gp-ext" role="region" aria-labelledby="gp-ext-title">
                 <div className="gp-ext-card">
                   <GamePoster game={game} size="thumb" />
-                  {extMode === "ask" ? (
+                  <h2 id="gp-ext-title">{game.title} plays on its own site</h2>
+                  <p>
+                    {game.signIn && user
+                      ? "You'll be signed in there with your Senevon account."
+                      : asksForApp(game)
+                        ? `Play in the ${game.title} app, or right away in your browser.`
+                        : isNative
+                        ? "It opens in your browser."
+                        : "It opens in a new tab."}
+                  </p>
+                  {asksForApp(game) ? (
                     <>
-                      <h2 id="gp-ext-title">{isNative ? `Play ${game.title} on its website` : "Best in a new window"}</h2>
-                      <p>
-                        {isNative
-                          ? "This game runs best on its own website. We'll open it in your browser."
-                          : `For the best experience, play ${game.title} in its own window.`}
-                      </p>
-                      <button
-                        type="button"
-                        className="gp-ext-go"
-                        onClick={() => {
-                          openExternal(game.embedUrl);
-                          setExtMode("opened");
-                        }}
-                      >
-                        <ExternalLink size={16} />
-                        {isNative ? "Open website" : "Open in new window"}
+                      <button type="button" className="gp-ext-go" onClick={() => openGameApp(game)}>
+                        <Smartphone size={16} />
+                        Open in app
+                      </button>
+                      <button type="button" className="gp-ext-skip" onClick={() => openGameWeb(game)}>
+                        Open in web
                       </button>
                     </>
                   ) : (
-                    <>
-                      <h2 id="gp-ext-title">Opened {isNative ? "in your browser" : "in a new window"}</h2>
-                      <p>Have fun! Come back here any time.</p>
-                      <button type="button" className="gp-ext-go" onClick={() => openExternal(game.embedUrl)}>
-                        <ExternalLink size={16} />
-                        Open again
-                      </button>
-                    </>
+                    <button type="button" className="gp-ext-go" onClick={() => openGameWeb(game)}>
+                      <ExternalLink size={16} />
+                      Open {game.title}
+                    </button>
                   )}
-                  <button type="button" className="gp-ext-skip" onClick={() => setExtMode("here")}>
-                    {extMode === "ask" ? "Skip, play here" : "Play here instead"}
-                  </button>
                 </div>
-              </div>
-            ) : (
-              <div className="iframe-wrap">
-                <iframe src={game.embedUrl} title={game.title} allow="gamepad; fullscreen" />
               </div>
             )}
             {startAd ? <StartAd /> : null}
@@ -513,5 +501,6 @@ export default function GamePage() {
         </p>
       ) : null}
     </div>
+    </GameShopProvider>
   );
 }

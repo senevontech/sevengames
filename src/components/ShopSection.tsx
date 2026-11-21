@@ -8,7 +8,9 @@ import { formatTokens } from "../lib/currency";
 import { useShop } from "../lib/shop";
 import { useTokens } from "../lib/tokens";
 import {
+  ARROW_BOARDS,
   ARROW_FX,
+  ARROW_HEADS,
   ARROW_SKINS,
   BOOSTERS,
   CHESS_BOARDS,
@@ -23,8 +25,9 @@ import {
 import { PieceSvg } from "../games/chess/pieces";
 import "../pages/account.css";
 import "./shop.css";
+import "../games/arrows.css";
 
-type Tab = "skins" | "fx" | "frames" | "boosters" | "chessBoards" | "chessPieces" | "ludoBoards" | "ludoDice";
+type Tab = "skins" | "fx" | "boards" | "heads" | "frames" | "boosters" | "chessBoards" | "chessPieces" | "ludoBoards" | "ludoDice";
 
 /** Which shop: one per game (shown inside that game), plus avatar frames on the Tokens page. */
 export type ShopScope = "arrows" | "chess" | "ludo" | "frames";
@@ -32,10 +35,12 @@ export type ShopScope = "arrows" | "chess" | "ludo" | "frames";
 const SCOPES: Record<ShopScope, { title: string; sub: string; tabs: { id: Tab; label: string }[] }> = {
   arrows: {
     title: "Arrows shop",
-    sub: "Arrow styles, exit effects and hint / undo packs.",
+    sub: "Arrow styles, exit effects, boards, arrowheads and hint / undo packs.",
     tabs: [
       { id: "skins", label: "Styles" },
       { id: "fx", label: "Effects" },
+      { id: "boards", label: "Boards" },
+      { id: "heads", label: "Heads" },
       { id: "boosters", label: "Boosters" },
     ],
   },
@@ -66,6 +71,8 @@ const GAME_NAMES: Record<string, string> = { chess: "Chess", ludo: "Ludo", arrow
 
 /* defaults when nothing is equipped in a slot */
 const SLOT_DEFAULT: Partial<Record<ShopSlot, string>> = {
+  arrow_board: "board:classic",
+  arrow_head: "head:classic",
   chess_board: "cboard:classic",
   chess_pieces: "cpieces:classic",
   ludo_board: "lboard:classic",
@@ -155,6 +162,62 @@ function SkinPreview({ id }: { id: string }) {
           </g>
         );
       })}
+    </svg>
+  );
+}
+
+/** A small board in the theme's colours, with dots and one arrow. */
+function BoardPreview({ id }: { id: string }) {
+  const b = ARROW_BOARDS[id];
+  const ink = b.tone === "light" ? "#17181b" : b.tone === "dark" ? "#f1f1f5" : "currentColor";
+  return (
+    <span className={`shop-aboard${id === "board:classic" ? " is-classic" : ` arw-bg-${id.slice(6)}`}`} aria-hidden="true">
+      <svg viewBox="0 0 120 80" style={{ color: ink }}>
+        {Array.from({ length: 15 }, (_, i) => (
+          <circle key={i} cx={20 + (i % 5) * 20} cy={20 + Math.floor(i / 5) * 20} r={1.6} fill="currentColor" opacity={0.25} />
+        ))}
+        <path d="M20 60 L20 40 L60 40" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+        <polygon points="66,40 57,35 57,45" fill="currentColor" />
+      </svg>
+    </span>
+  );
+}
+
+/** One arrow ending in the head shape. */
+function HeadPreview({ id }: { id: string }) {
+  const tip = { x: 70, y: 40 };
+  const along = (d: number, side = 0) => `${(tip.x + d).toFixed(1)},${(tip.y + side).toFixed(1)}`;
+  let head: React.ReactNode;
+  switch (id) {
+    case "head:chevron":
+      head = <polyline points={`${along(-13, -9)} ${along(4)} ${along(-13, 9)}`} fill="none" stroke="currentColor" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />;
+      break;
+    case "head:dot":
+      head = <circle cx={tip.x + 2} cy={tip.y} r={7} fill="currentColor" />;
+      break;
+    case "head:bold":
+      head = <polygon points={`${along(7)} ${along(-14, -11)} ${along(-14, 11)}`} fill="currentColor" stroke="currentColor" strokeWidth={2} strokeLinejoin="round" />;
+      break;
+    case "head:diamond":
+      head = <polygon points={`${along(10)} ${along(1, 7)} ${along(-6)} ${along(1, -7)}`} fill="currentColor" />;
+      break;
+    case "head:star": {
+      const list: string[] = [];
+      for (let i = 0; i < 10; i++) {
+        const a = (i * Math.PI) / 5;
+        const rr = i % 2 ? 4.4 : 10.5;
+        list.push(along(3 + Math.cos(a) * rr, Math.sin(a) * rr));
+      }
+      head = <polygon points={list.join(" ")} fill="currentColor" />;
+      break;
+    }
+    default:
+      head = <polygon points={`${along(4)} ${along(-10, -6)} ${along(-10, 6)}`} fill="currentColor" stroke="currentColor" strokeWidth={2} strokeLinejoin="round" />;
+  }
+  return (
+    <svg className="shop-ahead" viewBox="0 0 96 80" aria-hidden="true">
+      <path d="M18 64 L18 40 L66 40" fill="none" stroke="currentColor" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" />
+      {head}
     </svg>
   );
 }
@@ -376,6 +439,30 @@ export default function ShopSection({ scope, embedded = false }: { scope: ShopSc
                     <h3>{f.name}</h3>
                     <p>{f.blurb}</p>
                     {cosmetic(id, "arrow_fx", f.name)}
+                  </li>
+                ))
+              : null}
+            {tab === "boards"
+              ? Object.entries(ARROW_BOARDS).map(([id, b]) => (
+                  <li key={id} className="ac-card shop-card">
+                    <div className="shop-preview">
+                      <BoardPreview id={id} />
+                    </div>
+                    <h3>{b.name} board</h3>
+                    <p>{b.blurb}</p>
+                    {cosmetic(id, "arrow_board", `${b.name} board`)}
+                  </li>
+                ))
+              : null}
+            {tab === "heads"
+              ? Object.entries(ARROW_HEADS).map(([id, h]) => (
+                  <li key={id} className="ac-card shop-card">
+                    <div className="shop-preview shop-preview-dark">
+                      <HeadPreview id={id} />
+                    </div>
+                    <h3>{h.name} head</h3>
+                    <p>{h.blurb}</p>
+                    {cosmetic(id, "arrow_head", `${h.name} head`)}
                   </li>
                 ))
               : null}

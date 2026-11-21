@@ -102,10 +102,11 @@ export default function TokensPage() {
     document.title = "Tokens — Senevon Game Studio";
   }, []);
 
-  // "/tokens#buy" (from the profile wallet card) scrolls to the packs
+  // "/tokens#buy" (from the profile wallet card) scrolls to the packs, "/tokens#plus" to Senevon Plus
   useEffect(() => {
-    if (location.hash !== "#buy" || !packs) return;
-    const id = requestAnimationFrame(() => document.getElementById("buy")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    const target = location.hash.slice(1);
+    if ((target !== "buy" && target !== "plus") || !packs) return;
+    const id = requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" }));
     return () => cancelAnimationFrame(id);
   }, [location.hash, packs]);
 
@@ -330,12 +331,12 @@ export default function TokensPage() {
         </section>
       ) : null}
 
-      {/* ---------- subscription ---------- */}
-      <section className="tw-section">
+      {/* ---------- subscription (Senevon Plus; "/tokens#plus" scrolls here) ---------- */}
+      <section className="tw-section" id="plus">
         <div className="ac-section-head">
           <div>
             <h2 className="ac-h2">Subscribe</h2>
-            <p className="ac-sub">The best value: {formatTokens(perMonth)} tokens every month. Cancel any time.</p>
+            <p className="ac-sub">The best value: {formatTokens(perMonth)} tokens every month. Ad-free, with everything in DroidDoom unlocked. Cancel any time.</p>
           </div>
         </div>
         {sub ? (

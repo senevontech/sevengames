@@ -1,0 +1,130 @@
+/* "Open in app / Open in web" for web games with their own app (ExternalGamePrompt). Works on
+   every page, so it carries its own colours instead of a page's theme tokens. */
+.xg-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: end center;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: rgba(0, 0, 0, 0.5);
+  animation: xg-fade 0.2s ease both;
+}
+
+.xg-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: min(400px, 100%);
+  padding: 26px 20px 18px;
+  border-radius: 26px;
+  text-align: center;
+  color: #f4f4f6;
+  background: #1c1d21;
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.8);
+  animation: xg-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.xg-card .poster {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.xg-card h2 {
+  margin: 4px 0 0;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+
+.xg-card p {
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: rgba(244, 244, 246, 0.68);
+}
+
+.xg-card small {
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(244, 244, 246, 0.5);
+}
+
+.xg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  height: 50px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: #f4f4f6;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.xg-btn:active {
+  transform: scale(0.97);
+}
+
+.xg-btn-main {
+  color: #fff;
+  background: linear-gradient(145deg, #ff9d52, #f26a0c);
+}
+
+.xg-btn:focus-visible,
+.xg-close:focus-visible {
+  outline: 2px solid #ff8a3d;
+  outline-offset: 3px;
+}
+
+.xg-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: rgba(244, 244, 246, 0.7);
+  background: transparent;
+  cursor: pointer;
+}
+
+@media (min-width: 640px) {
+  .xg-scrim {
+    place-items: center;
+  }
+}
+
+@keyframes xg-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes xg-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xg-scrim,
+  .xg-card {
+    animation: none;
+  }
+}

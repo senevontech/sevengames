@@ -371,6 +371,45 @@ Deno.serve(async (req) => {
       case "stats":
         return json(await stats(body.days));
 
+      // Dashboard (supabase/analytics.sql): numbers for a period and the one before it
+      case "dashboard": {
+        const from = new Date(String(body.from));
+        const to = new Date(String(body.to));
+        if (isNaN(+from) || isNaN(+to) || to <= from) return json({ error: "Bad period" }, 400);
+        const { data, error } = await db.rpc("admin_dashboard", { p_from: from.toISOString(), p_to: to.toISOString() });
+        if (error) throw error;
+        return json(data);
+      }
+
+      case "dashboard_detail": {
+        const from = new Date(String(body.from));
+        const to = new Date(String(body.to));
+        if (isNaN(+from) || isNaN(+to) || to <= from) return json({ error: "Bad period" }, 400);
+        const { data, error } = await db.rpc("admin_detail", {
+          p_metric: String(body.metric ?? ""),
+          p_from: from.toISOString(),
+          p_to: to.toISOString(),
+          p_tz: typeof body.tz === "string" ? body.tz.slice(0, 64) : "UTC",
+        });
+        if (error) throw error;
+        return json(data);
+      }
+
+      // This browser never counts in the stats (the admin's own visits)
+      case "exclude_device": {
+        const visitor = typeof body.visitor === "string" ? body.visitor.slice(0, 64) : "";
+        if (visitor.length < 8) return json({ error: "Bad device id" }, 400);
+        if (body.on === false) {
+          await db.from("analytics_excluded").delete().eq("visitor_id", visitor);
+        } else {
+          const { error } = await db.from("analytics_excluded").upsert({ visitor_id: visitor, note: "admin device" });
+          if (error) throw error;
+          // its earlier visits don't count either
+          await db.from("events").delete().eq("visitor_id", visitor);
+        }
+        return json({ ok: true });
+      }
+
       case "ads_list": {
         const { data, error } = await db
           .from("ads")

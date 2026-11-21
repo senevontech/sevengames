@@ -14,7 +14,7 @@
 -- token ledger: allow 'adfree' (keep this list in sync with tokens.sql, carrom.sql and shop.sql)
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
-  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop'));
+  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match'));
 
 create table if not exists public.ad_free_passes (
   user_id uuid primary key references auth.users(id) on delete cascade,

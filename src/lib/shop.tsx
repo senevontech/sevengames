@@ -10,14 +10,16 @@ import { supabase } from "../supabase";
 import { tokenErrorText, useTokens } from "./tokens";
 import { enqueue } from "./offlineQueue";
 import { isNetworkError, isOnline } from "./online";
-import { DEFAULT_FX, DEFAULT_SKIN, levelForXp, type BoardGame, type BoosterItem, type ShopSlot } from "./shopCatalog";
+import { DEFAULT_FX, DEFAULT_SKIN, levelForXp, type BoardGame, type BoosterItem, type LevelGame, type ShopSlot } from "./shopCatalog";
 
 export type ShopState = {
   owned: string[];
   inventory: Record<BoosterItem, number>;
   equipped: Partial<Record<ShopSlot, string | null>>;
   /** XP per board game (chess, ludo). */
-  xp?: Partial<Record<BoardGame, number>>;
+  xp?: Partial<Record<BoardGame | "arrows", number>>;
+  /** Levels from elsewhere (Arrows: the puzzle level reached). */
+  levels?: Partial<Record<"arrows", number>>;
   free: boolean;
   tokens: number;
 };
@@ -31,7 +33,7 @@ export type PriceRow = {
   active: boolean;
   sort: number;
   /** Cosmetics unlocked by a level in this game (null = no level needed). */
-  game?: BoardGame | null;
+  game?: LevelGame | null;
   min_level?: number;
 };
 
@@ -53,12 +55,14 @@ type Ctx = {
   /** The item equipped in a slot (null = none / the default). */
   equippedIn: (slot: ShopSlot) => string | null;
   /** Level in a board game (1 for guests). */
-  levelOf: (game: BoardGame) => number;
+  levelOf: (game: LevelGame) => number;
   xpOf: (game: BoardGame) => number;
   /** Level needed to buy this item (1 = none). */
-  levelNeeded: (id: string) => { game: BoardGame | null; level: number };
+  levelNeeded: (id: string) => { game: LevelGame | null; level: number };
   /** Report XP for a finished game (server caps it). Guests: nothing. */
   awardXp: (game: BoardGame, amount: number) => Promise<void>;
+  /** Reload owned items, XP and levels from the server (e.g. after an online match). */
+  refresh: () => Promise<void>;
 };
 
 const ShopContext = createContext<Ctx | null>(null);
@@ -240,7 +244,10 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   );
 
   const xpOf = useCallback((game: BoardGame) => state?.xp?.[game] ?? 0, [state]);
-  const levelOf = useCallback((game: BoardGame) => levelForXp(xpOf(game)), [xpOf]);
+  const levelOf = useCallback(
+    (game: LevelGame) => (game === "arrows" ? Math.max(1, state?.levels?.arrows ?? 1) : levelForXp(xpOf(game))),
+    [xpOf, state],
+  );
   const levelNeeded = useCallback(
     (id: string) => {
       const row = prices.find((p) => p.item_id === id);
@@ -268,6 +275,15 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     [user, rpc, apply],
   );
 
+  const refresh = useCallback(async () => {
+    if (!user || !supabase) return;
+    try {
+      apply(await rpc("shop_state"));
+    } catch {
+      /* keep what we have */
+    }
+  }, [user, rpc, apply]);
+
   const value = useMemo<Ctx>(
     () => ({
       state,
@@ -286,8 +302,9 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       xpOf,
       levelNeeded,
       awardXp,
+      refresh,
     }),
-    [state, prices, available, user, priceOf, owns, buy, equip, use, equippedIn, levelOf, xpOf, levelNeeded, awardXp],
+    [state, prices, available, user, priceOf, owns, buy, equip, use, equippedIn, levelOf, xpOf, levelNeeded, awardXp, refresh],
   );
 
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;

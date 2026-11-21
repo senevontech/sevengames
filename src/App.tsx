@@ -16,6 +16,7 @@ const Profile = lazy(() => import("./pages/Profile"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const About = lazy(() => import("./pages/About"));
+const ConnectGame = lazy(() => import("./pages/ConnectGame"));
 const Admin = lazy(() => import("./pages/admin/Admin"));
 const TokensPage = lazy(() => import("./pages/TokensPage"));
 const Leaderboards = lazy(() => import("./pages/Leaderboards"));
@@ -27,6 +28,7 @@ import { ShopProvider } from "./lib/shop";
 import { startOfflineSync } from "./lib/offlineQueue";
 import OfflineBanner from "./components/OfflineBanner";
 import AppBanner from "./components/AppBanner";
+import ExternalGamePrompt from "./components/ExternalGamePrompt";
 
 import { trackPageview } from "./lib/track";
 
@@ -72,6 +74,7 @@ function Shell() {
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/about" element={<About />} />
+        <Route path="/connect/:id" element={<ConnectGame />} />
         <Route path="/tokens" element={<TokensPage />} />
         <Route path="/leaderboards" element={<Leaderboards />} />
         <Route path="/player/:id" element={<PlayerPage />} />
@@ -104,6 +107,7 @@ export default function App() {
     <AuthProvider>
       <OfflineBanner />
       <AppBanner />
+      <ExternalGamePrompt />
       <TokensProvider>
       <OfflineSync />
       <Suspense fallback={null}>

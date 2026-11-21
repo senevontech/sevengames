@@ -49,12 +49,26 @@ export type Game = {
 } & (
   | { kind: "builtin"; engine: GameEngine }
   | {
+      /** A web game on its own site. It never plays inside Senevon: opening it opens its site
+       *  (see lib/externalGames.ts). */
       kind: "iframe";
       embedUrl: string;
-      /** Only playable on this site: loads straight in the frame, no "new window" prompt or original-site link. */
-      embedOnly?: boolean;
+      /** Sign the player in on the game's site with their Senevon account when they open it
+       *  (one-time code, supabase/game_signin.sql). */
+      signIn?: boolean;
+      /** The game's own Android app: phones get "Open in app / Open in web". */
+      app?: GameApp;
     }
 );
+
+export type GameApp = {
+  /** Android package name, e.g. "com.senevon.droiddoom". */
+  androidPackage: string;
+  /** Link scheme the app opens on (its manifest needs a BROWSABLE intent filter for it). */
+  scheme: string;
+  /** Where to get the app when it isn't installed. */
+  playUrl: string;
+};
 
 export const categories: Array<GameCategory | "All"> = [
   "All",
@@ -171,7 +185,13 @@ export const games: Game[] = [
     category: "Action",
     kind: "iframe",
     embedUrl: "https://droiddoom.onrender.com",
-    embedOnly: true,
+    signIn: true,
+    // The DroidDoom app isn't published yet: until it is, "Open in app" leads to this Play link.
+    app: {
+      androidPackage: "com.senevon.droiddoom",
+      scheme: "droiddoom",
+      playUrl: "https://play.google.com/store/apps/details?id=com.senevon.droiddoom",
+    },
     difficulty: "Hard",
     minutes: 10,
     accent: "#ff3b30",

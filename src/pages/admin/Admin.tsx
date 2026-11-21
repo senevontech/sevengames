@@ -6,6 +6,8 @@ import { games } from "../../catalog";
 import { defaultSettings, type SiteSettings } from "../../lib/siteSettings";
 import AdsManager from "./AdsManager";
 import TokensTab from "./TokensTab";
+import DashboardTab from "./DashboardTab";
+import { excludeThisDevice, isDeviceExcluded, thisVisitorId } from "../../lib/track";
 
 type Stats = {
   days: number;
@@ -72,16 +74,6 @@ function BarList({ rows, total }: { rows: [string, number][]; total?: number }) 
   );
 }
 
-function Tile({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <div className="adm-tile">
-      <span>{label}</span>
-      <strong>{value}</strong>
-      {sub ? <small>{sub}</small> : null}
-    </div>
-  );
-}
-
 /* ---------- login ---------- */
 
 function LoginGate({ onDone }: { onDone: () => void }) {
@@ -130,53 +122,6 @@ function LoginGate({ onDone }: { onDone: () => void }) {
 }
 
 /* ---------- tabs ---------- */
-
-function Overview({ s }: { s: Stats }) {
-  const t = s.totals;
-  return (
-    <>
-      <div className="adm-tiles">
-        <Tile label="Page views" value={fmt(t.pageviews)} sub={`${fmt(t.todayViews)} today`} />
-        <Tile label="Unique visitors" value={fmt(t.visitors)} sub={`${fmt(t.todayVisitors)} today`} />
-        <Tile label="Games started" value={fmt(t.gameStarts)} sub={`${fmt(t.gameFinishes)} finished`} />
-        <Tile label="Registered users" value={fmt(t.users)} sub={`+${fmt(t.newUsers)} in range`} />
-        <Tile label="Scores saved (all time)" value={fmt(t.scoresSaved)} />
-      </div>
-      <div className="adm-cols">
-        <div className="card adm-card">
-          <h3>Page views per day</h3>
-          <Bars values={s.daily.map((d) => d.views)} labels={s.daily.map((d) => d.date)} />
-          <div className="adm-axis">
-            <span>{s.daily[0]?.date}</span>
-            <span>{s.daily[s.daily.length - 1]?.date}</span>
-          </div>
-        </div>
-        <div className="card adm-card">
-          <h3>Unique visitors per day</h3>
-          <Bars values={s.daily.map((d) => d.visitors)} labels={s.daily.map((d) => d.date)} color="#5e5ce6" />
-          <div className="adm-axis">
-            <span>{s.daily[0]?.date}</span>
-            <span>{s.daily[s.daily.length - 1]?.date}</span>
-          </div>
-        </div>
-      </div>
-      <div className="card adm-card">
-        <h3>Live feed</h3>
-        <ul className="adm-feed">
-          {s.recent.map((r, i) => (
-            <li key={i}>
-              <time>{new Date(r.at).toLocaleString()}</time>
-              <span className="adm-pill neutral">{r.type.replace("_", " ")}</span>
-              <span>{r.game_id ? gameTitle(r.game_id) : (r.path ?? "")}</span>
-              <small>{r.device}</small>
-            </li>
-          ))}
-        </ul>
-        {s.recent.length === 0 ? <p className="adm-empty">No events recorded yet.</p> : null}
-      </div>
-    </>
-  );
-}
 
 function Traffic({ s }: { s: Stats }) {
   return (
@@ -247,6 +192,29 @@ function GamesTab({ s }: { s: Stats }) {
   );
 }
 
+/** "Don't count this device": on for every browser that logs into the admin panel. */
+function DeviceSwitch() {
+  const [off, setOff] = useState(isDeviceExcluded);
+  const [busy, setBusy] = useState(false);
+  return (
+    <label className="adm-check">
+      <input
+        type="checkbox"
+        checked={off}
+        disabled={busy}
+        onChange={(e) => {
+          const on = e.target.checked;
+          setBusy(true);
+          excludeThisDevice(on);
+          setOff(on);
+          void adminCall("exclude_device", { visitor: thisVisitorId(), on }).finally(() => setBusy(false));
+        }}
+      />
+      Don&apos;t count this device in the stats
+    </label>
+  );
+}
+
 function SettingsTab() {
   const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
   const [msg, setMsg] = useState("");
@@ -295,6 +263,7 @@ function SettingsTab() {
         />
         Collect traffic &amp; game analytics
       </label>
+      <DeviceSwitch />
       <label className="adm-check">
         <input
           type="checkbox"
@@ -417,7 +386,7 @@ function ProTab() {
 
 type Tab = "overview" | "traffic" | "games" | "ads" | "tokens" | "pro" | "settings";
 const TABS: [Tab, string][] = [
-  ["overview", "Overview"],
+  ["overview", "Dashboard"],
   ["traffic", "Traffic"],
   ["games", "Games"],
   ["ads", "Ads"],
@@ -450,6 +419,13 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     void load();
   }, [load]);
 
+  // the admin's own visits never count: this browser is excluded once it's logged in here
+  useEffect(() => {
+    if (isDeviceExcluded()) return;
+    excludeThisDevice();
+    void adminCall("exclude_device", { visitor: thisVisitorId() }).catch(() => undefined);
+  }, []);
+
   return (
     <div className="adm">
       <header className="adm-bar">
@@ -466,7 +442,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             ))}
           </nav>
           <div className="adm-bar-right">
-            {tab !== "ads" && tab !== "settings" && tab !== "pro" && tab !== "tokens" ? (
+            {tab !== "overview" && tab !== "ads" && tab !== "settings" && tab !== "pro" && tab !== "tokens" ? (
               <select value={days} onChange={(e) => setDays(Number(e.target.value))} aria-label="Date range">
                 <option value={7}>Last 7 days</option>
                 <option value={30}>Last 30 days</option>
@@ -484,14 +460,14 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       </header>
       <main className="adm-main">
         {err ? <p className="adm-error">{err}</p> : null}
-        {tab === "overview" && stats ? <Overview s={stats} /> : null}
+        {tab === "overview" ? <DashboardTab /> : null}
         {tab === "traffic" && stats ? <Traffic s={stats} /> : null}
         {tab === "games" && stats ? <GamesTab s={stats} /> : null}
         {tab === "ads" ? <AdsManager stats={stats?.ads} /> : null}
         {tab === "settings" ? <SettingsTab /> : null}
         {tab === "pro" ? <ProTab /> : null}
         {tab === "tokens" ? <TokensTab /> : null}
-        {!stats && !err && tab !== "ads" && tab !== "settings" && tab !== "pro" && tab !== "tokens" ? <p className="adm-empty">Loading…</p> : null}
+        {!stats && !err && tab !== "overview" && tab !== "ads" && tab !== "settings" && tab !== "pro" && tab !== "tokens" ? <p className="adm-empty">Loading…</p> : null}
       </main>
     </div>
   );

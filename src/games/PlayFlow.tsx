@@ -1,10 +1,9 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { ChevronLeft, Play, Settings2, ShoppingBag } from "lucide-react";
+import { ChevronLeft, Play, Settings2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import TokenIcon from "../components/TokenIcon";
 import { formatTokens } from "../lib/currency";
 import "./play-flow.css";
-import { useGameShop } from "./gameShop";
 
 /*
  * Start screen for games with several ways to play, in TWO steps:
@@ -85,8 +84,6 @@ export default function PlayFlow({
   });
   const [gearOpen, setGearOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
-  // this game's shop (from the game page): a big "Shop" button next to Play
-  const shop = useGameShop();
   const mode = modes.find((m) => m.key === modeKey) ?? modes[0];
 
   // a mode that becomes unavailable (went offline) falls back to the first one that works
@@ -187,12 +184,6 @@ export default function PlayFlow({
               </span>
             ) : null}
           </button>
-          {shop ? (
-            <button type="button" className="pf-shop-btn" onClick={shop.open} title={shop.title}>
-              <ShoppingBag size={18} strokeWidth={2.2} aria-hidden="true" />
-              <span>Shop</span>
-            </button>
-          ) : null}
         </div>
         </div>
 

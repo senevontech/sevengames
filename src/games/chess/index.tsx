@@ -40,6 +40,7 @@ import PlayerAvatar from "../../components/PlayerAvatar";
 import { parseAvatar, type AvatarChoice } from "../../lib/avatar";
 import "./chess.css";
 import { GameShopButton } from "../gameShop";
+import { MatchRewardLine, useMatchReport } from "../../lib/matchReport";
 
 type Mode = "cpu" | "pass" | "online";
 type Result = { winner: Color | null; reason: string };
@@ -397,20 +398,28 @@ export default function ChessGame(_props: GameProps) {
   }, [g, mode, screen, level, cpuColor, user?.id]);
 
   /* ----- XP + rating when a game ends ----- */
+  const matchReport = useMatchReport("chess", () => void shop.refresh());
   const myColor: Color = mode === "online" ? online?.myColor ?? 1 : mode === "cpu" ? (-cpuColor as Color) : 1;
   useEffect(() => {
     if (!g.result || awarded.current || mode === "pass") return;
     awarded.current = true;
     const outcomeFor = g.result.winner === null ? "draw" : g.result.winner === myColor ? "win" : "loss";
-    const amount = mode === "cpu" ? XP.cpu[level][outcomeFor] : XP.online[outcomeFor];
-    if (user) {
+    const o = onlineRef.current;
+    if (mode === "online") {
+      // online: the server applies XP (+100 / −40 / +30 draw) and the confirmed-win token
+      if (o?.opp) {
+        const opp = o.opp.userId;
+        void matchReport.report(`${o.matchId}:${o.round}`, [user?.id, opp], g.result.winner === null ? [] : [g.result.winner === myColor ? user?.id : opp], g.result.winner === null);
+      }
+    } else if (user) {
+      const amount = XP.cpu[level][outcomeFor];
       setXpGain(amount);
       void shop.awardXp("chess", amount);
     }
-    const o = onlineRef.current;
     if (mode === "online" && o?.opp && supabase && !g.result.reason.includes("left")) {
       void supabase.rpc("chess_report", { p_match: o.matchId, p_opponent: o.opp.userId, p_result: outcomeFor });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [g.result, mode, myColor, level, user, shop]);
 
   /* ----- starting games ----- */
@@ -507,6 +516,7 @@ export default function ChessGame(_props: GameProps) {
     setG(newGame());
     awarded.current = false;
     setXpGain(null);
+    matchReport.reset();
     setDrawOffer(null);
     setRematch([]);
     setClocks({ w: minutes * 60_000, b: minutes * 60_000, since: performance.now() });
@@ -597,6 +607,12 @@ export default function ChessGame(_props: GameProps) {
   }, [rematch, peers]);
 
   function leaveOnline() {
+    // leaving a game in progress is a loss (and confirms the other player's win)
+    const o = onlineRef.current;
+    if (o?.opp && o.matchId && !g.result && !awarded.current && screen === "game") {
+      awarded.current = true;
+      void matchReport.report(`${o.matchId}:${o.round}`, [user?.id, o.opp.userId], [o.opp.userId]);
+    }
     roomRef.current?.leave();
     roomRef.current = null;
     hostMatch.current = null;
@@ -909,7 +925,7 @@ export default function ChessGame(_props: GameProps) {
             <div className={`ch-card${won && mode !== "pass" ? " is-win" : result.winner !== null && mode !== "pass" ? " is-loss" : ""}`}>
               <h3>{resultTitle}</h3>
               <p>{result.reason}</p>
-              {xpGain ? <p className="ch-xp-gain">+{xpGain} XP</p> : null}
+              {mode === "online" ? <MatchRewardLine reward={matchReport.reward} /> : xpGain ? <p className="ch-xp-gain">+{xpGain} XP</p> : null}
               <div className="ch-actions">
                 {mode === "online" ? (
                   <>
