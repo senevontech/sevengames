@@ -45,6 +45,25 @@
   --ac-bad: #c2410c;
 }
 
+/* inside the soft page frame (SoftPage: /tokens): the home page's surfaces and theme */
+.g2[data-theme] .acct {
+  --ac-bg: var(--neu-bg);
+  --ac-raise: var(--neu-raise);
+  --ac-raise-sm: var(--neu-raise-sm);
+  --ac-well: var(--neu-well);
+  --ac-accent: var(--neu-accent);
+  --ac-line: color-mix(in srgb, var(--gs-ink) 9%, transparent);
+  --ac-text: var(--gs-ink);
+  --ac-muted: color-mix(in srgb, var(--gs-ink) 64%, transparent);
+  --ac-faint: color-mix(in srgb, var(--gs-ink) 45%, transparent);
+  padding-top: 92px;
+}
+
+.g2[data-theme="light"] .acct {
+  --ac-good: #15803d;
+  --ac-bad: #c2410c;
+}
+
 .acct *,
 .acct *::before,
 .acct *::after {
@@ -231,5 +250,11 @@
 @media (max-width: 820px) {
   .acct {
     padding: 8px 16px 40px;
+  }
+}
+
+@media (max-width: 820px) {
+  .g2[data-theme] .acct {
+    padding-top: 84px;
   }
 }

@@ -2,18 +2,11 @@
    Google Play first, a direct APK for phones without Play, and iOS marked as coming soon. */
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { ArrowRight, ChevronDown, Download, Gauge, Moon, Smartphone, Sun, UserRound, WifiOff } from "lucide-react";
+import { ArrowRight, ChevronDown, Download, Gauge, Smartphone, UserRound, WifiOff } from "lucide-react";
 import { isNative } from "../lib/native";
 import { APK_NOTE, APK_URL, PLAY_STORE_URL, isAndroidBrowser, isIosBrowser } from "../lib/appLinks";
 import { AppleGlyph, PlayGlyph } from "../components/StoreGlyphs";
-import { useGameTheme } from "../hooks/useGameTheme";
-import GamesNav from "../components/GamesNav";
-import TokenPill from "../components/TokenPill";
-import SoftFooter from "../components/SoftFooter";
-import { THEMES } from "./Game2";
-import "./home3.css";
-import "./games-globe.css";
-import "./game2.css";
+import SoftPage from "../components/SoftPage";
 import "./get-app.css";
 
 const FEATURES = [
@@ -31,9 +24,6 @@ const APK_STEPS = [
 ];
 
 export default function GetApp() {
-  const { theme, toggle } = useGameTheme();
-  const dark = theme === "dark";
-  const { bg, ink } = THEMES[theme];
   const [platform] = useState(() => (isAndroidBrowser() ? "android" : isIosBrowser() ? "ios" : "desktop"));
 
   useEffect(() => {
@@ -48,24 +38,7 @@ export default function GetApp() {
   if (isNative) return <Navigate to="/" replace />;
 
   return (
-    <div
-      className={`gs h3 gs-flat g2${dark ? " gs-on-dark" : ""}`}
-      data-theme={theme}
-      style={{ "--gs-bg": bg, "--gs-ink": ink } as React.CSSProperties}
-    >
-      <GamesNav mobileMenu>
-        <TokenPill variant="solid" />
-        <button
-          type="button"
-          className="gs-icon-btn"
-          aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
-          title={dark ? "Light theme" : "Dark theme"}
-          onClick={toggle}
-        >
-          {dark ? <Sun size={19} strokeWidth={1.8} aria-hidden="true" /> : <Moon size={19} strokeWidth={1.8} aria-hidden="true" />}
-        </button>
-      </GamesNav>
-
+    <SoftPage>
     <main className="ga">
       <section className="ga-hero">
         <div className="ga-copy">
@@ -153,8 +126,6 @@ export default function GetApp() {
         <p className="ga-steps-note">Only download the APK from this page. It's the same app as on Google Play, signed by Senevon Game Studio.</p>
       </details>
     </main>
-
-      <SoftFooter />
-    </div>
+    </SoftPage>
   );
 }

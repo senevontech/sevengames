@@ -596,3 +596,24 @@
 .tw-adfree .ac-btn .token-icon {
   margin: 0 2px;
 }
+
+/* ---------- in the soft page frame (/tokens): checkout box follows the light / dark theme ---------- */
+.g2 .tk-modal {
+  background: color-mix(in srgb, var(--gs-bg) 55%, rgba(0, 0, 0, 0.55));
+}
+
+.g2 .tk-modal-card {
+  color: var(--gs-ink);
+  background: var(--neu-bg);
+  border: 0;
+  box-shadow: var(--neu-panel);
+}
+
+.g2 .tk-modal-x {
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise-sm);
+}
+
+.g2 .tk-modal-center p {
+  color: var(--g2-muted);
+}

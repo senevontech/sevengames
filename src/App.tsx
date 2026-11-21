@@ -29,6 +29,7 @@ import { startOfflineSync } from "./lib/offlineQueue";
 import OfflineBanner from "./components/OfflineBanner";
 import AppBanner from "./components/AppBanner";
 import ExternalGamePrompt from "./components/ExternalGamePrompt";
+import SoftPage from "./components/SoftPage";
 
 import { trackPageview } from "./lib/track";
 
@@ -75,7 +76,6 @@ function Shell() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/about" element={<About />} />
         <Route path="/connect/:id" element={<ConnectGame />} />
-        <Route path="/tokens" element={<TokensPage />} />
         <Route path="/leaderboards" element={<Leaderboards />} />
         <Route path="/player/:id" element={<PlayerPage />} />
         {/* The old home page is retired; old links land on the new one */}
@@ -124,6 +124,19 @@ export default function App() {
           }
         />
         <Route path="/" element={<Landing />} />
+        {/* soft page in the home page's frame (header, light/dark, footer) */}
+        <Route
+          path="/tokens"
+          element={
+            <Suspense fallback={<div style={{ minHeight: "100vh" }} />}>
+              <Tracked>
+                <SoftPage>
+                  <TokensPage />
+                </SoftPage>
+              </Tracked>
+            </Suspense>
+          }
+        />
         {/* website only (GetApp sends the app back home); soft page with its own nav like the home page */}
         <Route
           path="/app"
