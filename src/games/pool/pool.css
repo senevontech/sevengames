@@ -1,0 +1,632 @@
+/* Eight-ball pool. The table itself is drawn on the canvas (render.ts); everything around it
+   uses the game window's soft (neumorphic) surfaces, light or dark. */
+.pool-surface {
+  --pl-bg: var(--neu-bg, #2c2e33);
+  --pl-raise: var(--neu-raise-sm, 3px 3px 8px rgba(0, 0, 0, 0.35), -3px -3px 8px rgba(255, 255, 255, 0.05));
+  --pl-press: var(--neu-press, inset 3px 3px 7px rgba(0, 0, 0, 0.35), inset -3px -3px 7px rgba(255, 255, 255, 0.05));
+  --pl-well: var(--neu-well, inset 3px 3px 7px rgba(0, 0, 0, 0.35), inset -3px -3px 7px rgba(255, 255, 255, 0.05));
+  --pl-accent: var(--neu-accent, #ff8a3d);
+  --pl-ink: var(--text, #f4f4f6);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  width: min(1000px, 100%);
+  margin: 0 auto;
+  padding: 0 0 6px;
+  color: var(--pl-ink);
+}
+
+.pl-canvas-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.pl-canvas {
+  display: block;
+  max-width: 100%;
+  border-radius: 12px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.4));
+}
+
+.pl-canvas.is-live {
+  cursor: crosshair;
+}
+
+/* ---------- soft controls ---------- */
+.pl-tool {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  color: var(--pl-ink);
+  background: var(--pl-bg);
+  box-shadow: var(--pl-raise);
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pl-tool:active:not(:disabled) {
+  box-shadow: var(--pl-press);
+}
+
+.pl-tool:disabled {
+  cursor: default;
+}
+
+.pl-tool-sm {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+}
+
+.pl-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--pl-ink);
+  background: var(--pl-bg);
+  box-shadow: var(--pl-raise);
+  cursor: pointer;
+}
+
+.pl-pill:active {
+  box-shadow: var(--pl-press);
+}
+
+.pl-pill-main {
+  color: #fff;
+  background: var(--neu-orange, linear-gradient(145deg, #ff9d52, #f26a0c));
+  box-shadow: var(--neu-orange-raise, var(--pl-raise));
+}
+
+/* ---------- start screen ---------- */
+.pl-preview {
+  width: min(900px, 100%);
+  margin: 0 auto;
+}
+
+.pl-preview .pl-canvas-wrap {
+  pointer-events: none;
+}
+
+.pl-xp {
+  display: grid;
+  gap: 4px;
+  min-width: 120px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.pl-xp i {
+  display: block;
+  height: 5px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #ffb347, #ff7a1a);
+}
+
+.pl-settings {
+  display: grid;
+  gap: 10px;
+}
+
+.pl-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pl-cuecard {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px;
+  border-radius: 14px;
+  box-shadow: var(--pl-well);
+}
+
+.pl-cuecard-name {
+  display: grid;
+}
+
+.pl-cuecard-name b {
+  font-size: 15px;
+}
+
+.pl-cuecard-name small {
+  font-size: 11.5px;
+  opacity: 0.6;
+}
+
+.pl-cuecard-stats {
+  display: grid;
+  gap: 3px;
+  min-width: 140px;
+}
+
+.pl-cuecard .pl-pill {
+  grid-column: 1 / -1;
+}
+
+.pl-cuecard-stats > span {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  align-items: center;
+  gap: 6px;
+}
+
+.pl-cuecard-stats small {
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0.65;
+}
+
+.pl-cuecard-stats i {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+}
+
+.pl-cuecard-stats i b {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(127, 127, 127, 0.25);
+}
+
+.pl-cuecard-stats i b.on {
+  background: linear-gradient(90deg, #ffb347, #ff7a1a);
+}
+
+/* ---------- the game: player bar ---------- */
+/* clear the game window's corner buttons */
+.pool-game {
+  padding-top: 42px;
+}
+
+.pl-hud {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.pl-player {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: var(--pl-bg);
+  box-shadow: var(--pl-well);
+  transition: box-shadow 0.2s ease;
+}
+
+.pl-player.is-right {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.pl-player.is-turn {
+  box-shadow: var(--pl-raise), inset 0 0 0 1.5px var(--pl-accent);
+}
+
+.pl-av-wrap {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+}
+
+.pl-av-blank {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: var(--pl-raise);
+}
+
+.pl-pinfo {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pl-pinfo b {
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pl-balls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.pl-player.is-right .pl-balls {
+  justify-content: flex-end;
+}
+
+.pl-balls small {
+  font-size: 11px;
+  opacity: 0.55;
+}
+
+.pl-mini {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  box-shadow: inset -2px -2px 3px rgba(0, 0, 0, 0.35), inset 2px 2px 3px rgba(255, 255, 255, 0.3);
+}
+
+.pl-mini i {
+  display: grid;
+  place-items: center;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  font-size: 5.5px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
+  color: #111;
+  background: #f6f2e8;
+}
+
+.pl-mini.is-gone {
+  opacity: 0.2;
+  filter: grayscale(1);
+}
+
+/* shot clock: a ring around the avatar */
+.pl-clock {
+  position: absolute;
+  inset: -3px;
+  pointer-events: none;
+}
+
+.pl-clock svg {
+  width: 100%;
+  height: 100%;
+}
+
+.pl-clock-bg {
+  stroke: transparent;
+}
+
+.pl-clock-fg {
+  stroke: #3ecf7a;
+  transition: stroke-dasharray 0.25s linear;
+}
+
+.pl-clock.is-low .pl-clock-fg {
+  stroke: #ff5a3c;
+}
+
+.pl-clock b {
+  display: none;
+}
+
+/* ---------- table + cue rail ---------- */
+.pl-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+}
+
+.pl-rail {
+  display: grid;
+  grid-template-rows: auto minmax(120px, 1fr) 96px;
+  justify-items: center;
+  gap: 12px;
+  width: 52px;
+  padding: 10px 6px;
+  border-radius: 26px;
+  background: var(--pl-bg);
+  box-shadow: var(--pl-well);
+  transition: opacity 0.2s ease;
+}
+
+.pl-rail.is-off {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* spin: the cue ball, and a big one to pick the contact point */
+.pl-spin-wrap {
+  position: relative;
+}
+
+.pl-spin-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.pl-spin-ball,
+.pl-spin-big {
+  position: relative;
+  display: block;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #ffffff, #efe9da 45%, #b9b2a2 100%);
+}
+
+.pl-spin-ball {
+  width: 30px;
+  height: 30px;
+}
+
+.pl-spin-ball i,
+.pl-spin-big i {
+  position: absolute;
+  width: 24%;
+  height: 24%;
+  border-radius: 50%;
+  background: #d8342a;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.8);
+  transform: translate(-50%, -50%);
+}
+
+.pl-spin-pop {
+  position: absolute;
+  top: 0;
+  right: calc(100% + 14px);
+  z-index: 6;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: 220px;
+  padding: 16px;
+  border-radius: 22px;
+  color: var(--pl-ink);
+  background: var(--pl-bg);
+  box-shadow: var(--neu-panel, 0 20px 40px -12px rgba(0, 0, 0, 0.6));
+}
+
+.pl-spin-big {
+  width: 150px;
+  height: 150px;
+  touch-action: none;
+  cursor: crosshair;
+  box-shadow: 4px 6px 14px rgba(0, 0, 0, 0.3);
+}
+
+.pl-spin-big i {
+  width: 16%;
+  height: 16%;
+}
+
+.pl-spin-cross {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.16)) center / 1px 80% no-repeat,
+    linear-gradient(rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.16)) center / 80% 1px no-repeat;
+}
+
+/* how far your cue lets the tip go */
+.pl-spin-reach {
+  position: absolute;
+  border: 1.5px dashed rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+}
+
+.pl-spin-pop p {
+  margin: 0;
+  font-size: 12px;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.pl-spin-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* power: a slim well; pull down and let go */
+.pl-power {
+  position: relative;
+  width: 30px;
+  overflow: hidden;
+  border-radius: 15px;
+  background: var(--pl-bg);
+  box-shadow: var(--pl-well);
+  touch-action: none;
+  cursor: ns-resize;
+  user-select: none;
+}
+
+.pl-power-fill {
+  position: absolute;
+  inset: 0 0 auto;
+  border-radius: 15px;
+  background: linear-gradient(180deg, #3ecf7a, #ffd23f 55%, #ff5a3c);
+  opacity: 0.9;
+}
+
+/* a cue butt that slides down as you pull */
+.pl-power-cue {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 8px;
+  height: 58%;
+  margin-left: -4px;
+  border-radius: 4px 4px 2px 2px;
+  background: linear-gradient(180deg, #3f6fb5 0 3%, #f2eee3 3% 8%, #e2c48a 8% 62%, #2a1a10 62%);
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.pl-power-label {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.pl-power.is-pulling .pl-power-label {
+  color: #fff;
+  opacity: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* fine aim: a knurled wheel turned up / down */
+.pl-fine {
+  width: 26px;
+  border-radius: 13px;
+  background:
+    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.32) 0 2px, rgba(255, 255, 255, 0.18) 2px 4px, transparent 4px 9px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.35), rgba(255, 255, 255, 0.25) 45%, rgba(0, 0, 0, 0.35)),
+    #6d6f76;
+  box-shadow: var(--pl-raise);
+  touch-action: none;
+  cursor: ns-resize;
+  user-select: none;
+}
+
+/* ---------- on the table ---------- */
+.pl-status,
+.pl-toast {
+  position: absolute;
+  left: 50%;
+  z-index: 2;
+  max-width: calc(100% - 24px);
+  margin: 0;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #fff;
+  background: rgba(10, 10, 14, 0.55);
+  backdrop-filter: blur(4px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.pl-status {
+  bottom: 14px;
+}
+
+.pl-toast {
+  top: 14px;
+  background: rgba(10, 10, 14, 0.8);
+  animation: pl-toast 0.3s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+@keyframes pl-toast {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+}
+
+/* ---------- result ---------- */
+.rb .pl-result-actions {
+  flex-wrap: wrap;
+}
+
+.rb .pl-result-actions .rb-btn-main {
+  flex-basis: 100%;
+}
+
+.pl-xp-gain {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffd23f;
+}
+
+.pl-result-wait {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 13.5px;
+  opacity: 0.7;
+}
+
+/* ---------- phones ---------- */
+@media (max-width: 560px) {
+  .pool-game {
+    padding-top: 40px;
+  }
+  .pl-hud {
+    gap: 6px;
+  }
+  .pl-player {
+    padding: 5px 7px;
+    gap: 6px;
+  }
+  .pl-stage {
+    gap: 6px;
+  }
+  .pl-rail {
+    width: 44px;
+    gap: 10px;
+    padding: 8px 4px;
+    border-radius: 22px;
+  }
+  .pl-spin-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .pl-spin-ball {
+    width: 26px;
+    height: 26px;
+  }
+  .pl-power {
+    width: 26px;
+  }
+  .pl-fine {
+    width: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pl-toast {
+    animation: none;
+  }
+}

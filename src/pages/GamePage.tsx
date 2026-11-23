@@ -7,7 +7,8 @@ import { openExternalGame } from "../components/ExternalGamePrompt";
 import { Link, useParams } from "react-router-dom";
 import { ChevronLeft, Crown, ExternalLink, Info, Maximize, Minimize, Minimize2, Smartphone, Store, Trophy, X } from "lucide-react";
 import { useGameAccess } from "../lib/engagement";
-import { MatchChatHost } from "../components/chat/MatchChat";
+import { MatchChatButton, MatchChatHost } from "../components/chat/MatchChat";
+import { HowToPlayButton } from "../components/HowToPlay";
 import { useShop } from "../lib/shop";
 import { GamePoster } from "../components/GamePoster";
 import { getGame, scoreLabel } from "../catalog";
@@ -320,7 +321,9 @@ export default function GamePage() {
             <Maximize size={15} />
             <span>Full screen</span>
           </button>
+          <HowToPlayButton engine={game.kind === "builtin" ? game.engine : undefined} title={game.title} />
           <HeaderShop />
+          <MatchChatButton />
           {/* phones: the leaderboard opens as a panel over the game */}
           <button
             type="button"
@@ -364,6 +367,8 @@ export default function GamePage() {
                 >
                   <Trophy size={16} />
                 </button>
+                <HowToPlayButton engine={game.kind === "builtin" ? game.engine : undefined} title={game.title} size={16} />
+                <MatchChatButton />
                 {!full ? (
                   <button type="button" aria-label="Full screen" onClick={() => void enterFull()}>
                     <Maximize size={16} />
@@ -382,6 +387,8 @@ export default function GamePage() {
                 </button>
               </div>
             ) : null}
+            {/* online matches / lobbies: stickers, emoji and phrases (inside the window so full screen keeps it) */}
+            <MatchChatHost />
             {full ? (
               <button type="button" className="exit-full" onClick={exitFull} aria-label="Exit full screen">
                 <Minimize size={16} />
@@ -526,8 +533,6 @@ export default function GamePage() {
           </button>
         </p>
       ) : null}
-      {/* online matches / lobbies: stickers, emoji and phrases */}
-      <MatchChatHost />
     </div>
     </GameShopProvider>
   );

@@ -10,6 +10,7 @@ import { CardDefs, PlayingCard } from "../cards/Card";
 import { CHIP_VALUES, Chip, ChipStack, shortChips } from "../cards/Chip";
 import { cardSound, chipSound, winSound } from "../cards/sounds";
 import { chipsErrorText, chipsRpc, useChips, type ChipsState } from "../../lib/chips";
+import { OnlineLobby, OnlineTable, type TableView } from "./OnlineTable";
 import "../cards/cards.css";
 import "./blackjack.css";
 
@@ -43,8 +44,9 @@ const sameRank = (a: number, b: number) => a % 13 === b % 13;
 
 export default function BlackjackGame(_props: GameProps) {
   const location = useLocation();
-  const { chips, setChips, error, setError, claim, signedIn, loading } = useChips();
-  const [screen, setScreen] = useState<"menu" | "table">("menu");
+  const { chips, setChips, error, setError, claim, signedIn, loading, refresh: refreshChips } = useChips();
+  const [screen, setScreen] = useState<"menu" | "table" | "online">("menu");
+  const [table, setTable] = useState<TableView | null>(null);
   const [round, setRound] = useState<Round | null>(null);
   const [bet, setBet] = useState(0);
   const [lastBet, setLastBet] = useState(0);
@@ -131,8 +133,38 @@ export default function BlackjackGame(_props: GameProps) {
           corner={chips ? <ChipBalance amount={chips.balance} /> : null}
           modes={[
             { key: "dealer", label: "vs Dealer", icon: <Bot size={15} />, start: () => setScreen("table") },
-            { key: "online", label: "Online table", icon: <Globe size={15} />, disabled: true, note: "Coming soon" },
+            {
+              key: "online",
+              label: "Online table",
+              icon: <Globe size={15} />,
+              panel: (
+                <OnlineLobby
+                  onSeated={(v) => {
+                    setTable(v);
+                    setScreen("online");
+                  }}
+                />
+              ),
+            },
           ]}
+        />
+      </div>
+    );
+  }
+
+  /* ---------- online table ---------- */
+  if (screen === "online" && table) {
+    return (
+      <div className="game-surface bj-surface">
+        <CardDefs />
+        <OnlineTable
+          key={table.code}
+          initial={table}
+          onLeave={() => {
+            setTable(null);
+            setScreen("menu");
+            void refreshChips();
+          }}
         />
       </div>
     );

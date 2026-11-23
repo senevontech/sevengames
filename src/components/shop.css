@@ -686,3 +686,58 @@
   font-weight: 800;
   color: #b7791f;
 }
+
+/* Pool: a table corner, and a cue with its stats */
+.shop-ptable {
+  width: 100%;
+  max-width: 150px;
+  height: auto;
+  border-radius: 10px;
+}
+
+.shop-pcue {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 0 6px;
+}
+
+.shop-pcue svg {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.3));
+}
+
+.shop-pcue-stats {
+  display: grid;
+  gap: 3px;
+}
+
+.shop-pcue-stats > span {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  align-items: center;
+  gap: 6px;
+}
+
+.shop-pcue-stats small {
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0.7;
+}
+
+.shop-pcue-stats i {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+}
+
+.shop-pcue-stats b {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(127, 127, 127, 0.25);
+}
+
+.shop-pcue-stats b.on {
+  background: linear-gradient(90deg, #ffb347, #ff7a1a);
+}

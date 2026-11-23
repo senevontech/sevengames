@@ -11,7 +11,9 @@ export type ShopSlot =
   | "chess_pieces"
   | "ludo_board"
   | "ludo_dice"
-  | "ludo_token";
+  | "ludo_token"
+  | "pool_table"
+  | "pool_cue";
 export type BoosterItem = "arrows_hint" | "arrows_undo";
 
 export type ArrowSkin = {
@@ -186,7 +188,7 @@ export const frameClass = (id: string | null | undefined) => (id && FRAMES[id] ?
 
 /* ---------------- Chess + Ludo cosmetics ---------------- */
 
-export type BoardGame = "chess" | "ludo";
+export type BoardGame = "chess" | "ludo" | "pool";
 /** Games whose level can unlock shop items (Arrows: the puzzle level reached). */
 export type LevelGame = BoardGame | "arrows";
 
@@ -252,3 +254,69 @@ export const ludoTokenOf = (id: string | null | undefined): LudoTokenColour | nu
 
 export const ludoBoardOf = (id: string | null | undefined) => LUDO_BOARDS[id ?? ""] ?? LUDO_BOARDS["lboard:classic"];
 export const ludoDiceOf = (id: string | null | undefined) => LUDO_DICE[id ?? ""] ?? LUDO_DICE["ldice:classic"];
+
+/* ---------------- Pool: tables and cues (slots pool_table, pool_cue) ----------------
+   Keep ids in sync with supabase/shop.sql. Tables are looks only; cues have stats that
+   change play (everywhere, online too):
+     aim   - how far the aiming guide reaches (and, from 4, the cue ball's path off the hit)
+     power - the hardest shot the cue can play
+     spin  - how much follow, draw and side the tip can put on the cue ball */
+export type PoolTableTheme = {
+  name: string;
+  blurb: string;
+  cloth: string;
+  clothDark: string;
+  cushion: string;
+  /** rail finish, light / dark / light */
+  rail: [string, string, string];
+  /** wood grain on the rails */
+  grain: boolean;
+  /** pocket caps: light, dark */
+  metal: [string, string];
+  liner: string;
+  sight: string;
+};
+export const POOL_TABLES: Record<string, PoolTableTheme> = {
+  "ptable:club": { name: "Club", blurb: "Walnut rails, green cloth, black leather pockets.", cloth: "#1f7a4a", clothDark: "#0f4d2c", cushion: "#1a6a40", rail: ["#7a4421", "#55290f", "#6a3519"], grain: true, metal: ["#4a4a4d", "#121214"], liner: "#1a1a1a", sight: "#efe8d8" },
+  "ptable:tournament": { name: "Tournament", blurb: "Pro blue cloth, black lacquer, chrome corners.", cloth: "#2563b0", clothDark: "#153b70", cushion: "#22599e", rail: ["#2b2b2e", "#101012", "#222225"], grain: false, metal: ["#f1f3f6", "#8a9098"], liner: "#151515", sight: "#ffffff" },
+  "ptable:oak": { name: "Old Oak", blurb: "Honey oak, wine-red cloth, brass corners.", cloth: "#8e2333", clothDark: "#56121d", cushion: "#7c1e2c", rail: ["#c48a4a", "#8f5a26", "#b07a3c"], grain: true, metal: ["#f3d58a", "#9a6f1f"], liner: "#2a1810", sight: "#fff4dc" },
+  "ptable:slate": { name: "Slate", blurb: "Charcoal cloth on pale ash rails.", cloth: "#4f5864", clothDark: "#2c3238", cushion: "#46505b", rail: ["#d8cbb5", "#a99a82", "#c6b79e"], grain: true, metal: ["#e9ecef", "#7c848c"], liner: "#1c1c1c", sight: "#3a3a3a" },
+  "ptable:royal": { name: "Royal", blurb: "Deep purple cloth, mahogany and gold.", cloth: "#4b2a7a", clothDark: "#2a1548", cushion: "#43256e", rail: ["#6e1f1a", "#3e0e0b", "#5a1813"], grain: true, metal: ["#ffe08a", "#a8781a"], liner: "#140a06", sight: "#ffe9a8" },
+  "ptable:midnight": { name: "Midnight", blurb: "Black cloth, carbon rails, steel corners.", cloth: "#22262c", clothDark: "#0d0f12", cushion: "#1d2126", rail: ["#3a3d42", "#16181b", "#2a2d31"], grain: false, metal: ["#cfd8e3", "#5c6670"], liner: "#000000", sight: "#7fd8ff" },
+};
+export const poolTableOf = (id: string | null | undefined) => POOL_TABLES[id ?? ""] ?? POOL_TABLES["ptable:club"];
+
+export type PoolCue = {
+  name: string;
+  blurb: string;
+  /** 1..5 each */
+  aim: number;
+  power: number;
+  spin: number;
+  shaft: string;
+  forearm: string;
+  inlay: string;
+  wrap: string;
+  butt: string;
+  ring: string;
+};
+export const POOL_CUES: Record<string, PoolCue> = {
+  "pcue:house": { name: "House cue", blurb: "The plain maple cue off the wall rack.", aim: 1, power: 1, spin: 1, shaft: "#e2c48a", forearm: "#8a5a2b", inlay: "#e2c48a", wrap: "#5a3a1c", butt: "#6e4422", ring: "#d8d8d8" },
+  "pcue:maple": { name: "Birdseye", blurb: "Birdseye maple with ebony points. Steadier aim.", aim: 2, power: 1, spin: 2, shaft: "#ecd3a0", forearm: "#2a1a10", inlay: "#f2e6cf", wrap: "#1c1c1e", butt: "#2a1a10", ring: "#c9a34a" },
+  "pcue:ebony": { name: "Ebony", blurb: "Heavy ebony butt for a firmer break.", aim: 2, power: 3, spin: 2, shaft: "#e6cb94", forearm: "#141414", inlay: "#cfd6de", wrap: "#2b2b2e", butt: "#141414", ring: "#e9ecef" },
+  "pcue:carbon": { name: "Carbon", blurb: "Low-deflection carbon shaft. Balanced all round.", aim: 3, power: 3, spin: 3, shaft: "#2a2c30", forearm: "#3b3e44", inlay: "#ff7a1a", wrap: "#16181b", butt: "#24262a", ring: "#ff7a1a" },
+  "pcue:royal": { name: "Royal", blurb: "Rosewood and mother-of-pearl. Fine aim, big spin.", aim: 4, power: 3, spin: 4, shaft: "#ead2a2", forearm: "#5a1a14", inlay: "#f4efe6", wrap: "#3a0d0a", butt: "#5a1a14", ring: "#f3d58a" },
+  "pcue:legend": { name: "Legend", blurb: "Gold-capped tournament cue. The best there is.", aim: 5, power: 4, spin: 5, shaft: "#f0dcae", forearm: "#111111", inlay: "#ffd54a", wrap: "#111111", butt: "#1a1408", ring: "#ffd54a" },
+};
+export const poolCueOf = (id: string | null | undefined) => POOL_CUES[id ?? ""] ?? POOL_CUES["pcue:house"];
+/** What a cue's stats do in play. */
+export const cueStats = (c: PoolCue) => ({
+  /** object-ball guide length (table units) */
+  guide: [110, 170, 240, 320, 420][c.aim - 1],
+  /** also show where the cue ball goes after the hit (with spin) */
+  cuePath: c.aim >= 4,
+  /** multiplier on the hardest shot */
+  power: [0.9, 0.95, 1, 1.06, 1.12][c.power - 1],
+  /** share of full spin the tip can reach */
+  spin: [0.55, 0.65, 0.76, 0.88, 1][c.spin - 1],
+});

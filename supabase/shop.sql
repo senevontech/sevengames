@@ -64,7 +64,7 @@ alter table public.shop_items drop constraint if exists shop_items_kind_check;
 alter table public.shop_items add constraint shop_items_kind_check
   -- dd_*: DroidDoom (embedded game) unlocks, see droiddoom.sql
   check (kind in ('arrow_skin', 'arrow_fx', 'arrow_board', 'arrow_head', 'frame', 'booster', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice',
-                  'dd_levels', 'dd_skin', 'dd_weapon', 'chat_pack', 'ludo_token'));
+                  'dd_levels', 'dd_skin', 'dd_weapon', 'chat_pack', 'ludo_token', 'pool_table', 'pool_cue'));
 
 -- Ludo token colours: 9 free, 4 in the shop (keep ids in sync with LUDO_TOKENS in src/lib/shopCatalog.ts)
 insert into public.shop_items (item_id, kind, price, sort) values
@@ -77,7 +77,7 @@ on conflict (item_id) do nothing;
 alter table public.shop_items add column if not exists game text;
 -- which game's level unlocks an item: chess / ludo (game XP) or arrows (puzzle level reached)
 alter table public.shop_items drop constraint if exists shop_items_game_check;
-alter table public.shop_items add constraint shop_items_game_check check (game in ('chess', 'ludo', 'arrows'));
+alter table public.shop_items add constraint shop_items_game_check check (game in ('chess', 'ludo', 'arrows', 'pool'));
 alter table public.shop_items add column if not exists min_level integer not null default 1 check (min_level between 1 and 30);
 -- Senevon Plus exclusives: members own them for free, nobody else can buy them
 alter table public.shop_items add column if not exists plus_only boolean not null default false;
@@ -100,6 +100,23 @@ insert into public.shop_items (item_id, kind, price, sort, game, min_level) valu
   ('ldice:gem', 'ludo_dice', 900, 1, 'ludo', 2),
   ('ldice:neon', 'ludo_dice', 1400, 2, 'ludo', 5),
   ('ldice:gold', 'ludo_dice', 2200, 3, 'ludo', 10)
+on conflict (item_id) do nothing;
+
+-- Pool: tables (looks) and cues (stats: aim / power / spin). Keep ids in sync with POOL_TABLES / POOL_CUES
+-- in src/lib/shopCatalog.ts. The pool level comes from pool XP.
+insert into public.shop_items (item_id, kind, price, sort, game, min_level) values
+  ('ptable:club', 'pool_table', 0, 0, 'pool', 1),
+  ('ptable:tournament', 'pool_table', 800, 1, 'pool', 1),
+  ('ptable:oak', 'pool_table', 1200, 2, 'pool', 3),
+  ('ptable:slate', 'pool_table', 1600, 3, 'pool', 5),
+  ('ptable:royal', 'pool_table', 2200, 4, 'pool', 8),
+  ('ptable:midnight', 'pool_table', 3000, 5, 'pool', 12),
+  ('pcue:house', 'pool_cue', 0, 0, 'pool', 1),
+  ('pcue:maple', 'pool_cue', 600, 1, 'pool', 1),
+  ('pcue:ebony', 'pool_cue', 1200, 2, 'pool', 3),
+  ('pcue:carbon', 'pool_cue', 1800, 3, 'pool', 5),
+  ('pcue:royal', 'pool_cue', 2600, 4, 'pool', 8),
+  ('pcue:legend', 'pool_cue', 4000, 5, 'pool', 12)
 on conflict (item_id) do nothing;
 
 -- Arrows: more styles + effects, board themes and arrowhead shapes (Arrows level = puzzle level reached)
@@ -162,15 +179,20 @@ alter table public.player_cosmetics add column if not exists ludo_dice text;
 alter table public.player_cosmetics add column if not exists arrow_board text;
 alter table public.player_cosmetics add column if not exists arrow_head text;
 alter table public.player_cosmetics add column if not exists ludo_token text;
+alter table public.player_cosmetics add column if not exists pool_table text;
+alter table public.player_cosmetics add column if not exists pool_cue text;
 
--- XP per game (chess, ludo). Carrom keeps its own (carrom.sql).
+-- XP per game (chess, ludo, arrows, pool). Carrom keeps its own (carrom.sql).
 create table if not exists public.game_xp (
   user_id uuid not null references auth.users(id) on delete cascade,
-  game text not null check (game in ('chess', 'ludo')),
+  game text not null check (game in ('chess', 'ludo', 'arrows', 'pool')),
   xp integer not null default 0 check (xp >= 0),
   last_award timestamptz,
   primary key (user_id, game)
 );
+-- (tables made earlier: keep the game list current — same list as matches.sql)
+alter table public.game_xp drop constraint if exists game_xp_game_check;
+alter table public.game_xp add constraint game_xp_game_check check (game in ('chess', 'ludo', 'arrows', 'pool'));
 alter table public.game_xp enable row level security;
 drop policy if exists "Own game xp" on public.game_xp;
 create policy "Own game xp" on public.game_xp for select to authenticated using (auth.uid() = user_id);
@@ -261,10 +283,11 @@ returns jsonb language sql stable security definer set search_path = public as $
       select jsonb_build_object(
         'frame', frame, 'arrow_skin', arrow_skin, 'arrow_fx', arrow_fx,
         'chess_board', chess_board, 'chess_pieces', chess_pieces, 'ludo_board', ludo_board, 'ludo_dice', ludo_dice,
-        'arrow_board', arrow_board, 'arrow_head', arrow_head, 'ludo_token', ludo_token
+        'arrow_board', arrow_board, 'arrow_head', arrow_head, 'ludo_token', ludo_token,
+        'pool_table', pool_table, 'pool_cue', pool_cue
       ) from player_cosmetics where user_id = p_user
     ), '{}'::jsonb),
-    'xp', jsonb_build_object('chess', _game_xp(p_user, 'chess'), 'ludo', _game_xp(p_user, 'ludo'), 'arrows', _game_xp(p_user, 'arrows')),
+    'xp', jsonb_build_object('chess', _game_xp(p_user, 'chess'), 'ludo', _game_xp(p_user, 'ludo'), 'arrows', _game_xp(p_user, 'arrows'), 'pool', _game_xp(p_user, 'pool')),
     'levels', jsonb_build_object('arrows', _shop_level(p_user, 'arrows')),
     'free', _shop_free(p_user),
     'tokens', coalesce((select balance from token_wallets where user_id = p_user), 0)
@@ -318,7 +341,7 @@ declare
   v_kind text;
 begin
   if v_user is null then raise exception 'not_signed_in'; end if;
-  if p_slot not in ('frame', 'arrow_skin', 'arrow_fx', 'arrow_board', 'arrow_head', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice', 'ludo_token') then
+  if p_slot not in ('frame', 'arrow_skin', 'arrow_fx', 'arrow_board', 'arrow_head', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice', 'ludo_token', 'pool_table', 'pool_cue') then
     raise exception 'bad_slot';
   end if;
   if p_item is not null then
@@ -338,6 +361,8 @@ begin
     ludo_board = case when p_slot = 'ludo_board' then p_item else ludo_board end,
     ludo_dice = case when p_slot = 'ludo_dice' then p_item else ludo_dice end,
     ludo_token = case when p_slot = 'ludo_token' then p_item else ludo_token end,
+    pool_table = case when p_slot = 'pool_table' then p_item else pool_table end,
+    pool_cue = case when p_slot = 'pool_cue' then p_item else pool_cue end,
     updated_at = now()
   where user_id = v_user;
   return _shop_state(v_user);
@@ -368,7 +393,7 @@ declare
   v_last timestamptz;
 begin
   if v_user is null then raise exception 'not_signed_in'; end if;
-  if p_game not in ('chess', 'ludo') then raise exception 'bad_game'; end if;
+  if p_game not in ('chess', 'ludo', 'pool') then raise exception 'bad_game'; end if;
   insert into game_xp (user_id, game) values (v_user, p_game) on conflict do nothing;
   select last_award into v_last from game_xp where user_id = v_user and game = p_game for update;
   if v_last is null or v_last < now() - interval '20 seconds' then

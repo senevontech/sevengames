@@ -36,7 +36,8 @@ export type GameEngine =
   | "arrows"
   | "chess"
   | "ludo"
-  | "blackjack";
+  | "blackjack"
+  | "pool";
 
 export type Game = {
   id: string;
@@ -477,6 +478,17 @@ export const games: Game[] = [
     minutes: 5,
     accent: "#17703f",
     description: "Beat the dealer to 21 on a real felt table. Bet free chips, hit, stand, double or split. Blackjack pays 3 to 2.",
+  },
+  {
+    id: "pool",
+    title: "Eight Ball",
+    category: "Sports",
+    kind: "builtin",
+    engine: "pool",
+    difficulty: "Medium",
+    minutes: 10,
+    accent: "#1f7a4a",
+    description: "Real-physics eight-ball pool: follow, draw and side spin, rattling pockets. Pot your group, then the 8. vs CPU, on one device, or online.",
   },
 ];
 

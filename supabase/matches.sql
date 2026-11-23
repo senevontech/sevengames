@@ -12,7 +12,7 @@
 --     (the loser confirms), so nobody can award themselves tokens. Leaving mid-match reports a
 --     loss, which confirms the other player's win.
 --   * Token limits: 10 win tokens a day in total, and 3 a day from the same opponent.
---   * XP goes to: chess / ludo / arrows → game_xp (shop.sql), carrom → carrom_profiles.
+--   * XP goes to: chess / ludo / arrows / pool → game_xp (shop.sql), carrom → carrom_profiles.
 -- ============================================================
 
 -- the token ledger gets a 'match' reason (keep this list in sync with tokens.sql and friends)
@@ -20,12 +20,12 @@ alter table public.token_ledger drop constraint if exists token_ledger_reason_ch
 alter table public.token_ledger add constraint token_ledger_reason_check
   check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament'));
 
--- Arrows gets its own online rank XP
+-- Arrows and Pool get their own XP
 alter table public.game_xp drop constraint if exists game_xp_game_check;
-alter table public.game_xp add constraint game_xp_game_check check (game in ('chess', 'ludo', 'arrows'));
+alter table public.game_xp add constraint game_xp_game_check check (game in ('chess', 'ludo', 'arrows', 'pool'));
 
 create table if not exists public.match_reports (
-  game text not null check (game in ('chess', 'ludo', 'carrom', 'arrows')),
+  game text not null check (game in ('chess', 'ludo', 'carrom', 'arrows', 'pool')),
   match_id text not null check (length(match_id) between 6 and 80),
   user_id uuid not null references auth.users(id) on delete cascade,
   players uuid[] not null,
@@ -35,6 +35,9 @@ create table if not exists public.match_reports (
   created_at timestamptz not null default now(),
   primary key (game, match_id, user_id)
 );
+-- (tables made before Pool existed: widen the game list)
+alter table public.match_reports drop constraint if exists match_reports_game_check;
+alter table public.match_reports add constraint match_reports_game_check check (game in ('chess', 'ludo', 'carrom', 'arrows', 'pool'));
 create index if not exists match_reports_user_idx on public.match_reports (user_id, game, created_at desc);
 
 -- win tokens paid (one per match), for the daily limits
@@ -133,7 +136,7 @@ declare
   v_xp integer;
 begin
   if v_user is null then raise exception 'not_signed_in'; end if;
-  if p_game not in ('chess', 'ludo', 'carrom', 'arrows') then raise exception 'bad_game'; end if;
+  if p_game not in ('chess', 'ludo', 'carrom', 'arrows', 'pool') then raise exception 'bad_game'; end if;
   if p_match is null or length(p_match) not between 6 and 80 then raise exception 'bad_match'; end if;
   p_players := coalesce(p_players, '{}');
   p_winners := coalesce(p_winners, '{}');

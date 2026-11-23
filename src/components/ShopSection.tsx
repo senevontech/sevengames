@@ -19,6 +19,8 @@ import {
   LUDO_BOARDS,
   LUDO_DICE,
   LUDO_TOKENS,
+  POOL_CUES,
+  POOL_TABLES,
   chessPiecesOf,
   frameClass,
   type ShopSlot,
@@ -28,10 +30,10 @@ import "../pages/account.css";
 import "./shop.css";
 import "../games/arrows.css";
 
-type Tab = "skins" | "fx" | "boards" | "heads" | "frames" | "boosters" | "chessBoards" | "chessPieces" | "ludoBoards" | "ludoDice" | "ludoTokens";
+type Tab = "skins" | "fx" | "boards" | "heads" | "frames" | "boosters" | "chessBoards" | "chessPieces" | "ludoBoards" | "ludoDice" | "ludoTokens" | "poolTables" | "poolCues";
 
 /** Which shop: one per game (shown inside that game), plus avatar frames on the Tokens page. */
-export type ShopScope = "arrows" | "chess" | "ludo" | "frames";
+export type ShopScope = "arrows" | "chess" | "ludo" | "pool" | "frames";
 
 const SCOPES: Record<ShopScope, { title: string; sub: string; tabs: { id: Tab; label: string }[] }> = {
   arrows: {
@@ -62,6 +64,14 @@ const SCOPES: Record<ShopScope, { title: string; sub: string; tabs: { id: Tab; l
       { id: "ludoTokens", label: "Token colours" },
     ],
   },
+  pool: {
+    title: "Pool shop",
+    sub: "Tables to play on, and cues with better aim, power and spin.",
+    tabs: [
+      { id: "poolCues", label: "Cues" },
+      { id: "poolTables", label: "Tables" },
+    ],
+  },
   frames: {
     title: "Avatar frames",
     sub: "A frame around your picture, shown in every game and on leaderboards.",
@@ -69,7 +79,7 @@ const SCOPES: Record<ShopScope, { title: string; sub: string; tabs: { id: Tab; l
   },
 };
 
-const GAME_NAMES: Record<string, string> = { chess: "Chess", ludo: "Ludo", arrows: "Arrows", carrom: "Carrom" };
+const GAME_NAMES: Record<string, string> = { chess: "Chess", ludo: "Ludo", arrows: "Arrows", carrom: "Carrom", pool: "Pool" };
 
 /* defaults when nothing is equipped in a slot */
 const SLOT_DEFAULT: Partial<Record<ShopSlot, string>> = {
@@ -79,6 +89,8 @@ const SLOT_DEFAULT: Partial<Record<ShopSlot, string>> = {
   chess_pieces: "cpieces:classic",
   ludo_board: "lboard:classic",
   ludo_dice: "ldice:classic",
+  pool_table: "ptable:club",
+  pool_cue: "pcue:house",
 };
 
 /** A corner of a chess board with a few pieces. */
@@ -144,6 +156,81 @@ function LudoDicePreview({ id }: { id: string }) {
       <circle cx={78} cy={34} r={6} fill="#fff" opacity={0.85} />
       {d.tokenShine ? <ellipse cx={73} cy={28} rx={5} ry={2.6} fill="#fff" opacity={0.75} /> : null}
     </svg>
+  );
+}
+
+/** A corner of a pool table: rail, corner cap, pocket, cloth and a ball. */
+function PoolTablePreview({ id }: { id: string }) {
+  const t = POOL_TABLES[id];
+  const g = `shop-pt-${id.replace(/[^a-z0-9]/gi, "")}`;
+  return (
+    <svg className="shop-ptable" viewBox="0 0 120 72" aria-hidden="true">
+      <defs>
+        <linearGradient id={`${g}-r`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={t.rail[0]} />
+          <stop offset="0.5" stopColor={t.rail[1]} />
+          <stop offset="1" stopColor={t.rail[2]} />
+        </linearGradient>
+        <radialGradient id={`${g}-c`} cx="0.6" cy="0.6" r="0.9">
+          <stop offset="0" stopColor={t.cloth} />
+          <stop offset="1" stopColor={t.clothDark} />
+        </radialGradient>
+        <linearGradient id={`${g}-m`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={t.metal[0]} />
+          <stop offset="1" stopColor={t.metal[1]} />
+        </linearGradient>
+        <radialGradient id={`${g}-b`} cx="0.35" cy="0.3" r="0.8">
+          <stop offset="0" stopColor="#fff" />
+          <stop offset="0.25" stopColor="#f6c400" />
+          <stop offset="1" stopColor="#8a6a00" />
+        </radialGradient>
+      </defs>
+      <rect x="0" y="0" width="120" height="72" rx="10" fill={`url(#${g}-r)`} />
+      <circle cx="13" cy="13" r="13" fill={`url(#${g}-m)`} />
+      <rect x="14" y="14" width="106" height="58" fill={`url(#${g}-c)`} />
+      <rect x="14" y="14" width="106" height="5" fill={t.cushion} />
+      <rect x="14" y="14" width="5" height="58" fill={t.cushion} />
+      <circle cx="16" cy="16" r="8" fill={t.liner} />
+      <circle cx="16" cy="16" r="6" fill="#000" />
+      {[44, 74, 104].map((x) => (
+        <path key={x} d={`M${x} 5 l2 2.5 -2 2.5 -2 -2.5z`} fill={t.sight} />
+      ))}
+      <ellipse cx="78" cy="51" rx="7" ry="3" fill="rgba(0,0,0,0.35)" />
+      <circle cx="76" cy="46" r="6.5" fill={`url(#${g}-b)`} />
+    </svg>
+  );
+}
+
+/** A cue's butt and shaft in its finish, with its stats as bars. */
+function PoolCuePreview({ id }: { id: string }) {
+  const c = POOL_CUES[id];
+  return (
+    <span className="shop-pcue" aria-hidden="true">
+      <svg viewBox="0 0 200 22">
+        <rect x="2" y="7" width="8" height="8" rx="2" fill="#111" />
+        <rect x="10" y="5.5" width="26" height="11" rx="1.5" fill={c.butt} />
+        <rect x="36" y="5.5" width="3" height="11" fill={c.ring} />
+        <rect x="39" y="6" width="40" height="10" fill={c.wrap} />
+        <path d="M79 6.3 L130 7.6 L130 14.4 L79 15.7 Z" fill={c.forearm} />
+        <path d="M79 8 L112 11 L79 14 Z" fill={c.inlay} opacity="0.85" />
+        <rect x="130" y="7.4" width="4" height="7.2" fill={c.ring} />
+        <path d="M134 7.6 L192 9.6 L192 12.4 L134 14.4 Z" fill={c.shaft} />
+        <rect x="192" y="9.5" width="4" height="3" fill="#f2eee3" />
+        <rect x="196" y="9.7" width="2" height="2.6" fill="#3f6fb5" />
+      </svg>
+      <span className="shop-pcue-stats">
+        {(["aim", "power", "spin"] as const).map((k) => (
+          <span key={k}>
+            <small>{k === "aim" ? "Aim" : k === "power" ? "Power" : "Spin"}</small>
+            <i>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <b key={n} className={n <= c[k] ? "on" : ""} />
+              ))}
+            </i>
+          </span>
+        ))}
+      </span>
+    </span>
   );
 }
 
@@ -584,6 +671,30 @@ export default function ShopSection({ scope, embedded = false }: { scope: ShopSc
                       <h3>{t.name} tokens</h3>
                       <p>{t.blurb} Your picture shows on your tokens too.</p>
                       {cosmetic(id, "ludo_token", `${t.name} tokens`)}
+                    </li>
+                  ))
+              : null}
+            {tab === "poolTables"
+              ? Object.entries(POOL_TABLES).map(([id, t]) => (
+                    <li key={id} className="ac-card shop-card">
+                      <div className="shop-preview">
+                        <PoolTablePreview id={id} />
+                      </div>
+                      <h3>{t.name} table</h3>
+                      <p>{t.blurb}</p>
+                      {cosmetic(id, "pool_table", `${t.name} table`)}
+                    </li>
+                  ))
+              : null}
+            {tab === "poolCues"
+              ? Object.entries(POOL_CUES).map(([id, c]) => (
+                    <li key={id} className="ac-card shop-card">
+                      <div className="shop-preview">
+                        <PoolCuePreview id={id} />
+                      </div>
+                      <h3>{c.name}</h3>
+                      <p>{c.blurb}</p>
+                      {cosmetic(id, "pool_cue", c.name)}
                     </li>
                   ))
               : null}

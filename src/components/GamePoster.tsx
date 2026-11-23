@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   ArrowUpDown,
   Spade,
+  Disc,
   Bomb,
   Brain,
   Building2,
@@ -54,6 +55,7 @@ const byEngine: Record<string, LucideIcon> = {
   "lights-out": Lightbulb,
   arrows: MoveUpRight,
   blackjack: Spade,
+  pool: Disc,
 };
 
 const byId: Record<string, LucideIcon> = {

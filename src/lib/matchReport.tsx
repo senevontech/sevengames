@@ -9,7 +9,7 @@ import { useTokens } from "./tokens";
 import TokenIcon from "../components/TokenIcon";
 import "../components/match-reward.css";
 
-export type MatchGame = "chess" | "ludo" | "carrom" | "arrows";
+export type MatchGame = "chess" | "ludo" | "carrom" | "arrows" | "pool";
 
 export type MatchReward = {
   /** XP actually added (negative for a loss; 0 when rate-limited) */

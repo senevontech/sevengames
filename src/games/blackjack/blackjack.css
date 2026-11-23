@@ -388,3 +388,166 @@
     animation: none;
   }
 }
+
+/* ---------- online table ---------- */
+.bjo {
+  display: grid;
+  gap: 12px;
+}
+
+.bjo-code {
+  letter-spacing: 0.12em;
+  cursor: default;
+}
+
+.bjo-felt {
+  grid-template-rows: auto auto 1fr auto;
+}
+
+.bjo-others {
+  --cd-w: clamp(30px, 6.5vw, 46px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: clamp(8px, 2.5vw, 22px);
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.bjo-empty {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 236, 190, 0.6);
+}
+
+.bjo-seat {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  border: 1.5px solid transparent;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.bjo-seat.is-turn {
+  border-color: rgba(255, 211, 107, 0.75);
+  background: rgba(255, 236, 190, 0.07);
+}
+
+.bjo-seat.is-leaving {
+  opacity: 0.5;
+}
+
+.bjo-seat.is-small .bj-hand-foot {
+  min-height: 34px;
+  gap: 6px;
+}
+
+.bjo-seat.is-small .bj-total {
+  min-width: 26px;
+  padding: 2px 7px;
+  font-size: 12.5px;
+}
+
+.bjo-seat.is-small .bj-tag {
+  padding: 2px 7px;
+  font-size: 11px;
+}
+
+.bjo-who {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 180px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: rgba(255, 244, 220, 0.92);
+}
+
+.bjo-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bjo-clock {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: conic-gradient(#7ee2a8 var(--p), rgba(0, 0, 0, 0.35) 0);
+}
+
+.bjo-clock.is-low {
+  background: conic-gradient(#ff6b5b var(--p), rgba(0, 0, 0, 0.35) 0);
+}
+
+.bjo-net {
+  padding: 1px 7px;
+  border-radius: 99px;
+  font-size: 11.5px;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.bjo-net.is-up {
+  color: #ffd36b;
+}
+
+.bjo-net.is-down {
+  color: #ff9b8f;
+}
+
+.bjo-spot-small {
+  width: 64px;
+  height: 64px;
+  font-size: 10px;
+}
+
+.bjo-status {
+  margin: 0;
+  min-height: 20px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  opacity: 0.85;
+}
+
+.bjo-lobby {
+  display: grid;
+  gap: 10px;
+}
+
+.bjo-lobby .bj-btn {
+  width: 100%;
+}
+
+.bjo-join {
+  display: flex;
+  gap: 8px;
+}
+
+.bjo-join input {
+  flex: 1;
+  min-width: 0;
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid rgba(127, 127, 127, 0.35);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text, #f4f4f6);
+  background: transparent;
+}
+
+.bjo-join .bj-btn {
+  width: auto;
+}
+
+/* the game window caps game surfaces at 460px: the card table (five seats online) needs more */
+.gp-stage .game-surface.bj-surface {
+  max-width: 760px;
+}

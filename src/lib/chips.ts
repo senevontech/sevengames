@@ -25,6 +25,12 @@ export function chipsErrorText(err: unknown) {
   if (msg.includes("round_open")) return "Finish the current hand first.";
   if (msg.includes("bad_bet")) return "That bet is outside the table limits.";
   if (msg.includes("not_signed_in")) return "Sign in to play with chips.";
+  if (msg.includes("table_full")) return "That table is full (5 players).";
+  if (msg.includes("no_table")) return "No table with that code.";
+  if (msg.includes("betting_closed")) return "Bets are closed for this round.";
+  if (msg.includes("not_your_turn")) return "It's not your turn.";
+  if (msg.includes("not_seated")) return "You're not sitting at this table.";
+  if (msg.includes("cant_double") || msg.includes("cant_split")) return "You can't do that with this hand.";
   if (msg.includes("does not exist") || msg.includes("Could not find")) return "Card games aren't set up on the server yet.";
   return "Something went wrong. Try again.";
 }

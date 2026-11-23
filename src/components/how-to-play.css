@@ -1,0 +1,193 @@
+/* "How to play" sheet (HowToPlay.tsx). Reads the game page's light / dark neu tokens. */
+
+.htp {
+  position: fixed;
+  inset: 0;
+  z-index: 1250;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(6, 4, 8, 0.55);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  animation: htp-fade 0.2s ease both;
+}
+
+.htp-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(420px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: 18px 18px 16px;
+  border-radius: 26px;
+  color: var(--text, #f4f4f6);
+  background: var(--neu-bg, #1d1e24);
+  box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.75);
+  outline: none;
+  animation: htp-pop 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.htp-head {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 0 36px 6px;
+  text-align: center;
+}
+.htp-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--neu-accent, #ff8a3d);
+}
+.htp-head h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+.htp-x {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  color: inherit;
+  background: var(--neu-bg, transparent);
+  box-shadow: var(--neu-raise-sm, none);
+  cursor: pointer;
+}
+
+.htp-body {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 8px;
+  min-height: 220px;
+  padding: 12px 6px;
+  text-align: center;
+  animation: htp-step 0.28s ease both;
+}
+.htp-icon {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin-bottom: 6px;
+  border-radius: 26px;
+  font-size: 42px;
+  line-height: 1;
+  background: var(--neu-bg, rgba(255, 255, 255, 0.05));
+  box-shadow: var(--neu-press, inset 0 2px 8px rgba(0, 0, 0, 0.35));
+}
+.htp-body h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+.htp-body p {
+  margin: 0;
+  max-width: 32ch;
+  font-size: 15px;
+  line-height: 1.45;
+  opacity: 0.82;
+}
+.htp-list {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+.htp-list li {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.4;
+  background: color-mix(in srgb, var(--text, #fff) 6%, transparent);
+}
+
+.htp-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 0 14px;
+}
+.htp-dots button {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text, #fff) 22%, transparent);
+  cursor: pointer;
+  transition: width 0.25s ease, background 0.25s ease;
+}
+.htp-dots button.on {
+  width: 22px;
+  background: var(--neu-accent, #ff8a3d);
+}
+
+.htp-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.htp-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 110px;
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  color: inherit;
+  background: var(--neu-bg, rgba(255, 255, 255, 0.06));
+  box-shadow: var(--neu-raise-sm, none);
+  cursor: pointer;
+}
+.htp-nav:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.htp-nav.is-primary {
+  color: #1f0c00;
+  background: var(--neu-accent, #ff8a3d);
+}
+
+@keyframes htp-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes htp-pop {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+}
+@keyframes htp-step {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .htp,
+  .htp-panel,
+  .htp-body {
+    animation: none;
+  }
+}

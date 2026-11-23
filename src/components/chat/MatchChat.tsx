@@ -1,4 +1,4 @@
-/* Chat in online matches and game lobbies: a floating button opens the pack picker; what anyone
+/* Chat in online matches and game lobbies: a chat icon in the game's icon bar opens the pack picker; what anyone
    sends pops up as a bubble with their name. Messages travel on their own Realtime channel per
    room (nothing is stored). One message every 3 s; tap a bubble's name to mute that player for
    this match; "Chat off" hides everyone's messages. */
@@ -8,6 +8,44 @@ import { supabase } from "../../supabase";
 import { findItem, useChatOff, useChatPacks } from "../../lib/chatPacks";
 import { ChatItemView, ChatPicker, usePackAccess } from "./ChatKit";
 
+/* ---------- the icon in the game's icon bar and the panel share open / cooldown state ---------- */
+type Ui = { live: boolean; open: boolean; cool: number };
+let ui: Ui = { live: false, open: false, cool: 0 };
+const uiListeners = new Set<() => void>();
+function setUi(next: Partial<Ui>) {
+  ui = { ...ui, ...next };
+  uiListeners.forEach((l) => l());
+}
+function useUi() {
+  const [cur, setCur] = useState(ui);
+  useEffect(() => {
+    const on = () => setCur(ui);
+    uiListeners.add(on);
+    on();
+    return () => void uiListeners.delete(on);
+  }, []);
+  return cur;
+}
+
+/** The chat icon for the game's icon bar: only shown while in an online room. */
+export function MatchChatButton({ className = "" }: { className?: string }) {
+  const { live, open, cool } = useUi();
+  if (!live) return null;
+  return (
+    <button
+      type="button"
+      className={`mc-btn${open ? " active" : ""}${className ? ` ${className}` : ""}`}
+      onClick={() => setUi({ open: !ui.open })}
+      aria-label="Send a message"
+      title="Chat"
+      aria-expanded={open}
+    >
+      <MessageCircle size={15} aria-hidden="true" />
+      {cool > 0 ? <i className="mc-btn-cool">{cool}</i> : null}
+    </button>
+  );
+}
+
 type Bubble = { key: number; from: string; name: string; mine: boolean; pack: string; item: string };
 const COOLDOWN = 3;
 const SHOW_MS = 4500;
@@ -16,7 +54,8 @@ export default function MatchChat({ room, me }: { room: string | null | undefine
   const packs = useChatPacks();
   const access = usePackAccess();
   const off = useChatOff();
-  const [open, setOpen] = useState(false);
+  const { open } = useUi();
+  const setOpen = (o: boolean) => setUi({ open: o });
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
   const [muted, setMuted] = useState<Set<string>>(new Set());
   const [cool, setCool] = useState(0);
@@ -52,6 +91,13 @@ export default function MatchChat({ room, me }: { room: string | null | undefine
       void supabase!.removeChannel(ch);
     };
   }, [room, show]);
+
+  // the icon bar shows the chat icon while this room is open
+  useEffect(() => {
+    setUi({ live: true, open: false, cool: 0 });
+    return () => setUi({ live: false, open: false, cool: 0 });
+  }, []);
+  useEffect(() => setUi({ cool }), [cool]);
 
   // cooldown tick
   useEffect(() => {
@@ -112,10 +158,6 @@ export default function MatchChat({ room, me }: { room: string | null | undefine
         </div>
       ) : null}
 
-      <button type="button" className={`mc-fab${open ? " on" : ""}`} onClick={() => setOpen((o) => !o)} aria-label="Send a message" aria-expanded={open}>
-        <MessageCircle size={22} aria-hidden="true" />
-        {cool > 0 ? <i>{cool}</i> : null}
-      </button>
     </div>
   );
 }
