@@ -54,14 +54,16 @@ const ENDLESS = {
   /** points per ball, times the combo (up to maxCombo) */
   ballPts: 10,
   maxCombo: 5,
-  /** time per ball: base + per combo step */
-  ballMs: 4_000,
-  comboMs: 1_000,
+  /** time per ball potted */
+  ballMs: 3_000,
+  /** a combo of 3 (three potting shots in a row, and every 3 after that) adds this */
+  comboEvery: 3,
+  comboMs: 7_000,
   scratchMs: 10_000,
   rackPts: 50,
   rackMs: 15_000,
 };
-type Run = { score: number; combo: number; balls: number; rack: number; endAt: number; pausedAt: number | null; best: number; newBest: boolean };
+type Run = { score: number; combo: number; streak: number; balls: number; rack: number; endAt: number; pausedAt: number | null; best: number; newBest: boolean };
 const BEST_KEY = "senevon:pool:endless-best";
 function readBest() {
   try {
@@ -78,7 +80,7 @@ function saveBest(n: number) {
   }
 }
 const endlessXp = (score: number) => Math.min(80, 10 + Math.floor(score / 20));
-const freshRun = (): Run => ({ score: 0, combo: 0, balls: 0, rack: 1, endAt: Date.now() + ENDLESS.startMs, pausedAt: null, best: readBest(), newBest: false });
+const freshRun = (): Run => ({ score: 0, combo: 0, streak: 0, balls: 0, rack: 1, endAt: Date.now() + ENDLESS.startMs, pausedAt: null, best: readBest(), newBest: false });
 const fmtClock = (ms: number) => {
   const s = Math.max(0, Math.ceil(ms / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -429,15 +431,20 @@ export default function PoolGame(_props: GameProps) {
     const r = { ...runRef.current };
     const notes: string[] = [];
     if (out) {
-      r.combo = out.pots > 0 && !out.scratch ? Math.min(ENDLESS.maxCombo, r.combo + 1) : 0;
+      r.streak = out.pots > 0 && !out.scratch ? r.streak + 1 : 0;
+      r.combo = Math.min(ENDLESS.maxCombo, r.streak);
       const mult = Math.max(1, r.combo);
       if (out.pots) {
         const pts = out.pots * ENDLESS.ballPts * mult;
-        const ms = out.pots * (ENDLESS.ballMs + ENDLESS.comboMs * (mult - 1));
+        const ms = out.pots * ENDLESS.ballMs;
         r.score += pts;
         r.balls += out.pots;
         r.endAt += ms;
-        notes.push(`+${pts}${mult > 1 ? ` (combo ×${mult})` : ""} · +${Math.round(ms / 1000)}s`);
+        notes.push(`+${pts} · +${ms / 1000}s`);
+      }
+      if (r.streak > 0 && r.streak % ENDLESS.comboEvery === 0) {
+        r.endAt += ENDLESS.comboMs;
+        notes.push(`${r.streak} in a row! +${ENDLESS.comboMs / 1000}s`);
       }
       if (out.scratch) {
         r.endAt -= ENDLESS.scratchMs;
@@ -1133,7 +1140,7 @@ export default function PoolGame(_props: GameProps) {
   const endlessCard = (
     <div className="ol-card pl-settings">
       <p className="ol-sub pl-cpu-note">
-        Solo, offline, against the clock. You start with {ENDLESS.startMs / 1000}s: every ball you pot scores and adds time, potting on shot after shot builds a combo (up to ×{ENDLESS.maxCombo}),
+        Solo, offline, against the clock. You start with {ENDLESS.startMs / 1000}s: every ball you pot adds {ENDLESS.ballMs / 1000}s, and every {ENDLESS.comboEvery} potting shots in a row add {ENDLESS.comboMs / 1000}s more (the combo also multiplies your points, up to ×{ENDLESS.maxCombo});
         a scratch costs {ENDLESS.scratchMs / 1000}s. Clear the table for a new rack and a bonus.
       </p>
       {readBest() > 0 ? (
