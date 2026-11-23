@@ -16,6 +16,7 @@ import { OfflineNotice } from "../components/OnlineLobby";
 import { useShop } from "../lib/shop";
 import { levelForXp } from "../lib/shopCatalog";
 import { MatchRewardLine, useMatchReport } from "../lib/matchReport";
+import { useMatchChat } from "../components/chat/MatchChat";
 
 const MODES: { id: MatchMode; label: string; blurb: string }[] = [
   { id: "race", label: "Race", blurb: "Same board for both. First to clear it wins — 3 lives." },
@@ -232,6 +233,9 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
   }, []);
 
   /* ---------- gates ---------- */
+  // stickers / emoji / phrases with the other player, in the room and during the race
+  useMatchChat(roomCode && phase !== "menu" ? `arrows:${roomCode}` : null, { id: netRef.current?.clientId ?? "", name: myName });
+
   if (!isOnlineNow && phase === "menu") {
     return (
       <div className="game-surface arw-surface arw-online">

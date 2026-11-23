@@ -1,0 +1,399 @@
+/* /rewards (RewardsPage.tsx) + achievements on profiles */
+.rw-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.rw-hero-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  color: #1f0c00;
+  background: linear-gradient(145deg, #ff9d52, #f26a0c);
+  box-shadow: 0 12px 26px -12px rgba(244, 96, 0, 0.8);
+}
+
+.rw-hero-text {
+  flex: 1 1 260px;
+}
+
+.rw-hero h1 {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 32px);
+  color: var(--ac-text);
+}
+
+.rw-hero .ac-sub {
+  margin: 4px 0 0;
+}
+
+.rw-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  flex: 1 1 100%;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rw-stats li {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  border-radius: 14px;
+  box-shadow: var(--ac-well);
+  text-align: center;
+}
+
+.rw-stats b {
+  font-size: 20px;
+}
+
+.rw-stats small {
+  font-size: 11.5px;
+  color: var(--ac-muted);
+}
+
+@media (max-width: 480px) {
+  .rw-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* "Ways to earn" (server not ready / guests) */
+.rw-guide {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+  gap: clamp(12px, 2vw, 18px);
+}
+
+.rw-way {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.rw-way .ac-sub {
+  margin: 0;
+}
+
+.rw-way-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: var(--ac-accent);
+  box-shadow: var(--ac-well);
+}
+
+.rw-soon {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ac-muted);
+  box-shadow: var(--ac-well);
+}
+
+.rw-signin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rw-signin p {
+  margin: 0;
+}
+
+.rw-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: var(--ac-accent);
+}
+
+.rw-head .ac-h2 {
+  margin: 0;
+  color: var(--ac-text);
+}
+
+.rw-pill {
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ac-muted);
+  box-shadow: var(--ac-well);
+}
+
+.rw-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.rw-row .ac-sub {
+  margin: 0;
+}
+
+/* daily streak */
+.rw-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rw-days li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 10px 4px;
+  border-radius: 14px;
+  box-shadow: var(--ac-well);
+  font-size: 13px;
+}
+
+.rw-days li small {
+  color: var(--ac-muted);
+  font-size: 11px;
+}
+
+.rw-days li b {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.rw-days li.is-done {
+  color: var(--ac-good);
+}
+
+.rw-days li.is-today {
+  box-shadow: inset 0 0 0 2px var(--ac-accent);
+}
+
+.rw-days li svg:last-child {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+@media (max-width: 520px) {
+  .rw-days {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* challenges */
+.rw-challenges,
+.rw-tours,
+.rw-fc {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.rw-challenges li,
+.rw-tours li,
+.rw-fc li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  box-shadow: var(--ac-well);
+}
+
+.rw-challenges li.is-claimed {
+  opacity: 0.65;
+}
+
+.rw-ch-text,
+.rw-tours li > div,
+.rw-fc li > div {
+  display: grid;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+
+.rw-ch-text small,
+.rw-tours small,
+.rw-fc small {
+  color: var(--ac-muted);
+  font-size: 12.5px;
+}
+
+.rw-bar {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--ac-text) 10%, transparent);
+}
+
+.rw-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff9d52, #f26a0c);
+}
+
+.rw-claimed {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  color: var(--ac-good);
+}
+
+/* weekly board */
+.rw-board {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rw-board li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 12px;
+}
+
+.rw-board li.is-me {
+  box-shadow: inset 0 0 0 2px var(--ac-accent);
+}
+
+.rw-rank {
+  width: 22px;
+  text-align: center;
+  font-weight: 800;
+  color: var(--ac-muted);
+}
+
+.rw-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rw-empty {
+  color: var(--ac-muted);
+}
+
+/* forms */
+.rw-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.rw-form input,
+.rw-form select {
+  flex: 1 1 180px;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  color: var(--ac-text);
+  background: var(--ac-bg);
+  box-shadow: var(--ac-well);
+}
+
+.rw-fc li.is-beaten,
+.rw-fc li.is-held {
+  opacity: 0.75;
+}
+
+.rw-tour-top {
+  font-weight: 600;
+}
+
+/* achievements */
+.rw-ach {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rw-ach li {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 16px;
+  box-shadow: var(--ac-well);
+  opacity: 0.6;
+}
+
+.rw-ach li.is-on {
+  opacity: 1;
+  box-shadow: var(--ac-raise-sm);
+}
+
+.rw-ach-icon {
+  font-size: 26px;
+  line-height: 1;
+  filter: grayscale(1);
+}
+
+.rw-ach li.is-on .rw-ach-icon {
+  filter: none;
+}
+
+.rw-ach small {
+  color: var(--ac-muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.rw-ach-got {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--ac-good) !important;
+}
+
+.rw-ach-reward {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}

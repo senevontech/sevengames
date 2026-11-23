@@ -5,8 +5,9 @@ import "./shop.css";
 
 /* Carrom's shop needs the Carrom game code (its items + progress): only fetched when picked */
 const CarromShop = lazy(() => import("./CarromShop"));
+const ChatPackShop = lazy(() => import("./chat/ChatPackShop"));
 
-type HubTab = ShopScope | "carrom";
+type HubTab = ShopScope | "carrom" | "chat";
 
 const TABS: { id: HubTab; label: string }[] = [
   { id: "arrows", label: "Arrows" },
@@ -14,6 +15,7 @@ const TABS: { id: HubTab; label: string }[] = [
   { id: "ludo", label: "Ludo" },
   { id: "carrom", label: "Carrom" },
   { id: "frames", label: "Avatar frames" },
+  { id: "chat", label: "Chat packs" },
 ];
 
 const KEY = "senevon:shop-hub-tab";
@@ -75,6 +77,10 @@ export default function ShopHub() {
         {tab === "carrom" ? (
           <Suspense fallback={<p className="ac-sub">Opening the Carrom shop…</p>}>
             <CarromShop />
+          </Suspense>
+        ) : tab === "chat" ? (
+          <Suspense fallback={<p className="ac-sub">Opening chat packs…</p>}>
+            <ChatPackShop />
           </Suspense>
         ) : (
           <ShopSection key={tab} scope={tab} embedded />

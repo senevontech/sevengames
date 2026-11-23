@@ -7,6 +7,8 @@ import { defaultSettings, type SiteSettings } from "../../lib/siteSettings";
 import AdsManager from "./AdsManager";
 import TokensTab from "./TokensTab";
 import DashboardTab from "./DashboardTab";
+import EngagementTab from "./EngagementTab";
+import LeadsTab from "./LeadsTab";
 import { excludeThisDevice, isDeviceExcluded, thisVisitorId } from "../../lib/track";
 
 type Stats = {
@@ -384,11 +386,13 @@ function ProTab() {
 
 /* ---------- shell ---------- */
 
-type Tab = "overview" | "traffic" | "games" | "ads" | "tokens" | "pro" | "settings";
+type Tab = "overview" | "traffic" | "games" | "engagement" | "leads" | "ads" | "tokens" | "pro" | "settings";
 const TABS: [Tab, string][] = [
   ["overview", "Dashboard"],
   ["traffic", "Traffic"],
   ["games", "Games"],
+  ["engagement", "Engagement"],
+  ["leads", "Leads"],
   ["ads", "Ads"],
   ["tokens", "Tokens"],
   ["pro", "Pro"],
@@ -442,7 +446,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             ))}
           </nav>
           <div className="adm-bar-right">
-            {tab !== "overview" && tab !== "ads" && tab !== "settings" && tab !== "pro" && tab !== "tokens" ? (
+            {(tab === "traffic" || tab === "games") ? (
               <select value={days} onChange={(e) => setDays(Number(e.target.value))} aria-label="Date range">
                 <option value={7}>Last 7 days</option>
                 <option value={30}>Last 30 days</option>
@@ -465,9 +469,11 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         {tab === "games" && stats ? <GamesTab s={stats} /> : null}
         {tab === "ads" ? <AdsManager stats={stats?.ads} /> : null}
         {tab === "settings" ? <SettingsTab /> : null}
+        {tab === "engagement" ? <EngagementTab /> : null}
+        {tab === "leads" ? <LeadsTab /> : null}
         {tab === "pro" ? <ProTab /> : null}
         {tab === "tokens" ? <TokensTab /> : null}
-        {!stats && !err && tab !== "overview" && tab !== "ads" && tab !== "settings" && tab !== "pro" && tab !== "tokens" ? <p className="adm-empty">Loading…</p> : null}
+        {!stats && !err && (tab === "traffic" || tab === "games") ? <p className="adm-empty">Loading…</p> : null}
       </main>
     </div>
   );

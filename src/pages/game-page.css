@@ -661,3 +661,36 @@
     border-radius: 18px;
   }
 }
+
+/* Plus-only / early-access game, for non-members (GamePage) */
+.gp-pluslock {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  max-width: 440px;
+  margin: auto;
+  padding: 32px 22px;
+  text-align: center;
+}
+
+.gp-pluslock h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.gp-pluslock p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.gp-pluslock-badge {
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 20px;
+  color: #1f0c00;
+  background: linear-gradient(145deg, #ffd27a, #f2a20c);
+  box-shadow: 0 12px 28px -12px rgba(242, 162, 12, 0.9);
+}

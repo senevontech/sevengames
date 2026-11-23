@@ -17,6 +17,9 @@ export default function SoftFooter() {
           <Link className="g2-pill g2-pill-sm" to="/about">
             About us
           </Link>
+          <Link className="g2-pill g2-pill-sm" to="/business">
+            For business
+          </Link>
         </nav>
       </div>
     </footer>

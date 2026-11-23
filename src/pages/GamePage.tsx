@@ -5,7 +5,10 @@ import { isNative, openExternal } from "../lib/native";
 import { asksForApp, openGameApp, openGameWeb } from "../lib/externalGames";
 import { openExternalGame } from "../components/ExternalGamePrompt";
 import { Link, useParams } from "react-router-dom";
-import { ChevronLeft, ExternalLink, Info, Maximize, Minimize, Minimize2, Smartphone, Store, Trophy, X } from "lucide-react";
+import { ChevronLeft, Crown, ExternalLink, Info, Maximize, Minimize, Minimize2, Smartphone, Store, Trophy, X } from "lucide-react";
+import { useGameAccess } from "../lib/engagement";
+import { MatchChatHost } from "../components/chat/MatchChat";
+import { useShop } from "../lib/shop";
 import { GamePoster } from "../components/GamePoster";
 import { getGame, scoreLabel } from "../catalog";
 import { engines, previews } from "../games";
@@ -103,6 +106,14 @@ export default function GamePage() {
   premiumRef.current = premium;
   const [paidPlay, setPaidPlay] = useState(0);
   const showAds = useShowAds();
+  // Plus-only / early-access games (admin → Engagement): members play, others see the Plus offer
+  const access = useGameAccess(game?.id);
+  const shopState = useShop().state;
+  const plusMember =
+    Boolean(shopState?.plus) ||
+    Boolean(wallet?.unlimited) ||
+    Boolean(wallet?.subscription && new Date(wallet.subscription.period_end).getTime() > Date.now());
+  const plusLocked = Boolean(access) && !plusMember;
   const showAdsRef = useRef(showAds);
   showAdsRef.current = showAds;
   const [locked, setLocked] = useState(false);
@@ -339,7 +350,7 @@ export default function GamePage() {
               // free games start on the first touch; paid ones when "Start game" is paid
               // (not while the "new window" question is up for a web game)
               // (web games never play here: they open on their own site)
-              if (!playing && game.kind !== "iframe" && cost !== null && !selfGated && !(premium && (paidPlay === 0 || locked))) setPlaying(true);
+              if (!playing && !plusLocked && game.kind !== "iframe" && cost !== null && !selfGated && !(premium && (paidPlay === 0 || locked))) setPlaying(true);
             }}
           >
             {playing ? (
@@ -377,8 +388,23 @@ export default function GamePage() {
                 <span>Exit</span>
               </button>
             ) : null}
-            {cost === null ? (
+            {cost === null || access === undefined ? (
               <p className="empty-note">Loading…</p>
+            ) : plusLocked ? (
+              <div className="gp-pluslock" role="region" aria-label="Senevon Plus game">
+                <span className="gp-pluslock-badge" aria-hidden="true">
+                  <Crown size={26} />
+                </span>
+                <h2>{access === "early" ? "Early access for Plus members" : "A Senevon Plus exclusive"}</h2>
+                <p>
+                  {access === "early"
+                    ? `${game.title} is in early access. Senevon Plus members play it first; everyone else gets it soon.`
+                    : `${game.title} is included with Senevon Plus, along with no ads, 5,000 tokens a month and a bigger daily reward.`}
+                </p>
+                <Link className="primary-btn" to={user ? "/tokens#plus" : `/login?next=/game/${game.id}`}>
+                  {user ? "See Senevon Plus" : "Sign in"}
+                </Link>
+              </div>
             ) : premium && paidPlay === 0 && !selfGated ? (
               // preview of the game with the start bar UNDER it
               <FitBox maxScale={1.5}>
@@ -500,6 +526,8 @@ export default function GamePage() {
           </button>
         </p>
       ) : null}
+      {/* online matches / lobbies: stickers, emoji and phrases */}
+      <MatchChatHost />
     </div>
     </GameShopProvider>
   );

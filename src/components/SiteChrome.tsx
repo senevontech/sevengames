@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Coins, House, Menu, Moon, Smartphone, Sun, Trophy, UserRound, X } from "lucide-react";
+import { Building2, Coins, Gift, House, Menu, Moon, Smartphone, Sun, Trophy, UserRound, X } from "lucide-react";
 import { categories, games } from "../catalog";
 import { categoryIcon } from "../lib/categoryIcons";
 import NavAccount from "./NavAccount";
@@ -87,11 +87,23 @@ function SiteMenu({ pathname }: { pathname: string }) {
               })}
           </div>
           <div className="site-menu-sep" />
+          <Link to="/rewards" className="site-menu-item">
+            <span className="site-menu-icon" aria-hidden="true">
+              <Gift size={16} />
+            </span>
+            Rewards
+          </Link>
           <Link to="/tokens" className="site-menu-item">
             <span className="site-menu-icon" aria-hidden="true">
               <Coins size={16} />
             </span>
             Tokens & frames
+          </Link>
+          <Link to="/business" className="site-menu-item">
+            <span className="site-menu-icon" aria-hidden="true">
+              <Building2 size={16} />
+            </span>
+            For business
           </Link>
           <Link to="/profile" className="site-menu-item">
             <span className="site-menu-icon" aria-hidden="true">

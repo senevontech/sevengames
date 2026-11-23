@@ -3,6 +3,7 @@ import { adminCall } from "../../lib/adminApi";
 import { games } from "../../catalog";
 import { loadGamePrices } from "../../lib/tokens";
 import { loadShopPrices } from "../../lib/shop";
+import { BUILTIN_PACKS } from "../../lib/chatPacks";
 import { ARROW_BOARDS, ARROW_FX, ARROW_HEADS, ARROW_SKINS, BOOSTERS, CHESS_BOARDS, CHESS_PIECES, FRAMES, LUDO_BOARDS, LUDO_DICE } from "../../lib/shopCatalog";
 
 type Config = {
@@ -533,13 +534,14 @@ function GamePrices({
   );
 }
 
-type ShopItemRow = { item_id: string; kind: string; price: number; grants: string | null; qty: number; active: boolean; sort: number };
+type ShopItemRow = { item_id: string; kind: string; price: number; grants: string | null; qty: number; active: boolean; sort: number; plus_only?: boolean };
 
 const SHOP_KIND_LABEL: Record<string, string> = {
   arrow_skin: "Arrows · style",
   arrow_fx: "Arrows · effect",
   arrow_board: "Arrows · board",
   arrow_head: "Arrows · head",
+  chat_pack: "Chat pack",
   frame: "Avatar frame",
   booster: "Booster pack",
   chess_board: "Chess · board",
@@ -553,6 +555,7 @@ const shopItemName = (id: string) =>
   ARROW_FX[id]?.name ??
   ARROW_BOARDS[id]?.name ??
   ARROW_HEADS[id]?.name ??
+  BUILTIN_PACKS.find((p) => p.id === id)?.name ??
   FRAMES[id]?.name ??
   BOOSTERS[id]?.name ??
   CHESS_BOARDS[id]?.name ??
@@ -576,7 +579,7 @@ function ShopPrices() {
     void load();
   }, []);
 
-  async function save(row: ShopItemRow, patch: { price?: number; active?: boolean }, done: string) {
+  async function save(row: ShopItemRow, patch: { price?: number; active?: boolean; plus_only?: boolean }, done: string) {
     setMsg("");
     try {
       await adminCall("shop_item_set", { item_id: row.item_id, ...patch });
@@ -598,7 +601,8 @@ function ShopPrices() {
       <h3>Shop</h3>
       <p className="adm-note">
         Token prices for shop items. Price 0 on a style or effect makes it free for everyone. Turning an item off hides it
-        from sale; players who bought it keep it.
+        from sale; players who bought it keep it. "Plus only" makes an item a Senevon Plus exclusive: members get it free,
+        nobody else can buy it.
       </p>
       {msg ? <p className="adm-note adm-msg">{msg}</p> : null}
       {items ? (
@@ -609,6 +613,7 @@ function ShopPrices() {
                 <th>Item</th>
                 <th>Tokens</th>
                 <th>On sale</th>
+                <th>Plus only</th>
                 <th />
               </tr>
             </thead>
@@ -641,6 +646,20 @@ function ShopPrices() {
                         aria-label={`${name} on sale`}
                         onChange={(e) => void save(row, { active: e.target.checked }, `${name} ${e.target.checked ? "is on sale" : "is off sale"}.`)}
                       />
+                    </td>
+                    <td>
+                      {row.kind === "booster" || row.plus_only === undefined ? (
+                        <span className="adm-note">–</span>
+                      ) : (
+                        <input
+                          type="checkbox"
+                          checked={row.plus_only}
+                          aria-label={`${name} Plus only`}
+                          onChange={(e) =>
+                            void save(row, { plus_only: e.target.checked }, `${name} ${e.target.checked ? "is now a Plus exclusive" : "is for everyone again"}.`)
+                          }
+                        />
+                      )}
                     </td>
                     <td>
                       <button

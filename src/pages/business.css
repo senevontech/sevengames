@@ -1,0 +1,140 @@
+/* /business (BusinessPage.tsx) */
+.biz-hero {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+
+.biz-hero h1 {
+  margin: 0;
+  font-size: clamp(26px, 5vw, 42px);
+  line-height: 1.1;
+}
+
+.biz-hero .ac-sub {
+  max-width: 60ch;
+  margin: 0;
+}
+
+.biz-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ac-accent);
+}
+
+.biz-services {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+  gap: 14px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.biz-services li {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.biz-services svg {
+  color: var(--ac-accent);
+}
+
+.biz-services .ac-sub {
+  margin: 0;
+}
+
+.biz-prices {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.biz-prices li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  box-shadow: var(--ac-well);
+}
+
+.biz-prices li div {
+  display: grid;
+  gap: 2px;
+}
+
+.biz-prices small {
+  color: var(--ac-muted);
+  font-size: 12.5px;
+}
+
+.biz-prices strong {
+  font-size: 18px;
+  white-space: nowrap;
+}
+
+.biz-for {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.biz-for svg {
+  flex: none;
+  color: var(--ac-accent);
+}
+
+.biz-for p {
+  margin: 0;
+}
+
+.biz-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.biz-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ac-muted);
+}
+
+.biz-form input,
+.biz-form select,
+.biz-form textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ac-text);
+  background: var(--ac-bg);
+  box-shadow: var(--ac-well);
+}
+
+.biz-form textarea {
+  resize: vertical;
+}
+
+.biz-wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 560px) {
+  .biz-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

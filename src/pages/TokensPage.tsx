@@ -39,6 +39,15 @@ const REASON: Record<string, { label: string; Icon: LucideIcon }> = {
   purchase: { label: "Bought a token pack", Icon: ShoppingBag },
   carrom: { label: "Carrom shop", Icon: Gamepad2 },
   adfree: { label: "Ad-free month", Icon: ShieldCheck },
+  shop: { label: "Shop", Icon: ShoppingBag },
+  match: { label: "Online win", Icon: Gamepad2 },
+  daily: { label: "Daily reward", Icon: Gift },
+  challenge: { label: "Daily challenge", Icon: Check },
+  achievement: { label: "Achievement", Icon: Sparkles },
+  referral: { label: "Invited a friend", Icon: Gift },
+  weekly: { label: "Weekly competition prize", Icon: Crown },
+  friend: { label: "Friend challenge", Icon: Zap },
+  tournament: { label: "Tournament", Icon: Crown },
 };
 
 const PACK_META: Record<string, { name: string; flag?: string; coins: number }> = {
@@ -335,8 +344,11 @@ export default function TokensPage() {
       <section className="tw-section" id="plus">
         <div className="ac-section-head">
           <div>
-            <h2 className="ac-h2">Subscribe</h2>
-            <p className="ac-sub">The best value: {formatTokens(perMonth)} tokens every month. Ad-free, with everything in DroidDoom unlocked. Cancel any time.</p>
+            <h2 className="ac-h2">Senevon Plus</h2>
+            <p className="ac-sub">
+              The best value: {formatTokens(perMonth)} tokens every month, no ads, double daily rewards (+50 bonus a day), Plus-only games and early
+              access, and Plus-exclusive shop items free. Everything in DroidDoom unlocked. Cancel any time.
+            </p>
           </div>
         </div>
         {sub ? (

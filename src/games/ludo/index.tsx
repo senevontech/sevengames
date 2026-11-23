@@ -8,21 +8,26 @@ import type { GameProps } from "../index";
 import LudoBoard, { Die, useShownTokens } from "./Board";
 import { COLOR_KEYS, COLOR_NAMES, cpuPick, current, movable, move, newGame, pass, roll, type Color, type LudoState } from "./engine";
 import { useAuthContext } from "../../context/AuthContext";
-import { useAvatar, type AvatarChoice } from "../../lib/avatar";
+import { useAvatar, useAvatarUri, type AvatarChoice } from "../../lib/avatar";
+import { seatPaints } from "./paint";
 import { useShop } from "../../lib/shop";
-import { levelForXp, ludoBoardOf, ludoDiceOf, xpForLevel } from "../../lib/shopCatalog";
+import { levelForXp, ludoBoardOf, ludoDiceOf, ludoTokenOf, xpForLevel } from "../../lib/shopCatalog";
 import { GameRoom, type RoomMsg, type RoomPeer, type RoomStatus } from "../../lib/gameRoom";
 import { useCarromLobby, type LobbyApi, type Matched } from "../carrom/matchmaking";
 import { OnlineMenu, RoomWaiting, SignInToPlay } from "../../components/OnlineLobby";
 import PlayerAvatar from "../../components/PlayerAvatar";
 import "./ludo.css";
 import { GameShopButton } from "../gameShop";
+import { useMatchChat } from "../../components/chat/MatchChat";
+import { OutcomeIcon, type Outcome } from "../ResultBanner";
+import "../result-banner.css";
 import { MatchRewardLine, newMatchId, useMatchReport } from "../../lib/matchReport";
 import PlayFlow from "../PlayFlow";
 import { Bot, Globe, Users } from "lucide-react";
 
 type Mode = "cpu" | "pass" | "online";
-type Seat = { kind: "human" | "cpu"; name: string; clientId?: string; userId?: string; avatar?: AvatarChoice | null; timeouts?: number };
+/** `tint`: the player's token colour (shop slot ludo_token), shown to everyone. */
+type Seat = { kind: "human" | "cpu"; name: string; clientId?: string; userId?: string; avatar?: AvatarChoice | null; tint?: string | null; timeouts?: number };
 
 const TURN_MS = 15_000;
 const CPU_DELAY = 650;
@@ -85,6 +90,8 @@ export default function LudoGame(_props: GameProps) {
   const shop = useShop();
   const theme = ludoBoardOf(shop.equippedIn("ludo_board"));
   const diceStyle = ludoDiceOf(shop.equippedIn("ludo_dice"));
+  // your token colour (nothing equipped = the board's seat colour)
+  const myTint = ludoTokenOf(shop.equippedIn("ludo_token")) ? shop.equippedIn("ludo_token") : null;
   const meta = user?.user_metadata ?? {};
   const myName = ((meta.full_name as string | undefined) || (meta.name as string | undefined) || user?.email?.split("@")[0] || "You").slice(0, 40);
 
@@ -266,7 +273,7 @@ export default function LudoGame(_props: GameProps) {
     setMode(m);
     const list: Seat[] =
       m === "cpu"
-        ? Array.from({ length: n }, (_, i) => (i === 0 ? { kind: "human", name: myName, userId: user?.id, avatar: myAvatar } : { kind: "cpu", name: `CPU ${i}` }))
+        ? Array.from({ length: n }, (_, i) => (i === 0 ? { kind: "human", name: myName, userId: user?.id, avatar: myAvatar, tint: myTint } : { kind: "cpu", name: `CPU ${i}` }))
         : Array.from({ length: n }, (_, i) => ({ kind: "human", name: `Player ${i + 1}` }));
     setSeats(list);
     seatsRef.current = list;
@@ -280,7 +287,7 @@ export default function LudoGame(_props: GameProps) {
   }
 
   /* ----- online ----- */
-  const me = () => ({ userId: user?.id ?? "", name: myName, avatar: myAvatar });
+  const me = () => ({ userId: user?.id ?? "", name: myName, avatar: myAvatar, look: myTint });
 
   const onMessage = useCallback(
     (msg: RoomMsg) => {
@@ -334,7 +341,7 @@ export default function LudoGame(_props: GameProps) {
     const n = Number(room.settings.seats) || 2;
     const list: Seat[] = Array.from({ length: n }, (_, i) => {
       const p = room.players[i];
-      return p ? { kind: "human", name: p.name, clientId: p.clientId, userId: p.userId, avatar: p.avatar, timeouts: 0 } : { kind: "cpu", name: `CPU ${i}` };
+      return p ? { kind: "human", name: p.name, clientId: p.clientId, userId: p.userId, avatar: p.avatar, tint: p.look ?? null, timeouts: 0 } : { kind: "cpu", name: `CPU ${i}` };
     });
     setMode("online");
     setSeats(list);
@@ -467,6 +474,25 @@ export default function LudoGame(_props: GameProps) {
     return out;
   }, [st.colors, seats]);
 
+  // seat colours (players' own colours, clashes swapped) and pictures for the board
+  const paints = useMemo(() => seatPaints(theme, st.colors, st.colors.map((_, i) => seats[i]?.tint)), [theme, st.colors, seats]);
+  const avatarSeat = (i: number) => (seats[i]?.kind === "human" ? seats[i]?.avatar ?? null : null);
+  const av0 = useAvatarUri(avatarSeat(0));
+  const av1 = useAvatarUri(avatarSeat(1));
+  const av2 = useAvatarUri(avatarSeat(2));
+  const av3 = useAvatarUri(avatarSeat(3));
+  const avatars = useMemo(() => {
+    const out: Partial<Record<Color, string>> = {};
+    [av0, av1, av2, av3].forEach((uri, i) => {
+      if (uri && st.colors[i] !== undefined) out[st.colors[i]] = uri;
+    });
+    return out;
+  }, [av0, av1, av2, av3, st.colors]);
+  // menu preview: your colour and picture on the first seat
+  const myUri = useAvatarUri(user ? myAvatar ?? null : null);
+  const previewPaints = useMemo(() => seatPaints(theme, st.colors, [myTint]), [theme, st.colors, myTint]);
+  const previewAvatars = useMemo(() => (myUri ? ({ [st.colors[0]]: myUri } as Partial<Record<Color, string>>) : {}), [myUri, st.colors]);
+
   const seatPicker = (value: number, set: (n: number) => void, options: number[], label: string) => (
     <div className="ol-seg" role="radiogroup" aria-label={label}>
       {options.map((n) => (
@@ -476,6 +502,12 @@ export default function LudoGame(_props: GameProps) {
       ))}
     </div>
   );
+
+  // stickers / emoji / phrases with the other players, in the room and during the match
+  useMatchChat(mode === "online" || screen === "room" ? (roomRef.current ? `ludo:${roomRef.current.code}` : null) : null, {
+    id: roomRef.current?.clientId ?? "",
+    name: myName,
+  });
 
   if (screen === "room" && roomRef.current) {
     const room = roomRef.current;
@@ -519,7 +551,7 @@ export default function LudoGame(_props: GameProps) {
           preview={
             <div className="pf-preview lu-preview" inert>
               <div className="lu-board-wrap" style={{ "--lu-line": theme.line } as React.CSSProperties}>
-                <LudoBoard s={st} shown={shown} theme={theme} dice={diceStyle} choices={[]} onPick={() => {}} labels={labels} />
+                <LudoBoard s={st} shown={shown} theme={theme} dice={diceStyle} choices={[]} onPick={() => {}} labels={labels} paints={previewPaints} avatars={previewAvatars} />
               </div>
             </div>
           }
@@ -598,6 +630,8 @@ export default function LudoGame(_props: GameProps) {
   const boardRot = (2 - viewColor + 4) % 4;
   const winnerSeat = st.winner === null ? -1 : st.colors.indexOf(st.winner);
   const iWon = st.phase === "over" && winnerSeat >= 0 && winnerSeat === mySeat;
+  // result card look: a win for you (or whoever won on a shared device), a loss, or neutral
+  const resultOutcome: Outcome = hostGone ? "draw" : mode === "pass" || mySeat < 0 || iWon ? "win" : "lose";
   const turnName = seatNow?.name ?? COLOR_NAMES[turnColor];
   const status =
     st.phase === "over"
@@ -617,14 +651,14 @@ export default function LudoGame(_props: GameProps) {
           : `${turnName}'s turn`;
 
   return (
-    <div className="game-surface lu-surface" style={{ "--lu-turn": theme[COLOR_KEYS[turnColor]] } as React.CSSProperties}>
+    <div className="game-surface lu-surface" style={{ "--lu-turn": paints[turnColor].solid } as React.CSSProperties}>
       {/* players */}
       <ul className="lu-players">
         {st.colors.map((c, i) => {
           const seat = seats[i];
           const home = st.tokens[c].filter((p) => p === 56).length;
           return (
-            <li key={c} className={`${i === st.turn && st.phase !== "over" ? "is-turn" : ""}${i === mySeat ? " is-me" : ""}`} style={{ "--lu-c": theme[COLOR_KEYS[c]] } as React.CSSProperties}>
+            <li key={c} className={`${i === st.turn && st.phase !== "over" ? "is-turn" : ""}${i === mySeat ? " is-me" : ""}`} style={{ "--lu-c": paints[c].solid } as React.CSSProperties}>
               {seat?.userId ? (
                 <PlayerAvatar id={seat.userId} name={seat.name} avatar={seat.avatar ?? null} size={22} className="lb-initial lu-av" />
               ) : (
@@ -639,45 +673,53 @@ export default function LudoGame(_props: GameProps) {
       </ul>
 
       <div className="lu-board-wrap" style={{ "--lu-line": theme.line } as React.CSSProperties}>
-        <LudoBoard s={st} shown={shown} theme={theme} dice={diceStyle} choices={choices} onPick={myMove} labels={labels} rot={boardRot} />
+        <LudoBoard s={st} shown={shown} theme={theme} dice={diceStyle} choices={choices} onPick={myMove} labels={labels} rot={boardRot} paints={paints} avatars={avatars} />
         {st.phase === "over" || hostGone ? (
-          <div className="lu-overlay">
-            <div className={`lu-card${iWon ? " is-win" : st.phase === "over" && mode !== "pass" && mySeat >= 0 ? " is-loss" : ""}`}>
+          // same flat result card as every other game (ResultBanner), with Ludo's own buttons
+          <div className={`rb rb-${resultOutcome} lu-result`} role="dialog" aria-modal="false" aria-live="assertive">
+            <div className="rb-card">
+              <OutcomeIcon outcome={resultOutcome} />
               {hostGone ? (
                 <>
-                  <h3>The host left</h3>
-                  <p>This game can't go on without them.</p>
+                  <h3 className="rb-title">The host left</h3>
+                  <p className="rb-detail">This game can't go on without them.</p>
                 </>
               ) : (
                 <>
-                  <h3>{mode === "pass" || mySeat < 0 ? `${seats[winnerSeat]?.name ?? COLOR_NAMES[st.winner!]} wins!` : iWon ? "You won! 🏆" : "You lost"}</h3>
-                  <p>{mode !== "pass" && mySeat >= 0 && !iWon ? `${seats[winnerSeat]?.name ?? "Someone"} got all four tokens home first.` : "All four tokens home."}</p>
+                  <h3 className="rb-title">
+                    {mode === "pass" || mySeat < 0 ? `${seats[winnerSeat]?.name ?? COLOR_NAMES[st.winner!]} wins!` : iWon ? "You won!" : "You lost"}
+                  </h3>
+                  <p className="rb-detail">
+                    {mode !== "pass" && mySeat >= 0 && !iWon
+                      ? `${seats[winnerSeat]?.name ?? "Someone"} got all four tokens home first.`
+                      : "All four tokens home."}
+                  </p>
                   {mode === "online" ? <MatchRewardLine reward={matchReport.reward} /> : xpGain ? <p className="lu-xp-gain">+{xpGain} XP</p> : null}
                 </>
               )}
-              <div className="lu-actions">
+              <div className="rb-actions lu-result-actions">
                 {online ? (
                   <>
-                    <button type="button" className="ghost-btn" onClick={leaveOnline}>
-                      Leave
-                    </button>
                     {roomRef.current?.isHost && !hostGone ? (
-                      <button type="button" className="primary-btn" onClick={hostStartOnline}>
+                      <button type="button" className="rb-btn rb-btn-main" onClick={hostStartOnline}>
                         Play again
                       </button>
                     ) : !hostGone ? (
-                      <span className="ol-sub">Waiting for the host…</span>
+                      <p className="lu-result-wait">Waiting for the host…</p>
                     ) : null}
+                    <button type="button" className="rb-btn rb-btn-ghost" onClick={leaveOnline}>
+                      Leave
+                    </button>
                   </>
                 ) : (
                   <>
-                    <button type="button" className="ghost-btn" onClick={() => setScreen("menu")}>
-                      Menu
-                    </button>
-                    <GameShopButton />
-                    <button type="button" className="primary-btn" onClick={() => startLocal(mode, st.colors.length)}>
+                    <button type="button" className="rb-btn rb-btn-main" onClick={() => startLocal(mode, st.colors.length)}>
                       Play again
                     </button>
+                    <button type="button" className="rb-btn rb-btn-ghost" onClick={() => setScreen("menu")}>
+                      Menu
+                    </button>
+                    <GameShopButton className="rb-btn rb-btn-ghost" />
                   </>
                 )}
               </div>
@@ -691,7 +733,7 @@ export default function LudoGame(_props: GameProps) {
           value={st.dice}
           rollId={st.rolls}
           style={diceStyle}
-          color={theme[COLOR_KEYS[turnColor]]}
+          color={paints[turnColor].solid}
           onClick={myTurn && st.phase === "roll" ? myRoll : undefined}
         />
         <p className="lu-status" aria-live="polite">

@@ -10,7 +10,7 @@ export type Outcome = "win" | "lose" | "draw";
 const TITLES: Record<Outcome, string> = { win: "You won!", lose: "You lost", draw: "It's a draw" };
 
 /* Line-drawn icon: a ring draws itself, then the symbol inside, then (on a win) sparks fly out. */
-function OutcomeIcon({ outcome }: { outcome: Outcome }) {
+export function OutcomeIcon({ outcome }: { outcome: Outcome }) {
   return (
     <svg className="rb-svg" viewBox="0 0 64 64" width="88" height="88" aria-hidden="true">
       <circle className="rb-ring" cx="32" cy="32" r="28" pathLength={1} />

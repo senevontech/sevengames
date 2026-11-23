@@ -16,6 +16,8 @@ import "./account.css";
 import "./profile.css";
 import AvatarFrame from "../components/AvatarFrame";
 import FriendsSection from "../components/FriendsSection";
+import AchievementGrid from "../components/AchievementGrid";
+import { achievementsSync, type Achievement } from "../lib/engagement";
 
 /** One game's saved level, with a two-step reset. */
 function ProgressRow({ gameId }: { gameId: string }) {
@@ -77,6 +79,13 @@ export default function Profile() {
   useEffect(() => {
     document.title = "Profile — Senevon Game Studio";
   }, []);
+
+  // achievements: unlock (and pay for) any newly reached, then show them all
+  const [ach, setAch] = useState<Achievement[] | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    void achievementsSync().then((r) => setAch(r.list), () => setAch(null));
+  }, [user]);
 
   // "/profile#avatars" (from the nav avatar menu) jumps straight to the library.
   useEffect(() => {
@@ -259,6 +268,8 @@ export default function Profile() {
         </section>
 
         <FriendsSection />
+
+        {ach ? <AchievementGrid list={ach} /> : null}
 
         <section className="ac-card pf-progress">
           <div className="ac-section-head">

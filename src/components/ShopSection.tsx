@@ -18,6 +18,7 @@ import {
   FRAMES,
   LUDO_BOARDS,
   LUDO_DICE,
+  LUDO_TOKENS,
   chessPiecesOf,
   frameClass,
   type ShopSlot,
@@ -27,7 +28,7 @@ import "../pages/account.css";
 import "./shop.css";
 import "../games/arrows.css";
 
-type Tab = "skins" | "fx" | "boards" | "heads" | "frames" | "boosters" | "chessBoards" | "chessPieces" | "ludoBoards" | "ludoDice";
+type Tab = "skins" | "fx" | "boards" | "heads" | "frames" | "boosters" | "chessBoards" | "chessPieces" | "ludoBoards" | "ludoDice" | "ludoTokens";
 
 /** Which shop: one per game (shown inside that game), plus avatar frames on the Tokens page. */
 export type ShopScope = "arrows" | "chess" | "ludo" | "frames";
@@ -58,6 +59,7 @@ const SCOPES: Record<ShopScope, { title: string; sub: string; tabs: { id: Tab; l
     tabs: [
       { id: "ludoBoards", label: "Boards" },
       { id: "ludoDice", label: "Dice" },
+      { id: "ludoTokens", label: "Token colours" },
     ],
   },
   frames: {
@@ -141,6 +143,50 @@ function LudoDicePreview({ id }: { id: string }) {
       <circle cx={78} cy={34} r={14} fill="#e53935" stroke="#fff" strokeWidth={3.5} />
       <circle cx={78} cy={34} r={6} fill="#fff" opacity={0.85} />
       {d.tokenShine ? <ellipse cx={73} cy={28} rx={5} ry={2.6} fill="#fff" opacity={0.75} /> : null}
+    </svg>
+  );
+}
+
+/** Two tokens and a home-column strip in a token colour (with its effect). */
+function LudoTokenPreview({ id }: { id: string }) {
+  const t = LUDO_TOKENS[id];
+  const gid = `shop-ltok-${id.replace(/[^a-z0-9]/gi, "")}`;
+  const fill = t.effect && t.effect !== "neon" ? `url(#${gid})` : t.fill;
+  return (
+    <svg className="shop-ldice" viewBox="0 0 100 60" aria-hidden="true">
+      <defs>
+        {t.effect === "gold" ? (
+          <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#fff1a8" />
+            <stop offset="0.45" stopColor="#e2b23a" />
+            <stop offset="1" stopColor="#8a6510" />
+          </linearGradient>
+        ) : t.effect === "rainbow" ? (
+          <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
+            {["#ff4d4d", "#ff9f1a", "#ffe14d", "#3ddc84", "#3fa7ff", "#9b5cff"].map((c, i) => (
+              <stop key={c} offset={i / 5} stopColor={c} />
+            ))}
+          </linearGradient>
+        ) : t.effect === "galaxy" ? (
+          <radialGradient id={gid} cx="0.35" cy="0.3" r="0.9">
+            <stop offset="0" stopColor="#8f6bff" />
+            <stop offset="0.5" stopColor="#4a2a8c" />
+            <stop offset="1" stopColor="#120a2e" />
+          </radialGradient>
+        ) : null}
+      </defs>
+      {[0, 1, 2, 3].map((i) => (
+        <rect key={i} x={6 + i * 12} y={40} width={11} height={11} rx={1.5} fill={fill} opacity={0.85} />
+      ))}
+      {[
+        [64, 24],
+        [84, 34],
+      ].map(([x, y], i) => (
+        <g key={i} style={t.effect === "neon" ? { filter: `drop-shadow(0 0 4px ${t.fill})` } : undefined}>
+          <circle cx={x} cy={y} r={12} fill={fill} stroke="#fff" strokeWidth={3} />
+          <circle cx={x} cy={y} r={5} fill="#fff" opacity={0.85} />
+        </g>
+      ))}
     </svg>
   );
 }
@@ -302,11 +348,26 @@ export default function ShopSection({ scope, embedded = false }: { scope: ShopSc
           <span className="shop-status">
             <Check size={14} aria-hidden="true" /> Equipped
           </span>
-          {slot === "frame" ? (
-            <button type="button" className="ac-btn ac-btn-sm ac-btn-ghost" disabled={busy} onClick={() => void act(() => shop.equip(slot, null), "Frame taken off.")}>
+          {slot === "frame" || slot === "ludo_token" ? (
+            <button
+              type="button"
+              className="ac-btn ac-btn-sm ac-btn-ghost"
+              disabled={busy}
+              onClick={() => void act(() => shop.equip(slot, null), slot === "frame" ? "Frame taken off." : "Back to the board's colours.")}
+            >
               Take off
             </button>
           ) : null}
+        </div>
+      );
+    }
+    if (shop.isPlusOnly(id) && !owned) {
+      return (
+        <div className="shop-foot">
+          <span className="shop-plus">⭐ Plus</span>
+          <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/tokens#plus">
+            Get Plus
+          </Link>
         </div>
       );
     }
@@ -511,6 +572,18 @@ export default function ShopSection({ scope, embedded = false }: { scope: ShopSc
                       <h3>{t.name} dice</h3>
                       <p>{t.blurb}</p>
                       {cosmetic(id, "ludo_dice", `${t.name} dice`)}
+                    </li>
+                  ))
+              : null}
+            {tab === "ludoTokens"
+              ? Object.entries(LUDO_TOKENS).map(([id, t]) => (
+                    <li key={id} className="ac-card shop-card">
+                      <div className="shop-preview">
+                        <LudoTokenPreview id={id} />
+                      </div>
+                      <h3>{t.name} tokens</h3>
+                      <p>{t.blurb} Your picture shows on your tokens too.</p>
+                      {cosmetic(id, "ludo_token", `${t.name} tokens`)}
                     </li>
                   ))
               : null}

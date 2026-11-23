@@ -5,6 +5,9 @@ import PlayerAvatar from "./PlayerAvatar";
 import { PlayerCardModal } from "./PlayerCard";
 import { useAuthContext } from "../context/AuthContext";
 import { respondToRequest, unfollow, unfriend, useFriendInbox, useMyCircle, type MiniPlayer } from "../lib/social";
+import { MessageCircle } from "lucide-react";
+import FriendChat from "./chat/FriendChat";
+import { useChatUnread } from "./chat/ChatKit";
 
 export default function FriendsSection() {
   const { user } = useAuthContext();
@@ -14,6 +17,9 @@ export default function FriendsSection() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [tab, setTab] = useState<"friends" | "following">("friends");
+  // friends chat (stickers, emoji, phrases)
+  const [chatWith, setChatWith] = useState<MiniPlayer | null>(null);
+  const unread = useChatUnread();
 
   async function act(fn: () => Promise<void>) {
     setBusy(true);
@@ -92,9 +98,15 @@ export default function FriendsSection() {
             row(
               p,
               tab === "friends" ? (
-                <button type="button" className="ac-btn ac-btn-sm ac-btn-ghost" disabled={busy} onClick={() => void act(() => unfriend(p.id))}>
-                  Unfriend
-                </button>
+                <>
+                  <button type="button" className="ac-btn ac-btn-sm ac-btn-primary fr-chat" onClick={() => setChatWith(p)} aria-label={`Message ${p.name}`}>
+                    <MessageCircle size={15} aria-hidden="true" /> Message
+                    {unread.counts[p.id] ? <i className="fr-unread">{unread.counts[p.id]}</i> : null}
+                  </button>
+                  <button type="button" className="ac-btn ac-btn-sm ac-btn-ghost" disabled={busy} onClick={() => void act(() => unfriend(p.id))}>
+                    Unfriend
+                  </button>
+                </>
               ) : (
                 <button type="button" className="ac-btn ac-btn-sm ac-btn-ghost" disabled={busy || !user} onClick={() => void act(() => unfollow(user!.id, p.id))}>
                   Unfollow
@@ -122,6 +134,7 @@ export default function FriendsSection() {
       ) : null}
 
       {msg ? <p className="fr-msg">{msg}</p> : null}
+      {chatWith ? <FriendChat friend={chatWith} onClose={() => setChatWith(null)} /> : null}
       {open ? (
         <PlayerCardModal
           userId={open}

@@ -10,7 +10,8 @@ export type ShopSlot =
   | "chess_board"
   | "chess_pieces"
   | "ludo_board"
-  | "ludo_dice";
+  | "ludo_dice"
+  | "ludo_token";
 export type BoosterItem = "arrows_hint" | "arrows_undo";
 
 export type ArrowSkin = {
@@ -228,5 +229,26 @@ export const LUDO_DICE: Record<string, LudoDiceStyle> = {
 
 export const chessBoardOf = (id: string | null | undefined) => CHESS_BOARDS[id ?? ""] ?? CHESS_BOARDS["cboard:classic"];
 export const chessPiecesOf = (id: string | null | undefined) => CHESS_PIECES[id ?? ""] ?? CHESS_PIECES["cpieces:classic"];
+/* Ludo token colours (slot ludo_token): your tokens, yard and home column in your colour.
+   Nothing equipped = the board theme's seat colour. Keep ids in sync with supabase/shop.sql. */
+export type LudoTokenEffect = "gold" | "neon" | "rainbow" | "galaxy";
+export type LudoTokenColour = { name: string; blurb: string; fill: string; effect?: LudoTokenEffect };
+export const LUDO_TOKENS: Record<string, LudoTokenColour> = {
+  "ltok:red": { name: "Red", blurb: "Bold classic red.", fill: "#e53935" },
+  "ltok:orange": { name: "Orange", blurb: "Bright and warm.", fill: "#fb8c00" },
+  "ltok:yellow": { name: "Yellow", blurb: "Sunny yellow.", fill: "#fdd835" },
+  "ltok:lime": { name: "Lime", blurb: "Fresh zesty green.", fill: "#9ccc3c" },
+  "ltok:green": { name: "Green", blurb: "Deep leaf green.", fill: "#2e9e4f" },
+  "ltok:teal": { name: "Teal", blurb: "Cool sea teal.", fill: "#14a3a3" },
+  "ltok:blue": { name: "Blue", blurb: "Classic blue.", fill: "#1e88e5" },
+  "ltok:purple": { name: "Purple", blurb: "Royal purple.", fill: "#8e44d9" },
+  "ltok:pink": { name: "Pink", blurb: "Hot pink.", fill: "#ec4899" },
+  "ltok:gold": { name: "Gold", blurb: "Polished metallic gold.", fill: "#d4a017", effect: "gold" },
+  "ltok:neon": { name: "Neon", blurb: "Glowing electric green.", fill: "#39e61a", effect: "neon" },
+  "ltok:rainbow": { name: "Rainbow", blurb: "Every colour at once.", fill: "#ff5f6d", effect: "rainbow" },
+  "ltok:galaxy": { name: "Galaxy", blurb: "Deep space with stars.", fill: "#4a2a8c", effect: "galaxy" },
+};
+export const ludoTokenOf = (id: string | null | undefined): LudoTokenColour | null => LUDO_TOKENS[id ?? ""] ?? null;
+
 export const ludoBoardOf = (id: string | null | undefined) => LUDO_BOARDS[id ?? ""] ?? LUDO_BOARDS["lboard:classic"];
 export const ludoDiceOf = (id: string | null | undefined) => LUDO_DICE[id ?? ""] ?? LUDO_DICE["ldice:classic"];

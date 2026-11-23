@@ -64,6 +64,7 @@ import { CPU_STATS, FAIR_STATS, isPremiumStriker, playStats, tierOf, turnBonusSe
 import CarromLocker, { LevelBar } from "./Locker";
 import ShopSheet from "../../components/ShopSheet";
 import { useCustomGameShop } from "../gameShop";
+import { useMatchChat } from "../../components/chat/MatchChat";
 import { MatchRewardLine, newMatchId, useMatchReport } from "../../lib/matchReport";
 import { BoardPreview } from "./Preview";
 import PlayFlow, { HelpLine } from "../PlayFlow";
@@ -1159,6 +1160,9 @@ export default function CarromGame({ onFinish }: GameProps) {
       </button>
     </div>
   );
+
+  // stickers / emoji / phrases with the other players, in the lobby and during online matches
+  useMatchChat(roomCode && netRef.current ? `carrom:${roomCode}` : null, { id: netRef.current?.clientId ?? "", name: myName });
 
   if (screen === "menu" || screen === "join-form") {
     return (

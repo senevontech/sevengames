@@ -40,6 +40,7 @@ import PlayerAvatar from "../../components/PlayerAvatar";
 import { parseAvatar, type AvatarChoice } from "../../lib/avatar";
 import "./chess.css";
 import { GameShopButton } from "../gameShop";
+import { useMatchChat } from "../../components/chat/MatchChat";
 import { MatchRewardLine, useMatchReport } from "../../lib/matchReport";
 
 type Mode = "cpu" | "pass" | "online";
@@ -694,6 +695,9 @@ export default function ChessGame(_props: GameProps) {
       <i style={{ width: `${lv >= 30 ? 100 : ((xp - xpForLevel(lv)) / (xpForLevel(lv + 1) - xpForLevel(lv))) * 100}%` }} />
     </div>
   );
+
+  // stickers / emoji / phrases with the other player, in the room and during the match
+  useMatchChat(online && screen !== "menu" ? `chess:${online.room.code}` : null, { id: online?.room.clientId ?? "", name: myName });
 
   if (screen === "room" && online) {
     const room = online.room;

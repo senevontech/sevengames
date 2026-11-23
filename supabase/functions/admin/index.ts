@@ -378,7 +378,154 @@ Deno.serve(async (req) => {
         if (isNaN(+from) || isNaN(+to) || to <= from) return json({ error: "Bad period" }, 400);
         const { data, error } = await db.rpc("admin_dashboard", { p_from: from.toISOString(), p_to: to.toISOString() });
         if (error) throw error;
-        return json(data);
+        // KPIs (engagement.sql): missing until that file is run
+        const k = await db.rpc("admin_kpis", {
+          p_from: from.toISOString(),
+          p_to: to.toISOString(),
+          p_tz: typeof body.tz === "string" ? body.tz.slice(0, 64) : "UTC",
+        });
+        return json({ ...(data as Record<string, unknown>), kpis: k.error ? null : k.data });
+      }
+
+      /* ---------- engagement (engagement.sql) ---------- */
+      case "engagement_get": {
+        const today = new Date().toISOString().slice(0, 10);
+        const [weeks, tours, access, setting] = await Promise.all([
+          db.from("weekly_games").select("week_start, game_id, set_by_admin, settled_at").gte("week_start", new Date(Date.now() - 21 * 86_400_000).toISOString().slice(0, 10)).order("week_start"),
+          db.from("tournaments").select("*").order("starts_at", { ascending: false }).limit(50),
+          db.from("game_access").select("game_id, mode"),
+          db.from("site_settings").select("value").eq("key", "tournaments_enabled").maybeSingle(),
+        ]);
+        for (const r of [weeks, tours, access]) if (r.error) throw r.error;
+        const ids = (tours.data ?? []).map((t) => t.id);
+        const entries = ids.length ? await db.from("tournament_entries").select("tournament_id").in("tournament_id", ids) : { data: [] };
+        const counts: Record<string, number> = {};
+        for (const e of (entries.data ?? []) as { tournament_id: string }[]) counts[e.tournament_id] = (counts[e.tournament_id] ?? 0) + 1;
+        return json({
+          today,
+          weeks: weeks.data ?? [],
+          tournaments: (tours.data ?? []).map((t) => ({ ...t, entrants: counts[t.id] ?? 0 })),
+          access: access.data ?? [],
+          tournaments_enabled: setting.data?.value === true,
+        });
+      }
+
+      case "weekly_set": {
+        const week = text(body.week_start, 10);
+        const game = text(body.game_id, 64);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(week) || new Date(week + "T00:00:00Z").getUTCDay() !== 1) return json({ error: "Pick a Monday" }, 400);
+        if (!game) {
+          const { error } = await db.from("weekly_games").delete().eq("week_start", week).is("settled_at", null);
+          if (error) throw error;
+          return json({ ok: true });
+        }
+        const { error } = await db.from("weekly_games").upsert({ week_start: week, game_id: game, set_by_admin: true });
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
+      case "tournaments_toggle": {
+        const { error } = await db.from("site_settings").upsert({ key: "tournaments_enabled", value: body.on === true, updated_at: new Date().toISOString() });
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
+      case "tournament_save": {
+        const title = text(body.title, 80);
+        const game = text(body.game_id, 64);
+        const starts = new Date(String(body.starts_at));
+        const ends = new Date(String(body.ends_at));
+        if (title.length < 3 || !game || isNaN(+starts) || isNaN(+ends) || ends <= starts) return json({ error: "Check the title, game and dates" }, 400);
+        const pct = (Array.isArray(body.prize_pct) ? body.prize_pct : [50, 30, 20]).map((n) => Math.max(0, Math.round(Number(n) || 0))).slice(0, 10);
+        if (pct.reduce((a, b) => a + b, 0) > 100) return json({ error: "Prize shares add up to more than 100%" }, 400);
+        const row = {
+          title,
+          game_id: game,
+          entry_fee: Math.max(0, Math.min(100000, Math.round(Number(body.entry_fee) || 0))),
+          bonus: Math.max(0, Math.min(1000000, Math.round(Number(body.bonus) || 0))),
+          prize_pct: pct,
+          starts_at: starts.toISOString(),
+          ends_at: ends.toISOString(),
+        };
+        const id = text(body.id, 40);
+        const { error } = id ? await db.from("tournaments").update(row).eq("id", id).is("settled_at", null) : await db.from("tournaments").insert(row);
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
+      case "tournament_delete": {
+        const id = text(body.id, 40);
+        const { count } = await db.from("tournament_entries").select("user_id", { count: "exact", head: true }).eq("tournament_id", id);
+        if (count) return json({ error: "Players have joined (and paid); it can't be deleted" }, 400);
+        const { error } = await db.from("tournaments").delete().eq("id", id);
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
+      case "game_access_set": {
+        const game = text(body.game_id, 64);
+        if (!game) return json({ error: "Missing game" }, 400);
+        const mode = body.mode === "plus" || body.mode === "early" ? body.mode : null;
+        const { error } = mode
+          ? await db.from("game_access").upsert({ game_id: game, mode, updated_at: new Date().toISOString() })
+          : await db.from("game_access").delete().eq("game_id", game);
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
+      /* ---------- custom chat sticker packs (chat.sql) ---------- */
+      case "chat_packs_list": {
+        const { data, error } = await db.from("chat_custom_packs").select("*").order("created_at");
+        if (error) throw error;
+        const ids = (data ?? []).map((p) => `chat:c:${p.id}`);
+        const items = ids.length ? await db.from("shop_items").select("item_id, price, plus_only, active").in("item_id", ids) : { data: [] };
+        const byId = Object.fromEntries(((items.data ?? []) as { item_id: string }[]).map((r) => [r.item_id, r]));
+        return json({ packs: (data ?? []).map((p) => ({ ...p, shop: byId[`chat:c:${p.id}`] ?? null })) });
+      }
+
+      case "chat_pack_save": {
+        const id = text(body.id, 32).toLowerCase();
+        const name = text(body.name, 40);
+        if (!/^[a-z0-9-]{2,32}$/.test(id) || name.length < 2) return json({ error: "Give the pack an id (a-z, 0-9, -) and a name" }, 400);
+        const items = (Array.isArray(body.items) ? body.items : [])
+          .map((x: unknown, i: number) => {
+            const r = (x ?? {}) as Record<string, unknown>;
+            return { id: text(r.id, 32) || `s${i}`, label: text(r.label, 30), url: text(r.url, 500) };
+          })
+          .filter((x: { url: string }) => /^https:\/\/res\.cloudinary\.com\//.test(x.url))
+          .slice(0, 24);
+        if (!items.length) return json({ error: "Upload at least one sticker" }, 400);
+        const { error } = await db.from("chat_custom_packs").upsert({ id, name, items });
+        if (error) throw error;
+        const price = Math.max(0, Math.min(1_000_000, Math.round(Number(body.price) || 0)));
+        const plusOnly = body.plus_only === true;
+        const r = await db.from("shop_items").upsert({ item_id: `chat:c:${id}`, kind: "chat_pack", price, plus_only: plusOnly, sort: 100, updated_at: new Date().toISOString() });
+        if (r.error) throw r.error;
+        return json({ ok: true });
+      }
+
+      case "chat_pack_active": {
+        // stop selling it; players who bought it keep it (its stickers stay)
+        const id = text(body.id, 32);
+        const { error } = await db.from("shop_items").update({ active: body.active === true }).eq("item_id", `chat:c:${id}`);
+        if (error) throw error;
+        return json({ ok: true });
+      }
+
+      case "leads_list": {
+        const { data, error } = await db.from("business_enquiries").select("*").order("created_at", { ascending: false }).limit(200);
+        if (error) throw error;
+        return json({ leads: data ?? [] });
+      }
+
+      case "lead_update": {
+        const id = Number(body.id);
+        const patch: Record<string, unknown> = {};
+        if (["new", "contacted", "won", "lost"].includes(String(body.status))) patch.status = body.status;
+        if (body.note !== undefined) patch.note = text(body.note, 2000);
+        const { error } = await db.from("business_enquiries").update(patch).eq("id", id);
+        if (error) throw error;
+        return json({ ok: true });
       }
 
       case "dashboard_detail": {
@@ -549,7 +696,9 @@ Deno.serve(async (req) => {
 
       /* ---- Shop (supabase/shop.sql): item prices + on/off ---- */
       case "shop_items_list": {
-        const { data, error } = await db.from("shop_items").select("item_id, kind, price, grants, qty, active, sort").order("kind").order("sort");
+        let { data, error } = await db.from("shop_items").select("item_id, kind, price, grants, qty, active, sort, plus_only").order("kind").order("sort");
+        // plus_only arrives with shop.sql's Plus update
+        if (error) ({ data, error } = await db.from("shop_items").select("item_id, kind, price, grants, qty, active, sort").order("kind").order("sort"));
         if (error) throw error;
         return json({ items: data ?? [] });
       }
@@ -560,6 +709,7 @@ Deno.serve(async (req) => {
         const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
         if (body.price !== undefined) patch.price = Math.max(0, Math.min(1_000_000, Math.round(Number(body.price) || 0)));
         if (body.active !== undefined) patch.active = body.active === true;
+        if (body.plus_only !== undefined) patch.plus_only = body.plus_only === true;
         const { error } = await db.from("shop_items").update(patch).eq("item_id", itemId);
         if (error) throw error;
         return json({ ok: true });

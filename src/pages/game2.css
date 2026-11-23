@@ -1284,3 +1284,15 @@
     display: none;
   }
 }
+
+/* Soft pages (SoftPage.tsx: /tokens, /rewards, /business…): a full-height column, so a short page
+   keeps its footer at the bottom of the screen instead of leaving empty space under it. */
+.gs.g2.soft-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.gs.g2.soft-page > .g2-foot {
+  margin-top: auto;
+}

@@ -44,6 +44,21 @@ type Nums = {
   ad_rewards: number;
 };
 
+type Kpis = {
+  dau: number;
+  mau: number;
+  d1: number | null;
+  d7: number | null;
+  d30: number | null;
+  session_minutes: number;
+  games_per_session: number;
+  sessions: number;
+  conversion: number | null;
+  payers: number;
+  arpdau_inr: number | null;
+  sub_retention: number | null;
+};
+
 type Detail = {
   labels: string[];
   series: { d: string; a: number; b?: number }[] | null;
@@ -120,7 +135,7 @@ const sumMoney = (r: Record<string, number>) => Object.values(r ?? {}).reduce((a
 
 export default function DashboardTab() {
   const [period, setPeriod] = useState<Period>("7");
-  const [data, setData] = useState<{ cur: Nums; prev: Nums } | null>(null);
+  const [data, setData] = useState<{ cur: Nums; prev: Nums; kpis?: Kpis | null } | null>(null);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState<{ metric: Metric; title: string } | null>(null);
@@ -129,7 +144,7 @@ export default function DashboardTab() {
     setLoading(true);
     setErr("");
     try {
-      setData(await adminCall<{ cur: Nums; prev: Nums }>("dashboard", range(period)));
+      setData(await adminCall<{ cur: Nums; prev: Nums; kpis?: Kpis | null }>("dashboard", { ...range(period), tz: tz() }));
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Failed to load";
       setErr(msg.includes("admin_dashboard") ? "The dashboard isn't set up yet: run supabase/analytics.sql." : msg);
@@ -172,6 +187,8 @@ export default function DashboardTab() {
         !err ? <p className="adm-empty">Loading…</p> : null
       ) : (
         <>
+          {data?.kpis ? <KpiSection k={data.kpis} /> : null}
+
           <section className="dash-group">
             <h3>Players</h3>
             <div className="dash-grid">
@@ -243,6 +260,28 @@ export default function DashboardTab() {
         </>
       )}
     </div>
+  );
+}
+
+/* ---------- KPIs (business plan) ---------- */
+const pct = (v: number | null | undefined) => (v === null || v === undefined ? "–" : `${v}%`);
+
+function KpiSection({ k }: { k: Kpis }) {
+  const stick = k.mau ? Math.round((k.dau / k.mau) * 100) : null;
+  return (
+    <section className="dash-group">
+      <h3>Key metrics</h3>
+      <div className="dash-grid">
+        <Card label="DAU (daily active)" value={fmt(k.dau)} sub="average per day, signed-in players" />
+        <Card label="MAU (monthly active)" value={fmt(k.mau)} sub={stick !== null ? `stickiness ${stick}% (DAU/MAU)` : "last 30 days"} />
+        <Card label="Retention D1 · D7 · D30" value={`${pct(k.d1)} · ${pct(k.d7)} · ${pct(k.d30)}`} sub="of players who signed up in this period" />
+        <Card label="Avg session" value={`${k.session_minutes} min`} sub={`${fmt(k.sessions)} sessions`} />
+        <Card label="Games per session" value={String(k.games_per_session)} />
+        <Card label="Conversion" value={pct(k.conversion)} sub={`${fmt(k.payers)} paying players`} />
+        <Card label="ARPDAU" value={k.arpdau_inr === null ? "–" : `₹${k.arpdau_inr}`} sub="website revenue ÷ daily actives" />
+        <Card label="Subscription retention" value={pct(k.sub_retention)} sub="subscribers 30+ days in, still active" />
+      </div>
+    </section>
   );
 }
 

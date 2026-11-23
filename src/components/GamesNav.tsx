@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { LayoutGrid, Menu, Smartphone, X } from "lucide-react";
+import { Gift, LayoutGrid, Menu, Smartphone, X } from "lucide-react";
 import { isNative } from "../lib/native";
 import { GET_APP_PATH } from "../lib/appLinks";
 import { categories, games, type Game } from "../catalog";
@@ -190,6 +190,14 @@ function MobileMenu({ onPick }: { onPick: (g: Game) => void }) {
                     <span className="gs-cats-name">Leaderboards</span>
                   </Link>
                 </li>
+                <li>
+                  <Link to="/rewards" onClick={close}>
+                    <span className="gs-cats-icon" aria-hidden="true">
+                      <Gift size={16} />
+                    </span>
+                    <span className="gs-cats-name">Rewards</span>
+                  </Link>
+                </li>
                 {!isNative ? (
                   <li>
                     <Link to={GET_APP_PATH} onClick={close}>
@@ -343,6 +351,9 @@ export default function GamesNav({
             <RiSearchReicon size={21} aria-hidden="true" />
           </button>
         </div>
+        <Link className="gs-home" to="/rewards" aria-label="Rewards" title="Rewards">
+          <Gift size={21} strokeWidth={1.6} aria-hidden="true" />
+        </Link>
         <Link className="gs-home" to="/leaderboards" aria-label="Leaderboards" title="Leaderboards">
           <RiTrophyLine size={22} strokeWidth={1.5} aria-hidden="true" />
         </Link>

@@ -193,3 +193,101 @@
     order: 3;
   }
 }
+
+/* Engagement tab: tournament form */
+.adm-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.adm-form-grid label {
+  display: grid;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.adm-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
+/* Leads tab */
+.adm-leads {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adm-leads li {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: var(--radius, 14px);
+  border: 1px solid var(--border);
+}
+
+.adm-lead-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.adm-lead-top time {
+  margin-left: auto;
+}
+
+.adm-lead-msg {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.adm-lead-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.adm-lead-actions input {
+  flex: 1 1 220px;
+}
+
+/* custom sticker packs */
+.adm-stickers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.adm-stickers li {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.adm-stickers img,
+.adm-sticker-row img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+.adm-sticker-row {
+  display: flex;
+  gap: 4px;
+}
+.adm-sticker-row img {
+  width: 32px;
+  height: 32px;
+}

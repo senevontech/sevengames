@@ -23,7 +23,7 @@
 -- token ledger: allow 'shop' (keep this list in sync with tokens.sql, adfree.sql and carrom.sql)
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
-  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match'));
+  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament'));
 
 -- 1) Catalog ---------------------------------------------------------
 create table if not exists public.shop_items (
@@ -64,12 +64,23 @@ alter table public.shop_items drop constraint if exists shop_items_kind_check;
 alter table public.shop_items add constraint shop_items_kind_check
   -- dd_*: DroidDoom (embedded game) unlocks, see droiddoom.sql
   check (kind in ('arrow_skin', 'arrow_fx', 'arrow_board', 'arrow_head', 'frame', 'booster', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice',
-                  'dd_levels', 'dd_skin', 'dd_weapon'));
+                  'dd_levels', 'dd_skin', 'dd_weapon', 'chat_pack', 'ludo_token'));
+
+-- Ludo token colours: 9 free, 4 in the shop (keep ids in sync with LUDO_TOKENS in src/lib/shopCatalog.ts)
+insert into public.shop_items (item_id, kind, price, sort) values
+  ('ltok:red', 'ludo_token', 0, 0), ('ltok:orange', 'ludo_token', 0, 1), ('ltok:yellow', 'ludo_token', 0, 2),
+  ('ltok:lime', 'ludo_token', 0, 3), ('ltok:green', 'ludo_token', 0, 4), ('ltok:teal', 'ludo_token', 0, 5),
+  ('ltok:blue', 'ludo_token', 0, 6), ('ltok:purple', 'ludo_token', 0, 7), ('ltok:pink', 'ludo_token', 0, 8),
+  ('ltok:gold', 'ludo_token', 1200, 9), ('ltok:neon', 'ludo_token', 1500, 10),
+  ('ltok:rainbow', 'ludo_token', 2500, 11), ('ltok:galaxy', 'ludo_token', 3000, 12)
+on conflict (item_id) do nothing;
 alter table public.shop_items add column if not exists game text;
 -- which game's level unlocks an item: chess / ludo (game XP) or arrows (puzzle level reached)
 alter table public.shop_items drop constraint if exists shop_items_game_check;
 alter table public.shop_items add constraint shop_items_game_check check (game in ('chess', 'ludo', 'arrows'));
 alter table public.shop_items add column if not exists min_level integer not null default 1 check (min_level between 1 and 30);
+-- Senevon Plus exclusives: members own them for free, nobody else can buy them
+alter table public.shop_items add column if not exists plus_only boolean not null default false;
 
 insert into public.shop_items (item_id, kind, price, sort, game, min_level) values
   ('cboard:classic', 'chess_board', 0, 0, 'chess', 1),
@@ -150,6 +161,7 @@ alter table public.player_cosmetics add column if not exists ludo_board text;
 alter table public.player_cosmetics add column if not exists ludo_dice text;
 alter table public.player_cosmetics add column if not exists arrow_board text;
 alter table public.player_cosmetics add column if not exists arrow_head text;
+alter table public.player_cosmetics add column if not exists ludo_token text;
 
 -- XP per game (chess, ludo). Carrom keeps its own (carrom.sql).
 create table if not exists public.game_xp (
@@ -205,6 +217,23 @@ begin
 end;
 $$;
 
+-- Senevon Plus member right now (a running subscription, or a Pro member)
+create or replace function public._is_plus(p_user uuid)
+returns boolean language plpgsql stable security definer set search_path = public as $$
+declare
+  v boolean;
+begin
+  select exists (
+    select 1 from subscriptions where user_id = p_user and status in ('active', 'cancelled') and period_end > now()
+  ) into v;
+  if v then return true; end if;
+  if to_regclass('public.pro_members') is not null then
+    execute 'select exists (select 1 from public.pro_members where user_id = $1)' into v using p_user;
+  end if;
+  return coalesce(v, false);
+end;
+$$;
+
 create or replace function public._shop_free(p_user uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from token_unlimited where user_id = p_user)
@@ -212,14 +241,18 @@ $$;
 
 create or replace function public._shop_owns(p_user uuid, p_item text)
 returns boolean language sql stable security definer set search_path = public as $$
-  select exists (select 1 from shop_items where item_id = p_item and price = 0 and kind <> 'booster')
+  select exists (select 1 from shop_items where item_id = p_item and price = 0 and kind <> 'booster' and not plus_only)
     or exists (select 1 from shop_owned where user_id = p_user and item_id = p_item)
+    or (exists (select 1 from shop_items where item_id = p_item and plus_only) and _is_plus(p_user))
 $$;
 
 create or replace function public._shop_state(p_user uuid)
 returns jsonb language sql stable security definer set search_path = public as $$
   select jsonb_build_object(
-    'owned', coalesce((select jsonb_agg(item_id) from shop_owned where user_id = p_user), '[]'::jsonb),
+    'owned', coalesce((select jsonb_agg(item_id) from (
+      select item_id from shop_owned where user_id = p_user
+      union select item_id from shop_items where plus_only and _is_plus(p_user)) o), '[]'::jsonb),
+    'plus', _is_plus(p_user),
     'inventory', jsonb_build_object(
       'arrows_hint', coalesce((select count from shop_inventory where user_id = p_user and item = 'arrows_hint'), 0),
       'arrows_undo', coalesce((select count from shop_inventory where user_id = p_user and item = 'arrows_undo'), 0)
@@ -228,7 +261,7 @@ returns jsonb language sql stable security definer set search_path = public as $
       select jsonb_build_object(
         'frame', frame, 'arrow_skin', arrow_skin, 'arrow_fx', arrow_fx,
         'chess_board', chess_board, 'chess_pieces', chess_pieces, 'ludo_board', ludo_board, 'ludo_dice', ludo_dice,
-        'arrow_board', arrow_board, 'arrow_head', arrow_head
+        'arrow_board', arrow_board, 'arrow_head', arrow_head, 'ludo_token', ludo_token
       ) from player_cosmetics where user_id = p_user
     ), '{}'::jsonb),
     'xp', jsonb_build_object('chess', _game_xp(p_user, 'chess'), 'ludo', _game_xp(p_user, 'ludo'), 'arrows', _game_xp(p_user, 'arrows')),
@@ -261,6 +294,7 @@ begin
   select * into r from shop_items where item_id = p_item and active;
   if not found then raise exception 'bad_item'; end if;
   if r.kind <> 'booster' and _shop_owns(v_user, p_item) then return _shop_state(v_user); end if;
+  if r.plus_only then raise exception 'plus_only'; end if;
   if r.game is not null and _shop_level(v_user, r.game) < r.min_level then raise exception 'level_required'; end if;
   if r.price > 0 and not _shop_free(v_user) then
     perform token_wallet(); -- wallet exists, signup bonus in
@@ -284,7 +318,7 @@ declare
   v_kind text;
 begin
   if v_user is null then raise exception 'not_signed_in'; end if;
-  if p_slot not in ('frame', 'arrow_skin', 'arrow_fx', 'arrow_board', 'arrow_head', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice') then
+  if p_slot not in ('frame', 'arrow_skin', 'arrow_fx', 'arrow_board', 'arrow_head', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice', 'ludo_token') then
     raise exception 'bad_slot';
   end if;
   if p_item is not null then
@@ -303,6 +337,7 @@ begin
     chess_pieces = case when p_slot = 'chess_pieces' then p_item else chess_pieces end,
     ludo_board = case when p_slot = 'ludo_board' then p_item else ludo_board end,
     ludo_dice = case when p_slot = 'ludo_dice' then p_item else ludo_dice end,
+    ludo_token = case when p_slot = 'ludo_token' then p_item else ludo_token end,
     updated_at = now()
   where user_id = v_user;
   return _shop_state(v_user);
@@ -349,6 +384,7 @@ revoke all on function public._game_xp(uuid, text) from public, anon, authentica
 revoke all on function public.award_game_xp(text, integer) from public, anon;
 grant execute on function public.award_game_xp(text, integer) to authenticated;
 revoke all on function public._shop_free(uuid) from public, anon, authenticated;
+revoke all on function public._is_plus(uuid) from public, anon, authenticated;
 revoke all on function public._shop_level(uuid, text) from public, anon, authenticated;
 revoke all on function public._shop_owns(uuid, text) from public, anon, authenticated;
 revoke all on function public._shop_state(uuid) from public, anon, authenticated;

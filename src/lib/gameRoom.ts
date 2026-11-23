@@ -11,8 +11,9 @@ import { supabase, isSupabaseConfigured } from "../supabase";
 import { parseAvatar, type AvatarChoice } from "./avatar";
 
 export type RoomStatus = "connecting" | "lobby" | "error";
-export type RoomPeer = { clientId: string; userId: string; name: string; avatar: AvatarChoice | null; isHost: boolean };
-export type RoomMe = { userId: string; name: string; avatar: AvatarChoice | null };
+export type RoomPeer = { clientId: string; userId: string; name: string; avatar: AvatarChoice | null; isHost: boolean; look?: string | null };
+/** `look`: a cosmetic the game shows everyone (e.g. a Ludo token colour id). */
+export type RoomMe = { userId: string; name: string; avatar: AvatarChoice | null; look?: string | null };
 export type RoomMsg = { t: string; from: string; [k: string]: unknown };
 
 export type RoomEvents = {
@@ -148,6 +149,7 @@ export class GameRoom {
         userId: clip(p.userId, 64),
         name: clip(p.name, 40) || "Player",
         avatar: parseAvatar(p.avatar),
+        look: clip(p.look, 32) || null,
         isHost: p.host === true,
         at: Number(p.at) || 0,
         meta: p.meta,
@@ -162,7 +164,7 @@ export class GameRoom {
     all.sort((a, b) => Number(b.isHost) - Number(a.isHost) || a.at - b.at || a.clientId.localeCompare(b.clientId));
     const seated = all.slice(0, this.seats);
     if (this.isHost) for (const extra of all.slice(this.seats)) this.send("room-full", { to: extra.clientId });
-    this.peers = seated.map(({ clientId, userId, name, avatar, isHost }) => ({ clientId, userId, name, avatar, isHost }));
+    this.peers = seated.map(({ clientId, userId, name, avatar, isHost, look }) => ({ clientId, userId, name, avatar, isHost, look }));
 
     if (!this.isHost && host && this.noRoomTimer && seated.some((p) => p.clientId === this.clientId)) {
       window.clearTimeout(this.noRoomTimer);

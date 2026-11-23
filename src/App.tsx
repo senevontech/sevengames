@@ -22,6 +22,8 @@ const TokensPage = lazy(() => import("./pages/TokensPage"));
 const Leaderboards = lazy(() => import("./pages/Leaderboards"));
 const PlayerPage = lazy(() => import("./pages/PlayerPage"));
 const GetApp = lazy(() => import("./pages/GetApp"));
+const RewardsPage = lazy(() => import("./pages/RewardsPage"));
+const BusinessPage = lazy(() => import("./pages/BusinessPage"));
 const AdFreePromo = lazy(() => import("./components/AdFreePromo"));
 import { TokensProvider } from "./lib/tokens";
 import { ShopProvider } from "./lib/shop";
@@ -32,6 +34,7 @@ import ExternalGamePrompt from "./components/ExternalGamePrompt";
 import SoftPage from "./components/SoftPage";
 
 import { trackPageview } from "./lib/track";
+import { applyStoredReferral, captureReferral } from "./lib/engagement";
 
 // The /home2 test page and the category carousels: code-split.
 const Home2 = lazy(() => import("./pages/Home2"));
@@ -87,6 +90,21 @@ function Shell() {
   );
 }
 
+/** Invite links (?ref=CODE): remember the code, and use it once the visitor has signed in. */
+function ReferralCapture() {
+  const { user } = useAuthContext();
+  const { refresh } = useTokens();
+  useEffect(() => captureReferral(window.location.search), []);
+  useEffect(() => {
+    if (!user) return;
+    void applyStoredReferral().then((amount) => {
+      if (amount > 0) void refresh();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+  return null;
+}
+
 /** Sends progress made offline once the player is known (and whenever the connection returns). */
 function OfflineSync() {
   const { user } = useAuthContext();
@@ -110,6 +128,7 @@ export default function App() {
       <ExternalGamePrompt />
       <TokensProvider>
       <OfflineSync />
+      <ReferralCapture />
       <Suspense fallback={null}>
         <AdFreePromo />
       </Suspense>
@@ -132,6 +151,30 @@ export default function App() {
               <Tracked>
                 <SoftPage>
                   <TokensPage />
+                </SoftPage>
+              </Tracked>
+            </Suspense>
+          }
+        />
+        <Route
+          path="/rewards"
+          element={
+            <Suspense fallback={<div style={{ minHeight: "100vh" }} />}>
+              <Tracked>
+                <SoftPage>
+                  <RewardsPage />
+                </SoftPage>
+              </Tracked>
+            </Suspense>
+          }
+        />
+        <Route
+          path="/business"
+          element={
+            <Suspense fallback={<div style={{ minHeight: "100vh" }} />}>
+              <Tracked>
+                <SoftPage>
+                  <BusinessPage />
                 </SoftPage>
               </Tracked>
             </Suspense>

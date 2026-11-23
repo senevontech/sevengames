@@ -21,6 +21,8 @@ export type ShopState = {
   /** Levels from elsewhere (Arrows: the puzzle level reached). */
   levels?: Partial<Record<"arrows", number>>;
   free: boolean;
+  /** Senevon Plus member (shop.sql): Plus-only items are theirs */
+  plus?: boolean;
   tokens: number;
 };
 
@@ -35,6 +37,8 @@ export type PriceRow = {
   /** Cosmetics unlocked by a level in this game (null = no level needed). */
   game?: LevelGame | null;
   min_level?: number;
+  /** Senevon Plus exclusive: members own it, nobody can buy it */
+  plus_only?: boolean;
 };
 
 type Ctx = {
@@ -57,6 +61,8 @@ type Ctx = {
   /** Level in a board game (1 for guests). */
   levelOf: (game: LevelGame) => number;
   xpOf: (game: BoardGame) => number;
+  /** Senevon Plus exclusive (members own it automatically). */
+  isPlusOnly: (id: string) => boolean;
   /** Level needed to buy this item (1 = none). */
   levelNeeded: (id: string) => { game: LevelGame | null; level: number };
   /** Report XP for a finished game (server caps it). Guests: nothing. */
@@ -131,9 +137,11 @@ export function loadShopPrices(force = false): Promise<PriceRow[] | null> {
     priceInflight = null;
   }
   if (priceCache) return Promise.resolve(priceCache);
-  priceInflight ??= Promise.resolve(
-    supabase.from("shop_items").select("item_id, kind, price, grants, qty, active, sort, game, min_level").order("sort"),
-  ).then(({ data, error }) => {
+  const cols = "item_id, kind, price, grants, qty, active, sort, game, min_level";
+  priceInflight ??= Promise.resolve(supabase.from("shop_items").select(`${cols}, plus_only`).order("sort"))
+    // plus_only comes with shop.sql's Plus update: until it's run, read the list without it
+    .then((r) => (r.error ? Promise.resolve(supabase!.from("shop_items").select(cols).order("sort")) : r))
+    .then(({ data, error }) => {
     if (error) {
       priceInflight = null;
       return null;
@@ -194,7 +202,8 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const owns = useCallback(
     (id: string) => {
       const row = prices.find((p) => p.item_id === id);
-      if (row && row.price === 0 && row.kind !== "booster") return true;
+      // free items are everyone's; Plus exclusives (price 0 too) only come from the server's list
+      if (row && row.price === 0 && row.kind !== "booster" && !row.plus_only) return true;
       return !!state?.owned.includes(id);
     },
     [prices, state],
@@ -248,6 +257,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     (game: LevelGame) => (game === "arrows" ? Math.max(1, state?.levels?.arrows ?? 1) : levelForXp(xpOf(game))),
     [xpOf, state],
   );
+  const isPlusOnly = useCallback((id: string) => Boolean(prices.find((p) => p.item_id === id)?.plus_only), [prices]);
   const levelNeeded = useCallback(
     (id: string) => {
       const row = prices.find((p) => p.item_id === id);
@@ -301,10 +311,11 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       levelOf,
       xpOf,
       levelNeeded,
+      isPlusOnly,
       awardXp,
       refresh,
     }),
-    [state, prices, available, user, priceOf, owns, buy, equip, use, equippedIn, levelOf, xpOf, levelNeeded, awardXp, refresh],
+    [state, prices, available, user, priceOf, owns, buy, equip, use, equippedIn, levelOf, xpOf, levelNeeded, isPlusOnly, awardXp, refresh],
   );
 
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;
