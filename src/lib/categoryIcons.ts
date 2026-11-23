@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   Mountain,
   Puzzle,
+  Spade,
   Sparkles,
   Swords,
   Trophy,
@@ -29,6 +30,7 @@ export const categoryIcon: Record<GameCategory | "All", LucideIcon> = {
   Indie: Sparkles,
   Puzzle: Puzzle,
   Classic: Joystick,
+  Cards: Spade,
   Words: Type,
   Numbers: Hash,
 };

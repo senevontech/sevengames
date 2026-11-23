@@ -1,0 +1,176 @@
+/* ============================================================
+   Card table kit: felt table, cards (3D flip + deal), chips.
+   Set --cd-w on a container to size the cards (height follows 5:7).
+   ============================================================ */
+
+/* ---------- table ---------- */
+.ct-table {
+  --felt: #17703f;
+  --felt-dark: #0b3d22;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 28px;
+  padding: 14px;
+  background:
+    /* wooden rail */
+    linear-gradient(145deg, #7a4a24, #4a2a12 45%, #6b3d1c);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 220, 170, 0.25),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.45),
+    0 18px 40px -18px rgba(0, 0, 0, 0.7);
+}
+
+.ct-felt {
+  position: relative;
+  min-height: 100%;
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 90% at 50% 35%, var(--felt) 0%, var(--felt-dark) 100%);
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.35),
+    inset 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* felt grain: fine noise over the cloth */
+.ct-felt::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.6 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+.ct-felt > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* text printed on the cloth */
+.ct-print {
+  margin: 0;
+  text-align: center;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(10px, 1.6vw, 13px);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 236, 190, 0.55);
+}
+
+/* ---------- cards ---------- */
+.cd {
+  --w: var(--cd-w, 78px);
+  flex: none;
+  width: var(--w);
+  height: calc(var(--w) * 1.4);
+  perspective: 900px;
+}
+
+.cd-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: rotateY(180deg);
+  transition: transform 0.55s cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+
+.cd.is-up .cd-inner {
+  transform: rotateY(0deg);
+}
+
+.cd-side {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: calc(var(--w) * 0.064);
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35)) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25));
+}
+
+.cd-back {
+  transform: rotateY(180deg);
+}
+
+/* dealt from the shoe (top right of the table) */
+.cd.is-dealt {
+  animation: cd-deal 0.42s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+}
+
+@keyframes cd-deal {
+  from {
+    opacity: 0;
+    transform: translate(var(--cd-from-x, 220px), var(--cd-from-y, -180px)) rotate(-24deg) scale(0.9);
+  }
+  60% {
+    opacity: 1;
+  }
+}
+
+/* a row of cards that overlap like a hand on the table */
+.cd-row {
+  display: flex;
+  justify-content: center;
+  min-height: calc(var(--cd-w, 78px) * 1.4);
+}
+
+.cd-row .cd + .cd {
+  margin-left: calc(var(--cd-w, 78px) * -0.55);
+}
+
+/* ---------- chips ---------- */
+.chip {
+  display: block;
+  filter: drop-shadow(0 2px 1.5px rgba(0, 0, 0, 0.45));
+}
+
+.chip-stack {
+  position: relative;
+  display: inline-block;
+  min-width: 46px;
+}
+
+.chip-stack-chip {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: chip-drop 0.28s cubic-bezier(0.3, 1.4, 0.6, 1) both;
+}
+
+@keyframes chip-drop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -14px);
+  }
+}
+
+.chip-stack-amt {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cd-inner {
+    transition: none;
+  }
+  .cd.is-dealt,
+  .chip-stack-chip {
+    animation: none;
+  }
+}

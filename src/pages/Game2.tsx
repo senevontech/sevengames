@@ -69,6 +69,7 @@ const CATEGORY_COLOR: Partial<Record<GameCategory, string>> = {
   Indie: "#ff2d55",
   Puzzle: "#0a84ff",
   Classic: "#b3814c",
+  Cards: "#17703f",
   Words: "#e0a800",
   Numbers: "#30b0c7",
 };

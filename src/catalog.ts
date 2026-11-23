@@ -9,7 +9,8 @@ export type GameCategory =
   | "RPG"
   | "Racing"
   | "Sports"
-  | "Indie";
+  | "Indie"
+  | "Cards";
 
 export type GameEngine =
   | "tictactoe"
@@ -34,7 +35,8 @@ export type GameEngine =
   | "lights-out"
   | "arrows"
   | "chess"
-  | "ludo";
+  | "ludo"
+  | "blackjack";
 
 export type Game = {
   id: string;
@@ -81,6 +83,7 @@ export const categories: Array<GameCategory | "All"> = [
   "Indie",
   "Puzzle",
   "Classic",
+  "Cards",
   "Words",
   "Numbers",
 ];
@@ -463,6 +466,17 @@ export const games: Game[] = [
     minutes: 15,
     accent: "#e53935",
     description: "Roll, race your four tokens home and knock rivals back to base. 2–4 players: CPU, friends or online.",
+  },
+  {
+    id: "blackjack",
+    title: "Blackjack",
+    category: "Cards",
+    kind: "builtin",
+    engine: "blackjack",
+    difficulty: "Easy",
+    minutes: 5,
+    accent: "#17703f",
+    description: "Beat the dealer to 21 on a real felt table. Bet free chips, hit, stand, double or split. Blackjack pays 3 to 2.",
   },
 ];
 
