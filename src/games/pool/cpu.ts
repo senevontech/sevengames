@@ -2,17 +2,37 @@
    cut it can make), simulates the most promising ones with the real physics, and keeps the
    shot that pots a ball and leaves the cue ball best placed for the next one. With nothing
    to pot it plays safe: a legal hit that leaves the opponent the least. Then it misses a
-   little, by its level (aim and power noise). */
+   little, by its strength (aim and power noise).
+
+   Its strength follows the player's pool level: level 1 is a beginner that misses often and
+   only sees the easiest pots; it sharpens steadily, and from level 60 it plays like a pro. */
 import { FOOT_SPOT, HEAD_X, L, MU_ROLL_PUBLIC, POCKETS, R, W, legalTargets, placeOk, playShot, speedOf, type PoolState, type Shot, type Vec } from "./engine";
 
-export type CpuLevel = "easy" | "medium" | "hard";
 export type CpuPlan = { shot: Shot; cue: Vec | null };
 
-const LEVEL = {
-  easy: { aim: 1.5, power: 0.12, top: 3, variants: 2, pick: 3 },
-  medium: { aim: 0.55, power: 0.06, top: 6, variants: 4, pick: 1 },
-  hard: { aim: 0.16, power: 0.03, top: 10, variants: 6, pick: 1 },
-} as const;
+/** The level where the CPU reaches full strength. */
+export const CPU_MAX_LEVEL = 60;
+/** 0 (level 1) … 1 (level CPU_MAX_LEVEL and up) */
+export const cpuSkill = (level: number) => Math.max(0, Math.min(1, (level - 1) / (CPU_MAX_LEVEL - 1)));
+
+type Strength = { aim: number; power: number; top: number; variants: number; pick: number; safety: boolean; breakPower: number };
+/** How a CPU of this skill plays. */
+function strength(skill: number): Strength {
+  const k = Math.max(0, Math.min(1, skill));
+  return {
+    // aim error (degrees, one standard deviation): ~2.5° for a beginner, under 0.1° for a pro
+    aim: 2.5 * (1 - k) ** 1.7 + 0.08,
+    power: 0.16 - 0.13 * k,
+    // how many pots it considers, and how many ways it tries each
+    top: Math.round(2 + 10 * k),
+    variants: Math.max(1, Math.round(1 + 5 * k)),
+    // beginners don't always pick their best option
+    pick: k < 0.2 ? 3 : k < 0.45 ? 2 : 1,
+    // with nothing to pot, a beginner just hits something; later it plays a real safety
+    safety: k >= 0.25,
+    breakPower: 0.72 + 0.26 * k,
+  };
+}
 
 type Cand = { cue: Vec; target: number; pocket: number; dir: Vec; cut: number; dCG: number; dTP: number; score: number };
 
@@ -112,8 +132,7 @@ const gauss = () => {
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
 };
 
-function withNoise(shot: Shot, level: CpuLevel): Shot {
-  const lv = LEVEL[level];
+function withNoise(shot: Shot, lv: Strength): Shot {
   const a = (gauss() * lv.aim * Math.PI) / 180;
   const c = Math.cos(a);
   const s = Math.sin(a);
@@ -128,17 +147,17 @@ function withNoise(shot: Shot, level: CpuLevel): Shot {
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
 
 /** Plan the CPU's shot (async: it simulates candidates a few at a time to keep the page smooth). */
-export async function cpuPlan(st: PoolState, level: CpuLevel): Promise<CpuPlan> {
+export async function cpuPlan(st: PoolState, skill: number): Promise<CpuPlan> {
   const me = st.turn;
+  const lv = strength(skill);
   // the break: from the head string, straight into the head ball, hard
   if (st.isBreak) {
     const cue = { x: HEAD_X - 4 * R, y: W / 2 + (Math.random() - 0.5) * W * 0.4 };
     const dx = FOOT_SPOT.x - cue.x;
     const dy = FOOT_SPOT.y - cue.y;
     const d = Math.hypot(dx, dy);
-    return { cue, shot: withNoise({ dx: dx / d, dy: dy / d, power: level === "easy" ? 0.8 : 0.97, sx: 0, sy: -0.15 }, level) };
+    return { cue, shot: withNoise({ dx: dx / d, dy: dy / d, power: lv.breakPower, sx: 0, sy: -0.15 }, lv) };
   }
-  const lv = LEVEL[level];
   const cues: Vec[] = st.inHand ? placements(st) : [st.balls[0]];
   if (st.inHand && cues.length === 0) cues.push(st.balls[0]);
 
@@ -176,12 +195,18 @@ export async function cpuPlan(st: PoolState, level: CpuLevel): Promise<CpuPlan> 
   // nothing pots: play safe — a solid legal hit on each target at a couple of speeds
   if (!tried.some((t) => t.value >= 1000)) {
     const cue = st.inHand ? cues[0] : st.balls[0];
-    for (const target of legalTargets(st)) {
+    // a beginner just goes at the nearest ball it may hit
+    const targets = lv.safety
+      ? legalTargets(st)
+      : legalTargets(st)
+          .sort((a, b) => dist(st.balls[a], cue) - dist(st.balls[b], cue))
+          .slice(0, 1);
+    for (const target of targets) {
       const t = st.balls[target];
       const dx = t.x - cue.x;
       const dy = t.y - cue.y;
       const d = Math.hypot(dx, dy) || 1;
-      for (const off of [0, 0.6, -0.6]) {
+      for (const off of lv.safety ? [0, 0.6, -0.6] : [0]) {
         // aim a little off-centre for thinner hits
         const ox = t.x + (-dy / d) * off * R - cue.x;
         const oy = t.y + (dx / d) * off * R - cue.y;
@@ -203,5 +228,5 @@ export async function cpuPlan(st: PoolState, level: CpuLevel): Promise<CpuPlan> 
   }
   tried.sort((a, b) => b.value - a.value);
   const choice = tried[Math.floor(Math.random() * Math.min(lv.pick, tried.length))];
-  return { cue: choice.plan.cue, shot: withNoise(choice.plan.shot, level) };
+  return { cue: choice.plan.cue, shot: withNoise(choice.plan.shot, lv) };
 }

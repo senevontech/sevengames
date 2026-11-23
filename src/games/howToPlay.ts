@@ -215,11 +215,12 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
   },
   pool: {
     steps: [
-      { icon: "🎱", title: "Aim", text: "Drag on the table to point the cue. Use the fine-aim strip for tiny adjustments." },
+      { icon: "🎱", title: "Aim", text: "Mouse: point at where to shoot. Touch: tap a spot to aim there, or drag to turn the cue slowly. Use the fine-aim strip for tiny adjustments." },
       { icon: "💪", title: "Power and shoot", text: "Pull the power bar, then let go to shoot." },
       { icon: "🌀", title: "Spin", text: "Tap the cue-ball icon to hit it high (follow), low (draw) or to the side." },
       { icon: "🟡", title: "Pot your group", text: "The first ball potted after the break decides solids or stripes. Pot all of yours." },
       { icon: "⚫", title: "Then the 8", text: "Pot the 8 last to win. Potting it early, or scratching on it, loses the frame." },
+      { icon: "⏱️", title: "Endless", text: "Solo against the clock: every ball you pot scores and adds time, a scratch costs time. Clear the table for a fresh rack." },
     ],
     controls: ["Drag to aim · pull the bar to shoot", "Hit your own group first, or it's a foul"],
   },

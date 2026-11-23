@@ -119,7 +119,8 @@ function nearestPocket(x: number, y: number) {
 }
 
 /* ---------------- simulation ---------------- */
-export type SimEvent = { t: number; k: "cue" | "ball" | "rail" | "pot"; v: number; id: number; pocket?: number };
+/** x: where along the table it happened (0..L), so sounds can be panned */
+export type SimEvent = { t: number; k: "cue" | "ball" | "rail" | "pot"; v: number; id: number; x: number; pocket?: number };
 export type SimResult = {
   /** first object ball the cue ball touched */
   firstHit: number | null;
@@ -162,7 +163,7 @@ export function simulate(balls: Ball[], shot: Shot, record: boolean): SimResult 
   cue.uy = cue.vy * 2.5 * 0.5 * sy;
   cue.s = speed * 2.5 * 0.5 * sx;
 
-  const events: SimEvent[] = [{ t: 0, k: "cue", v: speed, id: 0 }];
+  const events: SimEvent[] = [{ t: 0, k: "cue", v: speed, id: 0, x: cue.x }];
   const potted: SimResult["potted"] = [];
   let firstHit: number | null = null;
   let railAfterContact = false;
@@ -282,7 +283,7 @@ export function simulate(balls: Ball[], shot: Shot, record: boolean): SimResult 
             }
           }
           if (firstHit === null && (a.id === 0 || b.id === 0)) firstHit = a.id === 0 ? b.id : a.id;
-          if (vrel > 20) events.push({ t: t + k * h, k: "ball", v: vrel, id: a.id });
+          if (vrel > 20) events.push({ t: t + k * h, k: "ball", v: vrel, id: a.id, x: (a.x + b.x) / 2 });
         }
       }
       // cushions
@@ -332,7 +333,7 @@ export function simulate(balls: Ball[], shot: Shot, record: boolean): SimResult 
             b.s *= 0.5;
           }
           if (firstHit !== null) railAfterContact = true;
-          if (-vn > 25) events.push({ t: t + k * h, k: "rail", v: -vn, id: b.id });
+          if (-vn > 25) events.push({ t: t + k * h, k: "rail", v: -vn, id: b.id, x: b.x });
         }
       }
       // pockets
@@ -358,7 +359,7 @@ export function simulate(balls: Ball[], shot: Shot, record: boolean): SimResult 
         b.x = POCKETS[hit].x;
         b.y = POCKETS[hit].y;
         potted.push({ id: b.id, pocket: hit, t: t + k * h });
-        events.push({ t: t + k * h, k: "pot", v: sp, id: b.id, pocket: hit });
+        events.push({ t: t + k * h, k: "pot", v: sp, id: b.id, x: POCKETS[hit].x, pocket: hit });
       }
     }
     t += TICK;
@@ -556,6 +557,41 @@ export function playShot(st: PoolState, shot: Shot, cue: Vec | null, record: boo
   }
   return { next, sim };
 }
+
+/* ---------------- Endless (solo, against the clock) ---------------- */
+/** Endless: no groups, every object ball (the 8 too) counts. A scratch gives ball in hand
+ *  anywhere; once every object ball is down a fresh rack is set up (break from the kitchen). */
+export type EndlessOutcome = ShotOutcome & { pots: number; scratch: boolean; cleared: boolean };
+
+export function playEndless(st: PoolState, shot: Shot, cue: Vec | null, record: boolean, rand: () => number = Math.random): EndlessOutcome {
+  const balls = st.balls.map((b) => ({ ...b }));
+  if (st.inHand && cue && placeOk(st, cue.x, cue.y)) balls[0] = { id: 0, x: cue.x, y: cue.y, potted: false };
+  const sim = simulate(balls, shot, record);
+  const ids = sim.potted.map((p) => p.id);
+  const scratch = ids.includes(0);
+  const pots = ids.filter((id) => id !== 0).length;
+  let next: PoolState = {
+    ...st,
+    balls: sim.final.map((b) => ({ ...b })),
+    turn: 0,
+    groups: [null, null],
+    isBreak: false,
+    shots: st.shots + 1,
+    foul: scratch,
+    note: scratch ? FOULS.scratch : null,
+    inHand: scratch ? "anywhere" : null,
+  };
+  if (scratch) {
+    const spot = freeSpot({ ...next, balls: next.balls.map((b) => (b.id === 0 ? { ...b, potted: true } : b)) }, HEAD_SPOT.x, HEAD_SPOT.y);
+    next.balls[0] = { id: 0, x: spot.x, y: spot.y, potted: false };
+  }
+  const cleared = next.balls.every((b) => b.id === 0 || b.potted);
+  if (cleared) next = { ...newRack(rand, 0), shots: next.shots };
+  return { next, sim, pots, scratch, cleared };
+}
+
+/** Endless: every object ball still on the table. */
+export const endlessTargets = (st: PoolState) => st.balls.filter((b) => !b.potted && b.id !== 0).map((b) => b.id);
 
 /** The shooter ran out of time: a foul, the other player gets ball in hand. */
 export function timeoutFoul(st: PoolState): PoolState {

@@ -29,9 +29,9 @@ export const ballCss = (id: number) => {
   return `rgb(${r},${g},${b})`;
 };
 
-const CUSH = 38; // cushion rubber width
+const CUSH = 26; // cushion rubber width (seen from above)
 /** cushion + rail around the cloth: slim on phones (more cloth on screen), fuller on big screens */
-export const frameFor = (compact: boolean) => (compact ? 70 : 112);
+export const frameFor = (compact: boolean) => (compact ? 44 : 58);
 const CUE_LEN = 1150;
 
 /* ---------------- tiny 3×3 rotation helpers ---------------- */
@@ -107,13 +107,12 @@ function glyphOf(id: number) {
 const SPOT_COS = Math.cos(0.5);
 const SPOT_TAN = Math.tan(0.5);
 const STRIPE = 0.56; // |z| above this is white on a striped ball
-// light toward the upper left, in screen space (z toward the viewer is negative)
-const LX = -0.42, LY = -0.55, LZ = -0.72;
+// lamp light: mostly from above, a little from the upper left (z toward the viewer is negative)
+const LX = -0.22, LY = -0.32, LZ = -0.92;
+// the lamp's reflection: centre and size on the plane above the table (screen units)
+const LAMP_X = -0.36, LAMP_Y = -0.5, LAMP_LONG = 0.5, LAMP_S = 0.2, LAMP_SOFT = 0.2;
 const LN = Math.hypot(LX, LY, LZ);
 const Lx = LX / LN, Ly = LY / LN, Lz = LZ / LN;
-const HX0 = Lx, HY0 = Ly, HZ0 = Lz - 1;
-const HN = Math.hypot(HX0, HY0, HZ0);
-const Hx = HX0 / HN, Hy = HY0 / HN, Hz = HZ0 / HN;
 
 function paintBall(img: ImageData, id: number, m: Mat, portrait: boolean, cloth: [number, number, number]) {
   const size = img.width;
@@ -172,19 +171,34 @@ function paintBall(img: ImageData, id: number, m: Mat, portrait: boolean, cloth:
           cr = 196; cg = 40; cb = 40;
         }
       }
-      // shading
+      // shading: the lamp hangs above the table (a little up-left of the view)
       const ndl = sx * Lx + sy * Ly + nz * Lz;
       const diff = ndl > 0 ? ndl : 0;
-      const ndh = sx * Hx + sy * Hy + nz * Hz;
-      const h = ndh > 0 ? ndh : 0;
-      const h2 = h * h, h4 = h2 * h2, h8 = h4 * h4, h16 = h8 * h8, h32 = h16 * h16;
-      const spec = h32 * h16 * 0.95 + h8 * 0.1;
-      const shade = 0.34 + 0.76 * diff;
-      // cloth colour reflected on the lower rim
-      const rim = r2 > 0.55 ? (r2 - 0.55) * 0.5 * (sy > -0.2 ? 1 : 0.4) : 0;
-      cr = cr * shade * (1 - rim) + cloth[0] * rim + spec * 255;
-      cg = cg * shade * (1 - rim) + cloth[1] * rim + spec * 255;
-      cb = cb * shade * (1 - rim) + cloth[2] * rim + spec * 255;
+      // gloss: the lamp's rectangular shade reflected in the lacquer (where the mirrored view
+      // ray meets the lamp's plane above the table)
+      const rz = 1 - 2 * nz * nz;
+      let spec = 0;
+      if (rz < -0.05) {
+        const qx = (-2 * nz * sx) / -rz;
+        const qy = (-2 * nz * sy) / -rz;
+        const ex = Math.abs(qx - LAMP_X) - (portrait ? LAMP_S : LAMP_LONG);
+        const ey = Math.abs(qy - LAMP_Y) - (portrait ? LAMP_LONG : LAMP_S);
+        const fx = ex < 0 ? 1 : ex > LAMP_SOFT ? 0 : 1 - ex / LAMP_SOFT;
+        const fy = ey < 0 ? 1 : ey > LAMP_SOFT ? 0 : 1 - ey / LAMP_SOFT;
+        spec = fx * fy * 0.92;
+        // a faint second lamp further along the table
+        const ex2 = Math.abs(qx - (portrait ? LAMP_X : -LAMP_X * 2.6)) - (portrait ? 0.12 : 0.22);
+        const ey2 = Math.abs(qy - (portrait ? -LAMP_Y * 2.2 : LAMP_Y)) - (portrait ? 0.22 : 0.12);
+        if (ex2 < 0.15 && ey2 < 0.15) spec += (1 - Math.max(0, ex2) / 0.15) * (1 - Math.max(0, ey2) / 0.15) * 0.22;
+      }
+      const shade = 0.3 + 0.8 * diff;
+      // towards the edge the ball reflects its surroundings: the cloth below, the dark room above
+      const edge = r2 > 0.5 ? (r2 - 0.5) * 2 : 0;
+      const rim = edge * edge * 0.55;
+      const clothW = rim * (sy > -0.3 ? 0.75 : 0.25);
+      cr = cr * shade * (1 - rim) + cloth[0] * clothW + spec * 255;
+      cg = cg * shade * (1 - rim) + cloth[1] * clothW + spec * 255;
+      cb = cb * shade * (1 - rim) + cloth[2] * clothW + spec * 255;
       d[o] = cr > 255 ? 255 : cr;
       d[o + 1] = cg > 255 ? 255 : cg;
       d[o + 2] = cb > 255 ? 255 : cb;
@@ -259,6 +273,8 @@ export class PoolView {
   inHand: null | "kitchen" | "anywhere" = null;
   /** placing the cue ball: is the spot allowed */
   placeBad = false;
+  /** while a shot plays: how much is rolling (0..1), for the rolling sound */
+  onRoll: ((level: number) => void) | null = null;
 
   constructor(readonly canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext("2d")!;
@@ -351,6 +367,11 @@ export class PoolView {
     return this.portrait ? { x: L + F - py, y: px - F } : { x: px - F, y: py - F };
   }
 
+  /** CSS pixels per table unit (how big the table is drawn) */
+  get cssPerUnit() {
+    return this.k / this.dpr;
+  }
+
   /** a screen-space offset (device px) as a world vector */
   private screenVec(dx: number, dy: number): Vec {
     return this.portrait ? { x: -dy / this.k, y: dx / this.k } : { x: dx / this.k, y: dy / this.k };
@@ -372,177 +393,181 @@ export class PoolView {
     this.worldTransform(c);
     const look = this.table;
     const FRAME = this.F;
-    const WOOD = FRAME - CUSH;
-    const rr = Math.min(46, FRAME * 0.45);
+    const RAIL = FRAME - CUSH;
+    const rr = 16;
     const rnd = mulberry(7);
-
-    // the rails
     const fx = -FRAME, fy = -FRAME, fw = L + 2 * FRAME, fh = W + 2 * FRAME;
-    const wood = c.createLinearGradient(0, fy, 0, fy + fh);
-    wood.addColorStop(0, look.rail[0]);
-    wood.addColorStop(0.5, look.rail[1]);
-    wood.addColorStop(1, look.rail[2]);
-    c.fillStyle = wood;
+
+    // the rails: one smooth piece, lit from above
+    const railG = c.createLinearGradient(0, fy, 0, fy + fh);
+    railG.addColorStop(0, shadeHex(look.rail[0], 1.08));
+    railG.addColorStop(0.5, look.rail[1]);
+    railG.addColorStop(1, look.rail[2]);
+    c.fillStyle = railG;
     roundRect(c, fx, fy, fw, fh, rr);
     c.fill();
-    // grain
-    c.save();
-    roundRect(c, fx, fy, fw, fh, rr);
-    c.clip();
-    for (let i = 0; i < (look.grain ? 140 : 0); i++) {
-      const y = fy + rnd() * fh;
-      c.strokeStyle = rnd() < 0.5 ? `rgba(30,12,4,${0.08 + rnd() * 0.12})` : `rgba(160,90,45,${0.05 + rnd() * 0.08})`;
-      c.lineWidth = 0.8 + rnd() * 2.2;
-      c.beginPath();
-      c.moveTo(fx, y);
-      const amp = 2 + rnd() * 6;
-      for (let x = fx; x <= fx + fw; x += 60) c.lineTo(x, y + Math.sin(x * 0.004 + i) * amp);
-      c.stroke();
+    if (look.grain) {
+      // a quiet grain, running along the rails
+      c.save();
+      roundRect(c, fx, fy, fw, fh, rr);
+      c.clip();
+      for (let i = 0; i < 90; i++) {
+        const y = fy + rnd() * fh;
+        c.strokeStyle = rnd() < 0.5 ? `rgba(0,0,0,${0.04 + rnd() * 0.05})` : `rgba(255,235,210,${0.03 + rnd() * 0.04})`;
+        c.lineWidth = 0.6 + rnd() * 1.4;
+        c.beginPath();
+        c.moveTo(fx, y);
+        const amp = 1 + rnd() * 3;
+        for (let x = fx; x <= fx + fw; x += 80) c.lineTo(x, y + Math.sin(x * 0.003 + i) * amp);
+        c.stroke();
+      }
+      c.restore();
     }
-    // lacquer sheen + bevel
-    const sheen = c.createLinearGradient(fx, fy, fx, fy + 90);
-    sheen.addColorStop(0, "rgba(255,220,180,0.22)");
-    sheen.addColorStop(1, "rgba(255,220,180,0)");
-    c.fillStyle = sheen;
-    c.fillRect(fx, fy, fw, 90);
-    c.restore();
-    c.lineWidth = 5;
-    c.strokeStyle = "rgba(0,0,0,0.45)";
-    roundRect(c, fx + 2.5, fy + 2.5, fw - 5, fh - 5, rr - 2);
+    // a crisp lit edge outside, a soft one inside
+    c.lineWidth = 2;
+    c.strokeStyle = "rgba(255,255,255,0.22)";
+    roundRect(c, fx + 1.5, fy + 1.5, fw - 3, fh - 3, rr - 1);
     c.stroke();
-    c.lineWidth = 2.5;
-    c.strokeStyle = "rgba(255,230,200,0.2)";
-    roundRect(c, fx + 7, fy + 7, fw - 14, fh - 14, Math.max(4, rr - 6));
+    c.lineWidth = 3;
+    c.strokeStyle = "rgba(0,0,0,0.35)";
+    roundRect(c, -CUSH - 1.5, -CUSH - 1.5, L + 2 * CUSH + 3, W + 2 * CUSH + 3, 4);
     c.stroke();
 
-    // metal caps over the rails at every pocket (kept inside the table's outline)
-    c.save();
-    roundRect(c, fx, fy, fw, fh, rr);
-    c.clip();
-    POCKETS.forEach((p) => {
-      const cr = (p.side ? 1.78 * R : 2.05 * R) + Math.min(30, WOOD * 0.62);
-      const g = c.createRadialGradient(p.x - cr * 0.3, p.y - cr * 0.3, cr * 0.1, p.x, p.y, cr);
-      g.addColorStop(0, look.metal[0]);
-      g.addColorStop(0.7, shadeHex(look.metal[0], 0.85));
-      g.addColorStop(1, look.metal[1]);
-      c.fillStyle = g;
-      c.beginPath();
-      c.arc(p.x, p.y, cr, 0, Math.PI * 2);
-      c.fill();
-      c.strokeStyle = "rgba(0,0,0,0.35)";
-      c.lineWidth = 2;
-      c.stroke();
-    });
-    c.restore();
-
-    // sights (mother-of-pearl diamonds)
-    const sightOff = CUSH + WOOD * 0.5;
-    const sz = Math.min(1, WOOD / 60);
+    // sights: small round inlays
+    const so = CUSH + RAIL * 0.5;
+    const sr = Math.min(4, RAIL * 0.16);
     const sight = (x: number, y: number) => {
-      const g = c.createRadialGradient(x - 3, y - 3, 1, x, y, 12 * sz);
-      g.addColorStop(0, "#ffffff");
-      g.addColorStop(0.6, look.sight);
-      g.addColorStop(1, shadeHex(look.sight, 0.75));
-      c.fillStyle = g;
+      c.fillStyle = look.sight;
       c.beginPath();
-      c.moveTo(x, y - 11 * sz);
-      c.lineTo(x + 7 * sz, y);
-      c.lineTo(x, y + 11 * sz);
-      c.lineTo(x - 7 * sz, y);
-      c.closePath();
+      c.arc(x, y, sr, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = "rgba(255,255,255,0.45)";
+      c.beginPath();
+      c.arc(x - sr * 0.3, y - sr * 0.3, sr * 0.4, 0, Math.PI * 2);
       c.fill();
     };
     for (let i = 1; i < 8; i++) {
       if (i === 4) continue;
-      sight((L * i) / 8, -sightOff);
-      sight((L * i) / 8, W + sightOff);
+      sight((L * i) / 8, -so);
+      sight((L * i) / 8, W + so);
     }
     for (let i = 1; i < 4; i++) {
-      sight(-sightOff, (W * i) / 4);
-      sight(L + sightOff, (W * i) / 4);
+      sight(-so, (W * i) / 4);
+      sight(L + so, (W * i) / 4);
     }
 
-    // cloth (reaches under the cushions and into the pocket mouths)
-    const cloth = c.createRadialGradient(L / 2, W / 2, 40, L / 2, W / 2, L * 0.62);
-    cloth.addColorStop(0, shadeHex(look.cloth, 1.1));
-    cloth.addColorStop(0.7, look.cloth);
-    cloth.addColorStop(1, look.clothDark);
-    c.fillStyle = cloth;
+    // the cloth
+    const base = c.createLinearGradient(0, 0, 0, W);
+    base.addColorStop(0, look.cloth);
+    base.addColorStop(1, shadeHex(look.cloth, 0.92));
+    c.fillStyle = base;
     c.fillRect(-CUSH, -CUSH, L + 2 * CUSH, W + 2 * CUSH);
-    // felt nap: fine speckle
-    for (let i = 0; i < 5000; i++) {
-      c.fillStyle = rnd() < 0.5 ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.035)";
-      c.fillRect(rnd() * L, rnd() * W, 2 + rnd() * 3, 1.5);
+    // lamp pools: three shades over the length of the table
+    c.save();
+    c.globalCompositeOperation = "screen";
+    for (const lx of [L * 0.2, L * 0.5, L * 0.8]) {
+      const g = c.createRadialGradient(lx, W * 0.48, 0, lx, W * 0.48, W * 0.62);
+      g.addColorStop(0, "rgba(255,248,226,0.16)");
+      g.addColorStop(0.55, "rgba(255,248,226,0.06)");
+      g.addColorStop(1, "rgba(255,248,226,0)");
+      c.fillStyle = g;
+      c.fillRect(-CUSH, -CUSH, L + 2 * CUSH, W + 2 * CUSH);
     }
-    // spots: foot spot and head spot
-    c.fillStyle = "rgba(255,255,255,0.35)";
+    c.restore();
+    // falling off towards the rails
+    const vig = c.createRadialGradient(L / 2, W / 2, W * 0.35, L / 2, W / 2, L * 0.58);
+    vig.addColorStop(0, "rgba(0,0,0,0)");
+    vig.addColorStop(1, hexA(look.clothDark, 0.75));
+    c.fillStyle = vig;
+    c.fillRect(-CUSH, -CUSH, L + 2 * CUSH, W + 2 * CUSH);
+    // felt: a fine, even weave
+    c.save();
+    c.globalAlpha = 0.07;
+    c.fillStyle = c.createPattern(feltTile(), "repeat")!;
+    c.fillRect(-CUSH, -CUSH, L + 2 * CUSH, W + 2 * CUSH);
+    c.restore();
+    // spots
+    c.fillStyle = "rgba(255,255,255,0.28)";
     c.beginPath();
-    c.arc(L * 0.75, W / 2, 5, 0, Math.PI * 2);
-    c.arc(HEAD_X, W / 2, 4, 0, Math.PI * 2);
+    c.arc(L * 0.75, W / 2, 4, 0, Math.PI * 2);
+    c.arc(HEAD_X, W / 2, 3, 0, Math.PI * 2);
     c.fill();
 
-    // pockets: liner, hole
+    // pockets: darker cloth at the mouth, a leather liner, depth (cut into the rails)
+    c.save();
+    roundRect(c, fx, fy, fw, fh, rr);
+    c.clip();
     POCKETS.forEach((p) => {
       const hr = p.side ? 1.78 * R : 2.05 * R;
+      const mouth = c.createRadialGradient(p.x, p.y, hr, p.x, p.y, hr * 2.1);
+      mouth.addColorStop(0, "rgba(0,0,0,0.38)");
+      mouth.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = mouth;
+      c.beginPath();
+      c.arc(p.x, p.y, hr * 2.1, 0, Math.PI * 2);
+      c.fill();
+      // liner, with a thin metal lip
       c.fillStyle = look.liner;
       c.beginPath();
-      c.arc(p.x, p.y, hr + 9, 0, Math.PI * 2);
+      c.arc(p.x, p.y, hr + 6, 0, Math.PI * 2);
       c.fill();
-      const lg = c.createRadialGradient(p.x, p.y, hr * 0.2, p.x, p.y, hr);
-      lg.addColorStop(0, "#000");
-      lg.addColorStop(0.75, "#050505");
-      lg.addColorStop(1, "#262626");
-      c.fillStyle = lg;
+      c.strokeStyle = hexA(look.metal[0], 0.55);
+      c.lineWidth = 1.6;
+      c.beginPath();
+      c.arc(p.x, p.y, hr + 6, 0, Math.PI * 2);
+      c.stroke();
+      const hole = c.createRadialGradient(p.x + hr * 0.15, p.y + hr * 0.15, 0, p.x, p.y, hr);
+      hole.addColorStop(0, "#000");
+      hole.addColorStop(0.7, "#030303");
+      hole.addColorStop(0.92, "#111");
+      hole.addColorStop(1, "#2a2a2a");
+      c.fillStyle = hole;
       c.beginPath();
       c.arc(p.x, p.y, hr, 0, Math.PI * 2);
       c.fill();
     });
+    c.restore();
 
-    // cushions: one polygon per rail section, between the jaw lines
-    for (const poly of cushionPolys()) {
+    // cushions: lit rubber, lighter at the nose
+    cushionPolys().forEach((poly, i) => {
+      // which way the nose faces (into the cloth)
+      const nose = i < 2 ? { x: 0, y: 0, dx: 0, dy: -CUSH } : i < 4 ? { x: 0, y: W, dx: 0, dy: CUSH } : i === 4 ? { x: 0, y: 0, dx: -CUSH, dy: 0 } : { x: L, y: 0, dx: CUSH, dy: 0 };
+      const g = c.createLinearGradient(nose.x, nose.y, nose.x + nose.dx, nose.y + nose.dy);
+      g.addColorStop(0, shadeHex(look.cushion, 1.22));
+      g.addColorStop(0.18, shadeHex(look.cushion, 1.05));
+      g.addColorStop(1, shadeHex(look.cushion, 0.72));
       c.beginPath();
-      poly.forEach((pt, i) => (i ? c.lineTo(pt.x, pt.y) : c.moveTo(pt.x, pt.y)));
+      poly.forEach((pt, k) => (k ? c.lineTo(pt.x, pt.y) : c.moveTo(pt.x, pt.y)));
       c.closePath();
-      c.fillStyle = look.cushion;
+      c.fillStyle = g;
       c.fill();
-    }
-    // cushion nose light + shadow cast on the cloth
+    });
+    // the nose's shadow on the cloth
     c.save();
     c.beginPath();
     c.rect(0, 0, L, W);
     c.clip();
-    const edge = 26;
-    const sides: Array<[number, number, number, number, number, number]> = [
-      [0, 0, L, edge, 0, 1],
-      [0, W - edge, L, edge, 0, -1],
-      [0, 0, edge, W, 1, 0],
-      [L - edge, 0, edge, W, -1, 0],
-    ];
-    for (const [x, y, w, h, nx, ny] of sides) {
-      const g = c.createLinearGradient(nx > 0 ? 0 : nx < 0 ? L : 0, ny > 0 ? 0 : ny < 0 ? W : 0, nx > 0 ? edge : nx < 0 ? L - edge : 0, ny > 0 ? edge : ny < 0 ? W - edge : 0);
-      g.addColorStop(0, "rgba(0,0,0,0.32)");
+    const sh = 16;
+    const band = (x0: number, y0: number, x1: number, y1: number, rx: number, ry: number, rw: number, rh: number) => {
+      const g = c.createLinearGradient(x0, y0, x1, y1);
+      g.addColorStop(0, "rgba(0,0,0,0.36)");
       g.addColorStop(1, "rgba(0,0,0,0)");
       c.fillStyle = g;
-      c.fillRect(x, y, w, h);
-    }
+      c.fillRect(rx, ry, rw, rh);
+    };
+    band(0, 0, 0, sh, 0, 0, L, sh);
+    band(0, W, 0, W - sh, 0, W - sh, L, sh);
+    band(0, 0, sh, 0, 0, 0, sh, W);
+    band(L, 0, L - sh, 0, L - sh, 0, sh, W);
     c.restore();
-    c.strokeStyle = "rgba(255,255,255,0.12)";
-    c.lineWidth = 2.5;
+    c.strokeStyle = "rgba(255,255,255,0.16)";
+    c.lineWidth = 1.4;
     for (const sg of CUSHIONS) {
       c.beginPath();
       c.moveTo(sg.ax, sg.ay);
       c.lineTo(sg.bx, sg.by);
       c.stroke();
     }
-    // overhead lamp
-    c.setTransform(1, 0, 0, 1, 0, 0);
-    const lw = cv.width, lh = cv.height;
-    const lamp = c.createRadialGradient(lw / 2, lh / 2, 0, lw / 2, lh / 2, Math.max(lw, lh) * 0.7);
-    lamp.addColorStop(0, "rgba(255,248,225,0.10)");
-    lamp.addColorStop(0.6, "rgba(255,248,225,0)");
-    lamp.addColorStop(1, "rgba(0,0,0,0.25)");
-    c.fillStyle = lamp;
-    c.fillRect(0, 0, lw, lh);
     this.layer = cv;
   }
 
@@ -632,10 +657,22 @@ export class PoolView {
         pos[i].fade = q;
         if (q >= 1) pos[i].on = false;
       }
+      // rolling: total ball speed this frame
+      if (this.onRoll) {
+        let sum = 0;
+        for (let i = 0; i < n; i++) {
+          if (!pos[i].on || pos[i].fade > 0) continue;
+          const o0 = (f0 * n + i) * STRIDE;
+          const o1 = (f1 * n + i) * STRIDE;
+          sum += Math.hypot(fr[o1] - fr[o0], fr[o1 + 1] - fr[o0 + 1]) / fdt;
+        }
+        this.onRoll(Math.min(1, sum / 7000));
+      }
       // sounds
       for (const e of sim.events) if (e.t > p.lastT && e.t <= t) p.onEvent(e);
       p.lastT = t;
       if (t >= sim.duration + 0.25) {
+        this.onRoll?.(0);
         this.play = null;
         this.balls = sim.final.map((b) => ({ ...b }));
         p.onDone();
@@ -664,12 +701,23 @@ export class PoolView {
       const q = pos[i];
       if (!q.on || q.fade > 0) continue;
       const s = this.tx(q.x, q.y);
-      const g = ctx.createRadialGradient(s.x + rpx * 0.28, s.y + rpx * 0.36, rpx * 0.2, s.x + rpx * 0.28, s.y + rpx * 0.36, rpx * 1.25);
-      g.addColorStop(0, "rgba(0,0,0,0.5)");
+      const ox = s.x + rpx * 0.16;
+      const oy = s.y + rpx * 0.24;
+      const g = ctx.createRadialGradient(ox, oy, rpx * 0.3, ox, oy, rpx * 1.45);
+      g.addColorStop(0, "rgba(0,0,0,0.42)");
+      g.addColorStop(0.55, "rgba(0,0,0,0.16)");
       g.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = g;
       ctx.beginPath();
-      ctx.arc(s.x + rpx * 0.28, s.y + rpx * 0.36, rpx * 1.25, 0, Math.PI * 2);
+      ctx.arc(ox, oy, rpx * 1.45, 0, Math.PI * 2);
+      ctx.fill();
+      // where the ball sits on the cloth
+      const cg = ctx.createRadialGradient(s.x + rpx * 0.05, s.y + rpx * 0.08, 0, s.x + rpx * 0.05, s.y + rpx * 0.08, rpx * 0.85);
+      cg.addColorStop(0, "rgba(0,0,0,0.55)");
+      cg.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = cg;
+      ctx.beginPath();
+      ctx.arc(s.x + rpx * 0.05, s.y + rpx * 0.08, rpx * 0.85, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -844,7 +892,7 @@ export class PoolView {
       ctx.closePath();
     };
     // shadow on the cloth
-    const sh = this.screenVec(14 * this.dpr, 20 * this.dpr);
+    const sh = this.screenVec(5 * this.dpr, 8 * this.dpr);
     ctx.save();
     ctx.translate(sh.x, sh.y);
     ctx.fillStyle = "rgba(0,0,0,0.28)";
@@ -908,6 +956,29 @@ function roundRect(c: CanvasRenderingContext2D, x: number, y: number, w: number,
   c.arcTo(x, y + h, x, y, r);
   c.arcTo(x, y, x + w, y, r);
   c.closePath();
+}
+
+/** a colour with alpha */
+function hexA(hex: string, a: number) {
+  const [r, g, b] = hexRgb(hex);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+let felt: HTMLCanvasElement | null = null;
+/** a small tile of cloth weave: fine random light/dark specks, slightly stretched along the nap */
+function feltTile() {
+  if (felt) return felt;
+  felt = document.createElement("canvas");
+  felt.width = felt.height = 96;
+  const x = felt.getContext("2d")!;
+  const img = x.createImageData(96, 96);
+  for (let i = 0; i < 96 * 96; i++) {
+    const v = Math.random() < 0.5 ? 0 : 255;
+    img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v;
+    img.data[i * 4 + 3] = Math.random() * 255;
+  }
+  x.putImageData(img, 0, 0);
+  return felt;
 }
 
 function shadeHex(hex: string, f: number) {
