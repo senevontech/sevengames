@@ -1,0 +1,131 @@
+/* the stake in an online waiting room (RoomBet.tsx) */
+.rbet {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  margin: 4px 0;
+  text-align: center;
+}
+
+.rbet-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.rbet-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.rbet-row button {
+  min-width: 44px;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  color: inherit;
+  background: var(--neu-bg, rgba(127, 127, 127, 0.14));
+  box-shadow: var(--neu-raise-sm, inset 0 0 0 1px rgba(127, 127, 127, 0.25));
+  cursor: pointer;
+}
+
+.rbet-row button.is-on {
+  color: #fff;
+  background: linear-gradient(145deg, #ff9d52, #ec5f00);
+  box-shadow: 0 6px 14px -8px rgba(236, 95, 0, 0.8);
+}
+
+.rbet-custom input {
+  width: 96px;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  color: inherit;
+  background: var(--neu-bg, rgba(127, 127, 127, 0.1));
+  box-shadow: var(--neu-well, inset 0 0 0 1px rgba(127, 127, 127, 0.3));
+}
+
+.rbet-sum {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 13.5px;
+}
+
+.rbet-sum .token-icon {
+  vertical-align: -0.2em;
+}
+
+/* vs CPU: the bet switch (CpuBet.tsx) */
+.cbet {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cbet input {
+  margin-top: 3px;
+}
+
+.cbet small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.6;
+}
+
+.cbet .token-icon,
+.cbet-note .token-icon,
+.cbet-line .token-icon {
+  vertical-align: -0.2em;
+}
+
+.cbet-note {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.cbet-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 4px auto 0;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  background: rgba(127, 127, 127, 0.16);
+}
+
+.cbet-line.is-up {
+  color: #15803d;
+  background: rgba(74, 222, 128, 0.18);
+}
+
+.cbet-line.is-down {
+  color: #c2410c;
+  background: rgba(255, 138, 107, 0.18);
+}
+
+.cbet-line.is-err {
+  font-weight: 600;
+  font-size: 12.5px;
+}

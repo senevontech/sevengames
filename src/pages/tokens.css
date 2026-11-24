@@ -704,8 +704,8 @@
   flex: none;
   display: inline-block;
   vertical-align: -0.18em;
-  /* a thin dark edge keeps the lime bolt readable on light surfaces too */
-  filter: drop-shadow(0 0.5px 0.5px rgba(0, 0, 0, 0.45)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  /* a soft shadow lifts the black chip off light surfaces */
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
 }
 
 /* room for the bar under the preview */
@@ -935,31 +935,21 @@
   height: auto;
   background: none;
   box-shadow: none;
-  filter: drop-shadow(0 0 22px rgba(158, 255, 0, 0.6));
+  filter: drop-shadow(0 0 22px rgba(255, 101, 0, 0.6));
 }
 
-/* token bolt: a glint sweeps across now and then — played by a shared timer in TokenIcon.tsx
-   (an endless CSS animation here kept the browser busy every frame) */
-
-/* hovering something with a token in it: the glint runs right away */
-:is(a, button):hover .token-icon .token-glint {
-  animation: token-glint-now 0.7s ease-out;
+/* the chip: hovering something with a chip in it brightens its LED ring */
+.token-icon .chip-glow,
+.token-icon .chip-led {
+  transition: stroke-opacity 0.25s ease, stroke 0.25s ease;
 }
 
-@keyframes token-glint-now {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(32px);
-  }
+:is(a, button):hover .token-icon .chip-glow {
+  stroke-opacity: 0.6;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .token-icon .token-glint {
-    animation: none;
-    opacity: 0;
-  }
+:is(a, button):hover .token-icon .chip-led {
+  stroke: #ffa255;
 }
 
 /* ============================================================
@@ -1038,4 +1028,8 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 10px;
+}
+
+:is(a, button):hover .token-icon.is-small .chip-led {
+  fill: #ff8f45;
 }

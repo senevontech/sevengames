@@ -30,7 +30,7 @@ export function engagementErrorText(err: unknown) {
   if (m.includes("tournaments_off")) return "Tournaments aren't running right now.";
   if (m.includes("tournament_closed")) return "This tournament has ended.";
   if (m.includes("already_joined")) return "You're already in.";
-  if (m.includes("insufficient_tokens")) return "Not enough tokens.";
+  if (m.includes("insufficient_tokens")) return "Not enough chips.";
   if (m.includes("not_signed_in")) return "Sign in first.";
   if (m.includes("bad_email")) return "Enter a valid email address.";
   if (m.includes("bad_name")) return "Enter your name.";

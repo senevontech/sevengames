@@ -30,14 +30,14 @@ export default function Login() {
           <br />
           Play everywhere.
         </h1>
-        <p className="ac-sub">Your scores, tokens and leaderboard ranks follow you to every device.</p>
+        <p className="ac-sub">Your scores, chips and leaderboard ranks follow you to every device.</p>
         <ul className="lg-perks">
           <li>
             <span className="lg-perk-icon" aria-hidden="true">
               <TokenIcon size={18} />
             </span>
             <span>
-              <b>1,000 free tokens</b>
+              <b>100 free chips</b>
               <small>for premium games, on your first sign-in</small>
             </span>
           </li>

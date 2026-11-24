@@ -5,6 +5,8 @@ import { Link, useLocation } from "react-router-dom";
 import {
   CalendarClock,
   Check,
+  Coins,
+  HandCoins,
   Crown,
   Gift,
   Gamepad2,
@@ -18,6 +20,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import TokenIcon from "../components/TokenIcon";
+import ChipShowcase from "../components/chip/ChipShowcase";
 import { AD_FREE_PRICE } from "../lib/tokens";
 import { useAuthContext } from "../context/AuthContext";
 import { tokenErrorText, usePlanPrices, useTokenPacks, useTokens, type LedgerRow, type TokenPack } from "../lib/tokens";
@@ -33,10 +36,10 @@ const REASON: Record<string, { label: string; Icon: LucideIcon }> = {
   signup: { label: "Welcome bonus", Icon: Gift },
   play: { label: "Played", Icon: Gamepad2 },
   ad: { label: "Watched an ad", Icon: Tv },
-  subscription: { label: "Subscription tokens", Icon: CalendarClock },
+  subscription: { label: "Subscription chips", Icon: CalendarClock },
   admin: { label: "Adjustment", Icon: Sparkles },
-  guest: { label: "Guest tokens carried over", Icon: Gift },
-  purchase: { label: "Bought a token pack", Icon: ShoppingBag },
+  guest: { label: "Guest chips carried over", Icon: Gift },
+  purchase: { label: "Bought a chip pack", Icon: ShoppingBag },
   carrom: { label: "Carrom shop", Icon: Gamepad2 },
   adfree: { label: "Ad-free month", Icon: ShieldCheck },
   shop: { label: "Shop", Icon: ShoppingBag },
@@ -48,7 +51,17 @@ const REASON: Record<string, { label: string; Icon: LucideIcon }> = {
   weekly: { label: "Weekly competition prize", Icon: Crown },
   friend: { label: "Friend challenge", Icon: Zap },
   tournament: { label: "Tournament", Icon: Crown },
+  bet: { label: "Bet", Icon: Coins },
+  gift: { label: "Gift", Icon: HandCoins },
 };
+
+const BET_GAMES: Record<string, string> = { chess: "Chess", ludo: "Ludo", carrom: "Carrom", arrows: "Arrows", pool: "Eight Ball" };
+/** "cpu:pool" → "Eight Ball vs CPU", "pool:match-id" → "Eight Ball" */
+function betRefLabel(ref: string, delta: number) {
+  const [a, b] = ref.split(":");
+  const game = a === "cpu" ? `${BET_GAMES[b] ?? b} vs CPU` : BET_GAMES[a] ?? a;
+  return `${game} · ${delta < 0 ? "stake" : "winnings"}`;
+}
 
 const PACK_META: Record<string, { name: string; flag?: string; coins: number }> = {
   starter: { name: "Starter", coins: 1 },
@@ -108,10 +121,10 @@ export default function TokensPage() {
   const [rows, setRows] = useState<LedgerRow[]>([]);
 
   useEffect(() => {
-    document.title = "Tokens — Senevon Game Studio";
+    document.title = "Chips — Senevon Game Studio";
   }, []);
 
-  // "/tokens#buy" (from the profile wallet card) scrolls to the packs, "/tokens#plus" to Senevon Plus
+  // "/chips#buy" (from the profile wallet card) scrolls to the packs, "/chips#plus" to Senevon Plus
   useEffect(() => {
     const target = location.hash.slice(1);
     if ((target !== "buy" && target !== "plus") || !packs) return;
@@ -173,10 +186,10 @@ export default function TokensPage() {
     if (!checkout) return;
     const done =
       checkout.kind === "plan"
-        ? await run(() => subscribe(checkout.plan, currency), `Subscribed! ${formatTokens(perMonth)} tokens have been added.`)
+        ? await run(() => subscribe(checkout.plan, currency), `Subscribed! ${formatTokens(perMonth)} chips have been added.`)
         : await run(
             () => buyPack(checkout.pack.id, currency),
-            `${formatTokens(checkout.pack.tokens + checkout.pack.bonus)} tokens added to your wallet.`,
+            `${formatTokens(checkout.pack.tokens + checkout.pack.bonus)} chips added to your wallet.`,
           );
     setCheckout(null);
     if (done) window.scrollTo({ top: 0, behavior: "smooth" });
@@ -185,7 +198,7 @@ export default function TokensPage() {
   async function doRedeem(e: React.FormEvent) {
     e.preventDefault();
     if (!code.trim()) return;
-    const ok = await run(() => redeem(code.trim()), "Code redeemed — you now have unlimited tokens.");
+    const ok = await run(() => redeem(code.trim()), "Code redeemed — you now have unlimited chips.");
     if (ok) {
       setCode("");
       setCodeOpen(false);
@@ -198,20 +211,18 @@ export default function TokensPage() {
       <div className="acct tw">
         <section className="ac-card ac-coin-card tw-hero">
           <div className="tw-hero-main">
-            <span className="tw-hero-coin" aria-hidden="true">
-              <TokenIcon size="100%" />
-            </span>
+            <ChipShowcase className="tw-hero-chip" />
             <div>
-              <span className="tw-hero-label">Guest tokens</span>
+              <span className="tw-hero-label">Guest chips</span>
               <strong className="tw-balance">{guestBalance === null ? "…" : formatTokens(guestBalance)}</strong>
               <p className="tw-hero-sub">
-                Premium games cost tokens per play. Sign in to get 1,000 free tokens, buy packs and earn more by
-                watching ads. Your unspent guest tokens come with you.
+                Premium games cost chips per play. Sign in to get 100 free chips, buy packs and earn more by
+                watching ads. Your unspent guest chips come with you.
               </p>
             </div>
           </div>
           <div className="tw-hero-actions">
-            <Link className="ac-btn" to="/login?next=/tokens">
+            <Link className="ac-btn" to="/login?next=/chips">
               Sign in or create an account
             </Link>
           </div>
@@ -226,9 +237,7 @@ export default function TokensPage() {
       {/* ---------- balance ---------- */}
       <section className="ac-card ac-coin-card tw-hero">
         <div className="tw-hero-main">
-          <span className="tw-hero-coin" aria-hidden="true">
-            <TokenIcon size="100%" />
-          </span>
+          <ChipShowcase className="tw-hero-chip" />
           <div>
             <span className="tw-hero-label">Your balance</span>
             <strong className="tw-balance">
@@ -239,14 +248,22 @@ export default function TokensPage() {
                 <KeyRound size={14} aria-hidden="true" /> Unlimited: premium games are free for you
               </span>
             ) : (
-              <p className="tw-hero-sub">Free games are always free. Premium games use tokens per play. Tokens never expire.</p>
+              <>
+                <p className="tw-hero-sub">Free games are always free. Premium games use chips per play. Chips never expire.</p>
+                {wallet ? (
+                  <p className="tw-hero-sub tw-earned">
+                    <b>{formatTokens(wallet.earned ?? 0)}</b> earned (can be bet or gifted) ·{" "}
+                    <b>{formatTokens(Math.max(0, wallet.balance - (wallet.earned ?? 0)))}</b> bought (shop and premium games only)
+                  </p>
+                ) : null}
+              </>
             )}
           </div>
         </div>
         <div className="tw-hero-actions">
           {wallet && !wallet.unlimited ? (
             <a className="ac-btn" href="#buy">
-              <ShoppingBag size={16} aria-hidden="true" /> Buy tokens
+              <ShoppingBag size={16} aria-hidden="true" /> Buy chips
             </a>
           ) : null}
           {!noAds ? (
@@ -279,8 +296,8 @@ export default function TokensPage() {
         <section className="tw-section" id="buy">
           <div className="ac-section-head">
             <div>
-              <h2 className="ac-h2">Buy tokens</h2>
-              <p className="ac-sub">One-off packs. Bigger packs include bonus tokens.</p>
+              <h2 className="ac-h2">Buy chips</h2>
+              <p className="ac-sub">One-off packs. Bigger packs include bonus chips.</p>
             </div>
             {mock ? <span className="tw-test">Test mode · no real payment</span> : null}
           </div>
@@ -291,7 +308,7 @@ export default function TokensPage() {
               ))}
             </div>
           ) : packs.length === 0 ? (
-            <p className="ac-sub">Token packs aren't available right now.</p>
+            <p className="ac-sub">Chip packs aren't available right now.</p>
           ) : (
             <div className="tw-packs">
               {packs.map((p, i) => {
@@ -309,7 +326,7 @@ export default function TokensPage() {
                     <h3 className="tw-pack-name">{meta.name}</h3>
                     <p className="tw-pack-tokens">
                       {formatTokens(p.tokens + p.bonus)}
-                      <small>tokens</small>
+                      <small>chips</small>
                     </p>
                     <p className="tw-pack-bonus">
                       {p.bonus > 0 ? (
@@ -326,7 +343,7 @@ export default function TokensPage() {
                       disabled={isNative ? !play?.packs[p.id] || busy : amount === undefined || busy}
                       onClick={() =>
                         isNative
-                          ? void playRun(() => buyPack(p.id, user.id), `${formatTokens(p.tokens + p.bonus)} tokens added!`)
+                          ? void playRun(() => buyPack(p.id, user.id), `${formatTokens(p.tokens + p.bonus)} chips added!`)
                           : setCheckout({ kind: "pack", pack: p })
                       }
                     >
@@ -340,13 +357,13 @@ export default function TokensPage() {
         </section>
       ) : null}
 
-      {/* ---------- subscription (Senevon Plus; "/tokens#plus" scrolls here) ---------- */}
+      {/* ---------- subscription (Senevon Plus; "/chips#plus" scrolls here) ---------- */}
       <section className="tw-section" id="plus">
         <div className="ac-section-head">
           <div>
             <h2 className="ac-h2">Senevon Plus</h2>
             <p className="ac-sub">
-              The best value: {formatTokens(perMonth)} tokens every month, no ads, double daily rewards (+50 bonus a day), Plus-only games and early
+              The best value: {formatTokens(perMonth)} chips every month, no ads, double daily rewards (+50 bonus a day), Plus-only games and early
               access, and Plus-exclusive shop items free. Everything in DroidDoom unlocked. Cancel any time.
             </p>
           </div>
@@ -362,14 +379,14 @@ export default function TokensPage() {
                 <span className={`tw-status ${sub.status}`}>{sub.status === "active" ? "Active" : "Cancelled"}</span>
               </p>
               <p className="ac-sub">
-                {formatTokens(perMonth)} tokens every month · {formatMoney(Number(sub.amount), sub.currency)}/
+                {formatTokens(perMonth)} chips every month · {formatMoney(Number(sub.amount), sub.currency)}/
                 {sub.plan === "monthly" ? "month" : "year"}
               </p>
               <p className="ac-sub">
                 {sub.status === "active"
-                  ? `Next ${formatTokens(perMonth)} tokens on ${fmtDate(sub.next_credit_at)} · renews ${fmtDate(sub.period_end)}`
+                  ? `Next ${formatTokens(perMonth)} chips on ${fmtDate(sub.next_credit_at)} · renews ${fmtDate(sub.period_end)}`
                   : new Date(sub.next_credit_at) < new Date(sub.period_end)
-                    ? `Next ${formatTokens(perMonth)} tokens on ${fmtDate(sub.next_credit_at)} · ends ${fmtDate(sub.period_end)}`
+                    ? `Next ${formatTokens(perMonth)} chips on ${fmtDate(sub.next_credit_at)} · ends ${fmtDate(sub.period_end)}`
                     : `Ends ${fmtDate(sub.period_end)}`}
               </p>
             </div>
@@ -379,7 +396,7 @@ export default function TokensPage() {
                 className="ac-btn ac-btn-sm"
                 disabled={busy}
                 onClick={() =>
-                  void run(cancel, "Subscription cancelled. It won't renew; tokens you've paid for still arrive until the period ends.")
+                  void run(cancel, "Subscription cancelled. It won't renew; chips you've paid for still arrive until the period ends.")
                 }
               >
                 Cancel
@@ -404,7 +421,7 @@ export default function TokensPage() {
                   </p>
                   <ul className="tw-perks">
                     <li>
-                      <Check size={14} aria-hidden="true" /> {formatTokens(perMonth)} tokens every month
+                      <Check size={14} aria-hidden="true" /> {formatTokens(perMonth)} chips every month
                     </li>
                     <li>
                       <Check size={14} aria-hidden="true" /> First {formatTokens(perMonth)} straight away
@@ -419,7 +436,7 @@ export default function TokensPage() {
                     disabled={isNative ? !play?.plus[plan] || busy : amount === undefined}
                     onClick={() =>
                       isNative
-                        ? void playRun(() => buySubscription(PLUS_PRODUCT, plan, user.id), `Subscribed! ${formatTokens(perMonth)} tokens have been added.`)
+                        ? void playRun(() => buySubscription(PLUS_PRODUCT, plan, user.id), `Subscribed! ${formatTokens(perMonth)} chips have been added.`)
                         : setCheckout({ kind: "plan", plan })
                     }
                   >
@@ -431,7 +448,7 @@ export default function TokensPage() {
           </div>
         )}
         <p className="tw-fine">
-          {isNative ? "Billed through Google Play. " : `Prices shown in ${currency}. `}Unused tokens never expire.
+          {isNative ? "Billed through Google Play. " : `Prices shown in ${currency}. `}Unused chips never expire.
           {isNative ? (
             <>
               {" "}
@@ -449,7 +466,7 @@ export default function TokensPage() {
           <div>
             <h2 className="ac-h2">Go ad-free</h2>
             <p className="ac-sub">
-              No ads anywhere on Senevon for <TokenIcon size={14} /> {AD_FREE_PRICE} tokens a month. Renews automatically; cancel any time.
+              No ads anywhere on Senevon for <TokenIcon size={14} /> {AD_FREE_PRICE} chips a month. Renews automatically; cancel any time.
             </p>
           </div>
         </div>
@@ -475,7 +492,7 @@ export default function TokensPage() {
                         ? "Included with your unlimited account."
                         : adFree.active && adFree.expires_at
                           ? adFree.auto_renew
-                            ? `Ad-free until ${fmtDate(adFree.expires_at)} · renews for ${AD_FREE_PRICE} tokens`
+                            ? `Ad-free until ${fmtDate(adFree.expires_at)} · renews for ${AD_FREE_PRICE} chips`
                             : `Ad-free until ${fmtDate(adFree.expires_at)} · won't renew`
                           : "Hide every ad on the site, including ad breaks, for 30 days at a time."}
             </p>
@@ -528,7 +545,7 @@ export default function TokensPage() {
             <Tv size={20} />
           </span>
           <div className="tw-earn-text">
-            <b>Watch an ad · +{wallet?.ad_reward ?? 50} tokens</b>
+            <b>Watch an ad · +{wallet?.ad_reward ?? 50} chips</b>
             <p className="ac-sub">{wallet ? `${wallet.ads_today} of ${wallet.ad_daily_cap} watched today` : "Up to 10 a day"}</p>
             {wallet ? (
               <span className="tw-meter" aria-hidden="true">
@@ -593,7 +610,9 @@ export default function TokensPage() {
                 (r.reason === "play" && r.ref ? (getGame(r.ref)?.title ?? r.ref) : null) ??
                 (r.reason === "purchase" && r.ref ? (PACK_META[r.ref]?.name ?? r.ref) + " pack" : null) ??
                 (r.reason === "carrom" && r.ref ? carromRefLabel(r.ref) : null) ??
-                (r.reason === "admin" && r.ref ? r.ref : null);
+                (r.reason === "admin" && r.ref ? r.ref : null) ??
+                (r.reason === "bet" && r.ref ? betRefLabel(r.ref, r.delta) : null) ??
+                (r.reason === "gift" ? (r.delta < 0 ? "Sent" : "Received") : null);
               return (
                 <li key={r.id}>
                   <span className={`tw-h-icon${r.delta >= 0 ? " plus" : ""}`} aria-hidden="true">
@@ -634,7 +653,7 @@ export default function TokensPage() {
                     <small>/{checkout.plan === "monthly" ? "month" : "year"}</small>
                   </p>
                   <p>
-                    {formatTokens(perMonth)} tokens now, then {formatTokens(perMonth)} every month
+                    {formatTokens(perMonth)} chips now, then {formatTokens(perMonth)} every month
                     {checkout.plan === "yearly" ? " for the year" : ""}. Cancel any time.
                   </p>
                 </>
@@ -649,7 +668,7 @@ export default function TokensPage() {
                     )}
                   </p>
                   <p>
-                    {formatTokens(checkout.pack.tokens + checkout.pack.bonus)} tokens
+                    {formatTokens(checkout.pack.tokens + checkout.pack.bonus)} chips
                     {checkout.pack.bonus > 0 ? ` (includes ${formatTokens(checkout.pack.bonus)} bonus)` : ""}, added to your wallet
                     right away. One-off payment.
                   </p>

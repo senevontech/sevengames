@@ -16,6 +16,8 @@ import { OfflineNotice } from "../components/OnlineLobby";
 import { useShop } from "../lib/shop";
 import { levelForXp } from "../lib/shopCatalog";
 import { MatchRewardLine, useMatchReport } from "../lib/matchReport";
+import { useTokens } from "../lib/tokens";
+import { StakePicker } from "../components/RoomBet";
 import { useMatchChat } from "../components/chat/MatchChat";
 
 const MODES: { id: MatchMode; label: string; blurb: string }[] = [
@@ -96,7 +98,22 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
     void matchReport.report(matchKey, matchPlayers(), result.winner ? [winnerId] : [], result.winner === null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, matchKey]);
-  useEffect(() => matchReport.reset(), [matchKey, matchReport.reset]);
+  // a new round: clear the last result, then stake the round's chips (set by onStart)
+  const pendingBet = useRef<{ key: string; bet: number; bk: "room" | "random"; players: string[] } | null>(null);
+  useEffect(() => {
+    matchReport.reset();
+    const p = pendingBet.current;
+    if (p && p.key === matchKey && p.bet > 0) void matchReport.joinBet(p.key, p.players, p.bk, p.bet);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchKey, matchReport.reset]);
+  // my earned chips go to the room (the host caps the stake to them)
+  const { wallet } = useTokens();
+  const earned = wallet?.earned ?? 0;
+  const earnedRef = useRef(earned);
+  earnedRef.current = earned;
+  useEffect(() => {
+    netRef.current?.setChips(earned);
+  }, [earned]);
   const rankXp = shop.state?.xp?.arrows ?? 0;
 
   const events = useCallback(
@@ -122,8 +139,17 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
           window.setTimeout(() => netRef.current === net && net.start(), 400);
         }
       },
-      onStart: (cfg: { mode: MatchMode; seed: number; round: number }) => {
-        setRound(cfg);
+      onStart: (cfg: { mode: MatchMode; seed: number; round: number; bet: number; bk: "room" | "random" }) => {
+        const net = netRef.current;
+        if (net) {
+          pendingBet.current = {
+            key: `${net.roomCode}-${cfg.seed}-${cfg.round}`,
+            bet: cfg.bet,
+            bk: cfg.bk,
+            players: net.players.map((p) => p.userId),
+          };
+        }
+        setRound({ mode: cfg.mode, seed: cfg.seed, round: cfg.round });
         setOpp(null);
         setResult(null);
         setMyEnd(null);
@@ -136,7 +162,7 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
     [],
   );
 
-  const me = () => ({ userId: user?.id ?? "", name: myName, avatar: myAvatar });
+  const me = () => ({ userId: user?.id ?? "", name: myName, avatar: myAvatar, chips: earnedRef.current });
 
   function resetRoom() {
     setNetStatus(null);
@@ -157,6 +183,7 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
     autoStart.current = Boolean(match);
     setMatchedRoom(Boolean(match));
     const net = ArrowsNet.host(me(), mode, events());
+    net.setMatched(Boolean(match));
     netRef.current = net;
     setRoomCode(net.roomCode);
     setRoomMode(mode);
@@ -170,6 +197,7 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
     autoStart.current = false;
     setMatchedRoom(matched);
     const net = ArrowsNet.join(me(), code, events());
+    net.setMatched(matched);
     netRef.current = net;
     setRoomCode(net.roomCode);
     setPhase("room");
@@ -380,6 +408,15 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
                 ))}
                 {peers.length < 2 ? <li className="is-empty">Waiting for a player…</li> : null}
               </ul>
+              {net ? (
+                <StakePicker
+                  isHost={net.isHost}
+                  matched={matchedRoom}
+                  chosen={net.bet}
+                  chips={peers.map((p) => p.chips ?? 0)}
+                  onChoose={(n) => net.setBet(n)}
+                />
+              ) : null}
               {net?.isHost && !matchedRoom ? (
                 <button type="button" className="primary-btn" disabled={peers.length < 2} onClick={() => net.start()}>
                   Start match

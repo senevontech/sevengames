@@ -67,7 +67,7 @@ export default function ChatPackShop() {
                 ) : st === "plus" ? (
                   <>
                     <span className="shop-plus">⭐ Plus</span>
-                    <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/tokens#plus">
+                    <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/chips#plus">
                       Get Plus
                     </Link>
                   </>
@@ -77,12 +77,12 @@ export default function ChatPackShop() {
                       <TokenIcon size={14} /> {formatTokens(price)}
                     </span>
                     {!shop.signedIn ? (
-                      <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/login?next=/tokens">
+                      <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/login?next=/chips">
                         Sign in
                       </Link>
                     ) : balance < price ? (
                       <a className="ac-btn ac-btn-sm ac-btn-ghost" href="#buy">
-                        Get tokens
+                        Get chips
                       </a>
                     ) : (
                       <button type="button" className={`ac-btn ac-btn-sm ac-btn-primary${armed === p.id ? " is-armed" : ""}`} disabled={busy} onClick={() => void buy(p.id, p.name)}>

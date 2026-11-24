@@ -7,7 +7,7 @@
 --     and anyone can read game prices and plan prices.
 --   * Nobody writes these tables from the browser. Every balance change goes through
 --     the SECURITY DEFINER functions below, which check the rules on the server:
---       token_wallet()          creates the wallet, grants the 1,000 signup bonus once,
+--       token_wallet()          creates the wallet, grants the 100 signup bonus once,
 --                               and credits any subscription tokens that are due
 --       spend_for_play(game)    charges the game's price for one play
 --       start_ad_view(...)      opens an ad view (daily cap checked)
@@ -40,22 +40,43 @@ create table if not exists public.token_ledger (
   user_id uuid not null references auth.users(id) on delete cascade,
   delta integer not null,
   balance_after integer not null,
-  reason text not null check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament')),
+  reason text not null check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'bet', 'gift')),
   ref text,
   created_at timestamptz not null default now()
 );
 
 create index if not exists token_ledger_user_time on public.token_ledger (user_id, created_at desc);
+
+-- Earned vs bought chips. `balance` is every chip; `earned` is the part that did NOT come from a
+-- purchase or a subscription. Only earned chips can be bet (bets.sql) or gifted, so chips bought
+-- with money never ride on a game result or change hands. Ordinary spending (shop, premium
+-- plays, ad-free) uses earned chips first. Always 0 <= earned <= balance.
+alter table public.token_wallets add column if not exists earned integer not null default 0;
+alter table public.token_wallets drop constraint if exists token_wallets_earned_check;
+alter table public.token_wallets add constraint token_wallets_earned_check check (earned >= 0 and earned <= balance);
 -- the signup bonus can only ever be granted once per account
 create unique index if not exists token_ledger_one_signup on public.token_ledger (user_id) where reason = 'signup';
 -- databases created before guest carry-over existed: widen the reason check
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
-  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament'));
+  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'bet', 'gift'));
 -- guest tokens can only be carried over once per account
 create unique index if not exists token_ledger_one_guest on public.token_ledger (user_id) where reason = 'guest';
 -- each subscription credit is unique (stops double credits if two requests race)
 create unique index if not exists token_ledger_sub_ref on public.token_ledger (ref) where reason = 'subscription';
+
+-- One-time: wallets from before the split. Everything except what was bought is earned
+-- (assume purchases are still unspent, the cautious reading).
+do $$
+begin
+  if not exists (select 1 from public.site_settings where key = 'chips_earned_split') then
+    update public.token_wallets w set earned = greatest(0, w.balance - coalesce((
+      select sum(l.delta) from public.token_ledger l
+      where l.user_id = w.user_id and l.reason in ('purchase', 'subscription') and l.delta > 0
+    ), 0));
+    insert into public.site_settings (key, value) values ('chips_earned_split', 'true'::jsonb);
+  end if;
+end $$;
 
 -- 2) Prices --------------------------------------------------------
 create table if not exists public.game_prices (
@@ -165,7 +186,7 @@ create policy "Public plan prices" on public.plan_prices for select to anon, aut
 create or replace function public._tok_const(p_name text)
 returns integer language sql immutable as $$
   select case p_name
-    when 'signup_bonus' then 1000
+    when 'signup_bonus' then 100
     when 'guest_tokens' then 300     -- starting balance of a guest's browser wallet
     when 'sub_tokens' then 5000      -- per month, both plans
     when 'ad_reward' then 50
@@ -181,14 +202,25 @@ language plpgsql security definer set search_path = public
 as $$
 declare
   v_balance integer;
+  v_earned integer;
 begin
   insert into token_wallets (user_id, balance) values (p_user, 0) on conflict (user_id) do nothing;
-  select balance into v_balance from token_wallets where user_id = p_user for update;
-  if v_balance + p_delta < 0 then
-    raise exception 'insufficient_tokens';
+  select balance, earned into v_balance, v_earned from token_wallets where user_id = p_user for update;
+  if p_delta >= 0 then
+    -- bought chips stay out of `earned`; everything else (rewards, wins, gifts, refunds) is earned
+    if p_reason not in ('purchase', 'subscription') then v_earned := v_earned + p_delta; end if;
+  elsif p_reason in ('bet', 'gift') then
+    -- stakes and gifts: earned chips only
+    if v_earned + p_delta < 0 then raise exception 'insufficient_earned'; end if;
+    v_earned := v_earned + p_delta;
+  else
+    -- ordinary spending: earned chips first
+    if v_balance + p_delta < 0 then raise exception 'insufficient_tokens'; end if;
+    v_earned := greatest(0, v_earned + p_delta);
   end if;
   v_balance := v_balance + p_delta;
-  update token_wallets set balance = v_balance, updated_at = now() where user_id = p_user;
+  v_earned := least(v_earned, v_balance);
+  update token_wallets set balance = v_balance, earned = v_earned, updated_at = now() where user_id = p_user;
   insert into token_ledger (user_id, delta, balance_after, reason, ref)
   values (p_user, p_delta, v_balance, p_reason, p_ref);
   return v_balance;
@@ -251,6 +283,7 @@ language sql stable security definer set search_path = public
 as $$
   select jsonb_build_object(
     'balance', coalesce((select balance from token_wallets where user_id = p_user), 0),
+    'earned', coalesce((select earned from token_wallets where user_id = p_user), 0),
     'unlimited', exists (select 1 from token_unlimited where user_id = p_user),
     'subscription', (
       select to_jsonb(x) from (

@@ -1,0 +1,96 @@
+/* "Gift chips" on a player's profile (GiftChips.tsx) */
+.gift-box {
+  flex-basis: 100%;
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--ac-bg, rgba(127, 127, 127, 0.08));
+  box-shadow: var(--ac-well, inset 0 0 0 1px rgba(127, 127, 127, 0.2));
+  text-align: left;
+}
+
+.gift-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.gift-amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--ac-bg, transparent);
+  box-shadow: var(--ac-well, inset 0 0 0 1px rgba(127, 127, 127, 0.3));
+}
+
+.gift-amount input {
+  width: 72px;
+  border: 0;
+  font: inherit;
+  font-weight: 750;
+  color: inherit;
+  background: transparent;
+  outline: none;
+}
+
+.gift-pick {
+  height: 32px;
+  min-width: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: inherit;
+  background: var(--ac-bg, rgba(127, 127, 127, 0.12));
+  box-shadow: var(--ac-raise-sm, inset 0 0 0 1px rgba(127, 127, 127, 0.25));
+  cursor: pointer;
+}
+
+.gift-pick.is-on {
+  color: #fff;
+  background: linear-gradient(145deg, #ff9d52, #ec5f00);
+}
+
+.gift-note {
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 14px;
+  color: inherit;
+  background: var(--ac-bg, transparent);
+  box-shadow: var(--ac-well, inset 0 0 0 1px rgba(127, 127, 127, 0.3));
+}
+
+.gift-send.is-sure {
+  filter: saturate(1.3);
+}
+
+.gift-sub {
+  margin: 0;
+  font-size: 12.5px;
+  opacity: 0.7;
+}
+
+.gift-msg {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.gift-msg.ok {
+  color: #15803d;
+}
+
+.gift-msg.bad {
+  color: #c2410c;
+}

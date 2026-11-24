@@ -403,7 +403,7 @@
 
 .pf-wallet .ac-token {
   flex: none;
-  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 14px rgba(158, 255, 0, 0.4));
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 14px rgba(255, 101, 0, 0.4));
 }
 
 /* ---------- saved progress ---------- */

@@ -220,6 +220,15 @@
   display: none;
 }
 
+/* the column scrolls, which clips the cards' soft neumorphic shadows at its edges: give the
+   shadows room inside it (padding) without moving the cards (matching negative margin) */
+@media (min-width: 861px) {
+  html:not(.gp-playing) .site.site-game .gp-side {
+    padding: 16px;
+    margin: -16px;
+  }
+}
+
 .site.site-game .gp .leaderboard {
   position: static;
   flex: none;

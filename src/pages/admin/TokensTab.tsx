@@ -65,7 +65,7 @@ export default function TokensTab() {
       <div className="card adm-card adm-settings">
         <h3>Payments</h3>
         <p className="adm-note">
-          No payment provider is connected yet. In <b>mock</b> mode the Tokens page shows a test checkout and
+          No payment provider is connected yet. In <b>mock</b> mode the Chips page shows a test checkout and
           anyone signed in can subscribe for free — for testing only. Switch to <b>live</b> before launch: test
           checkout is then refused, and subscriptions will come from the payment provider once it's connected.
         </p>
@@ -97,7 +97,7 @@ export default function TokensTab() {
         costs={costs}
         setCosts={setCosts}
         onSaveOne={(id, title, cost) =>
-          run("game_price_set", { game_id: id, cost }, `${title}: ${cost ? `${cost} tokens per play` : "free"}.`)
+          run("game_price_set", { game_id: id, cost }, `${title}: ${cost ? `${cost} chips per play` : "free"}.`)
         }
         onSaveAll={async (rows) => {
           setMsg("");
@@ -120,7 +120,7 @@ export default function TokensTab() {
       <div className="card adm-card adm-settings">
         <h3>Subscription prices</h3>
         <p className="adm-note">
-          Both plans give 5,000 tokens every month. Visitors see the price for their country's currency; any
+          Both plans give 5,000 chips every month. Visitors see the price for their country's currency; any
           currency not listed falls back to USD.
         </p>
         <div className="adm-table-wrap">
@@ -185,8 +185,8 @@ export default function TokensTab() {
 
       {/* ---------- Grant / look up ---------- */}
       <div className="card adm-card adm-settings">
-        <h3>Player tokens</h3>
-        <p className="adm-note">Look up a player's balance, or add tokens (use a negative amount to deduct).</p>
+        <h3>Player chips</h3>
+        <p className="adm-note">Look up a player's balance, or add chips (use a negative amount to deduct).</p>
         <div className="adm-field">
           <label>Player email</label>
           <input value={grant.email} onChange={(e) => setGrant((g) => ({ ...g, email: e.target.value }))} placeholder="player@example.com" />
@@ -208,7 +208,7 @@ export default function TokensTab() {
               setLookup("");
               try {
                 const r = await adminCall<{ balance: number; subscription: { plan: string; status: string } | null }>("tokens_lookup", { email: grant.email.trim() });
-                setLookup(`${r.balance.toLocaleString()} tokens${r.subscription ? ` · ${r.subscription.plan} plan (${r.subscription.status})` : " · no subscription"}`);
+                setLookup(`${r.balance.toLocaleString()} chips${r.subscription ? ` · ${r.subscription.plan} plan (${r.subscription.status})` : " · no subscription"}`);
               } catch (e) {
                 setLookup(errText(e, "Lookup failed"));
               }
@@ -224,7 +224,7 @@ export default function TokensTab() {
               void run(
                 "tokens_grant",
                 { email: grant.email.trim(), amount: Number(grant.amount), note: grant.note },
-                `${Number(grant.amount) > 0 ? "Added" : "Deducted"} ${Math.abs(Number(grant.amount)).toLocaleString()} tokens for ${grant.email.trim()}.`,
+                `${Number(grant.amount) > 0 ? "Added" : "Deducted"} ${Math.abs(Number(grant.amount)).toLocaleString()} chips for ${grant.email.trim()}.`,
               ).then(() => setGrant((g) => ({ ...g, amount: "", note: "" })))
             }
           >
@@ -332,9 +332,9 @@ function RedeemCard() {
 
   return (
     <div className="card adm-card adm-settings">
-      <h3>Redeem code (unlimited tokens)</h3>
+      <h3>Redeem code (unlimited chips)</h3>
       <p className="adm-note">
-        Developers and admins enter this code on the Tokens page (“Have a code?”) to get unlimited tokens — premium
+        Developers and admins enter this code on the Chips page (“Have a code?”) to get unlimited chips — premium
         games become free for that account. The code is stored hashed, so it can't be shown here; set a new one to change
         it. {info ? (info.code_set_at ? `Last changed ${new Date(info.code_set_at).toLocaleString()}.` : "No code set yet.") : null}
       </p>
@@ -439,7 +439,7 @@ function GamePrices({
     <div className="card adm-card adm-settings">
       <h3>Game prices</h3>
       <p className="adm-note">
-        Tokens per play. 0 = free game. Premium games ask players to pay before each new play. {premiumCount} of {games.length}{" "}
+        Chips per play. 0 = free game. Premium games ask players to pay before each new play. {premiumCount} of {games.length}{" "}
         games are premium.
       </p>
 
@@ -461,9 +461,9 @@ function GamePrices({
             min={0}
             step={5}
             value={bulkValue}
-            placeholder="tokens"
+            placeholder="chips"
             style={{ width: 100 }}
-            aria-label="Tokens per play for the selected games"
+            aria-label="Chips per play for the selected games"
             onChange={(e) => setBulkValue(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && bulkValue !== "" && applyBulk(bulkValue)}
           />
@@ -488,7 +488,7 @@ function GamePrices({
           <thead>
             <tr>
               <th>Game</th>
-              <th>Tokens / play</th>
+              <th>Chips / play</th>
               <th />
             </tr>
           </thead>
@@ -509,7 +509,7 @@ function GamePrices({
                       value={val}
                       placeholder="0"
                       style={{ width: 110 }}
-                      aria-label={`${g.title} tokens per play`}
+                      aria-label={`${g.title} chips per play`}
                       onChange={(e) => setCosts((c) => ({ ...c, [g.id]: e.target.value }))}
                     />
                     {isDirty ? <span className="adm-note"> was {saved(g.id)}</span> : null}
@@ -600,7 +600,7 @@ function ShopPrices() {
     <div className="card adm-card adm-settings">
       <h3>Shop</h3>
       <p className="adm-note">
-        Token prices for shop items. Price 0 on a style or effect makes it free for everyone. Turning an item off hides it
+        Chip prices for shop items. Price 0 on a style or effect makes it free for everyone. Turning an item off hides it
         from sale; players who bought it keep it. "Plus only" makes an item a Senevon Plus exclusive: members get it free,
         nobody else can buy it.
       </p>
@@ -611,7 +611,7 @@ function ShopPrices() {
             <thead>
               <tr>
                 <th>Item</th>
-                <th>Tokens</th>
+                <th>Chips</th>
                 <th>On sale</th>
                 <th>Plus only</th>
                 <th />
@@ -634,7 +634,7 @@ function ShopPrices() {
                         step={50}
                         value={val}
                         style={{ width: 110 }}
-                        aria-label={`${name} price in tokens`}
+                        aria-label={`${name} price in chips`}
                         onChange={(e) => setEdits((x) => ({ ...x, [row.item_id]: e.target.value }))}
                       />
                       {isDirty ? <span className="adm-note"> was {row.price}</span> : null}
@@ -666,7 +666,7 @@ function ShopPrices() {
                         type="button"
                         className="ghost-btn"
                         disabled={!isDirty}
-                        onClick={() => void save(row, { price: Number(cleanCost(val)) }, `${name}: ${cleanCost(val)} tokens.`)}
+                        onClick={() => void save(row, { price: Number(cleanCost(val)) }, `${name}: ${cleanCost(val)} chips.`)}
                       >
                         Save
                       </button>

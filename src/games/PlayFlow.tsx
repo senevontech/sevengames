@@ -178,7 +178,7 @@ export default function PlayFlow({
             </span>
             <span>{gate?.busy ? "Starting…" : mode.playLabel ?? "Play"}</span>
             {showCost ? (
-              <span className="pf-cost" aria-label={`${formatTokens(gate.cost)} tokens`}>
+              <span className="pf-cost" aria-label={`${formatTokens(gate.cost)} chips`}>
                 <TokenIcon size={15} />
                 {formatTokens(gate.cost)}
               </span>
@@ -220,11 +220,11 @@ export function HelpLine({ short, children }: { short: ReactNode; children: Reac
 export function GateShort({ signIn, gameId }: { signIn: boolean; gameId: string }) {
   return signIn ? (
     <>
-      Not enough guest tokens. <Link to={`/login?next=/game/${gameId}`}>Sign in</Link> for 1,000 free.
+      Not enough guest chips. <Link to={`/login?next=/game/${gameId}`}>Sign in</Link> for 100 free.
     </>
   ) : (
     <>
-      Not enough tokens. <Link to="/tokens#buy">Get tokens</Link>
+      Not enough chips. <Link to="/chips#buy">Get chips</Link>
     </>
   );
 }

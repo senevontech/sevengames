@@ -15,7 +15,7 @@
 -- token ledger: allow 'carrom' spends (keep this list in sync with tokens.sql, adfree.sql and shop.sql)
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
-  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament'));
+  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'bet', 'gift'));
 
 -- 1) Catalog ---------------------------------------------------------
 create table if not exists public.carrom_catalog (
@@ -208,8 +208,7 @@ begin
   select price, min_level into v_price, v_min from carrom_catalog where kind = p_kind and item_id = p_item;
   if v_price is null then raise exception 'bad_item'; end if;
   if _carrom_owns(v_user, p_kind, p_item) then return _carrom_state(v_user); end if;
-  select xp into v_xp from carrom_profiles where user_id = v_user;
-  if _carrom_level(v_xp) < v_min then raise exception 'level_required'; end if;
+  -- no level gate: chips buy any item (strength upgrades keep theirs)
   if not _carrom_free(v_user) and v_price > 0 then
     perform token_wallet(); -- wallet exists, signup bonus in
     perform _tok_credit(v_user, -v_price, 'carrom', p_kind || ':' || p_item); -- raises insufficient_tokens

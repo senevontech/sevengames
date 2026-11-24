@@ -21,9 +21,13 @@ export type StartCfg = {
   players: Array<{ name: string; kind: "human" | "cpu" }>;
   mid?: string;
   uids?: Array<string | null>;
+  /** chips each player stakes (0: no bet) and how the match was made */
+  bet?: number;
+  bk?: "room" | "random";
 };
 
-export type RosterEntry = { clientId: string; name: string; seat: number; isHost: boolean; userId?: string };
+/** `chips`: the player's earned chips (what they could bet; the server checks every stake). */
+export type RosterEntry = { clientId: string; name: string; seat: number; isHost: boolean; userId?: string; chips?: number };
 
 export type NetStatus = "idle" | "connecting" | "lobby" | "playing" | "error";
 
@@ -54,6 +58,10 @@ export class CarromNet {
   private left = false;
   /** this player's account id (signed in), shared through presence for match results */
   private userId = "";
+  private chips = 0;
+  private myName = "";
+  /** the host's chip stake per player (0 = no bet), shared with the roster */
+  private stake = 0;
 
   private constructor(isHost: boolean, events: NetEvents) {
     this.isHostClient = isHost;
@@ -70,6 +78,24 @@ export class CarromNet {
 
   get rosterList() {
     return this.roster;
+  }
+
+  get bet() {
+    return this.stake;
+  }
+
+  /** My earned chips, shown to the host so the stake fits everyone. */
+  setChips(n: number) {
+    this.chips = Math.max(0, Math.floor(n) || 0);
+    if (this.channel && this.myName) void this.channel.track({ name: this.myName, userId: this.userId, chips: this.chips });
+  }
+
+  /** Host: the chip stake per player (guests get it with the roster). */
+  setBet(n: number) {
+    if (!this.isHostClient) return;
+    this.stake = Math.max(0, Math.floor(n) || 0);
+    this.events.onRoster([...this.roster], this.seats);
+    this.broadcastRoster(false);
   }
 
   static get configured() {
@@ -116,8 +142,9 @@ export class CarromNet {
 
     ch.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
-        await ch.track({ name, userId: this.userId });
-        this.roster = [{ clientId: this.clientId, name, seat: 0, isHost: true, userId: this.userId || undefined }];
+        this.myName = name;
+        await ch.track({ name, userId: this.userId, chips: this.chips });
+        this.roster = [{ clientId: this.clientId, name, seat: 0, isHost: true, userId: this.userId || undefined, chips: this.chips }];
         this.joinedOrder = [this.clientId];
         this.events.onStatus("lobby");
         this.events.onRoster([...this.roster], seats);
@@ -146,7 +173,8 @@ export class CarromNet {
 
     ch.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
-        await ch.track({ name, userId: this.userId });
+        this.myName = name;
+        await ch.track({ name, userId: this.userId, chips: this.chips });
         // If no host roster arrives shortly, the room does not exist.
         this.joinAckTimer = window.setTimeout(() => {
           if (this.events && this.mySeat === 0 && this.roster.length === 0) {
@@ -162,7 +190,7 @@ export class CarromNet {
   private wirePresence(ch: RealtimeChannel, _name: string) {
     ch.on("presence", { event: "sync" }, () => {
       if (!this.isHostClient) return;
-      const state = ch.presenceState<{ name: string; userId?: string }>();
+      const state = ch.presenceState<{ name: string; userId?: string; chips?: number }>();
       const keys = Object.keys(state);
       // new keys (ignoring ones we already know) join after existing roster
       for (const key of keys) {
@@ -181,6 +209,7 @@ export class CarromNet {
           seat,
           isHost: key === this.clientId,
           userId: typeof meta?.userId === "string" && meta.userId ? meta.userId.slice(0, 64) : undefined,
+          chips: Number.isFinite(Number(meta?.chips)) ? Math.max(0, Math.floor(Number(meta?.chips))) : 0,
         });
         seat += 1;
         if (seat >= this.seats) break;
@@ -198,6 +227,7 @@ export class CarromNet {
     ch.on("broadcast", { event: "roster" }, ({ payload }) => {
       const roster = (payload as { roster: RosterEntry[]; seats: Seats }).roster;
       const seats = (payload as { seats: Seats }).seats;
+      this.stake = Math.max(0, Math.floor(Number((payload as { bet?: number }).bet) || 0));
       this.roster = roster;
       this.seats = seats;
       const mine = roster.find((entry) => entry.clientId === this.clientId);
@@ -261,7 +291,7 @@ export class CarromNet {
   }
 
   broadcastRoster(started: boolean) {
-    this.send("roster", { roster: this.roster, seats: this.seats, started });
+    this.send("roster", { roster: this.roster, seats: this.seats, started, bet: this.stake });
   }
 
   broadcastStart(cfg: StartCfg) {

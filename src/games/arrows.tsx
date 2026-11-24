@@ -500,7 +500,7 @@ function BoosterPanel({ item, onClose }: { item: BoosterItem; onClose: () => voi
         <h3 id="arw-shop-title">Get {noun}</h3>
         {!shop.signedIn ? (
           <>
-            <p>Sign in to buy {noun} with tokens.</p>
+            <p>Sign in to buy {noun} with chips.</p>
             <Link className="primary-btn" to="/login">
               Sign in
             </Link>
@@ -523,15 +523,15 @@ function BoosterPanel({ item, onClose }: { item: BoosterItem; onClose: () => voi
                       <small>{b.blurb}</small>
                     </span>
                     <button type="button" className="primary-btn" disabled={busy !== null || price === null} onClick={() => void buy(id)}>
-                      <TokenIcon size={14} title="tokens" /> {price === null ? "—" : formatTokens(price)}
+                      <TokenIcon size={14} title="chips" /> {price === null ? "—" : formatTokens(price)}
                     </button>
                   </li>
                 );
               })}
             </ul>
             {msg ? <p className="arw-shop-msg">{msg}</p> : null}
-            <Link className="arw-shop-more" to="/tokens#buy">
-              Get more tokens
+            <Link className="arw-shop-more" to="/chips#buy">
+              Get more chips
             </Link>
           </>
         )}

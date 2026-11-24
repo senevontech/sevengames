@@ -12,7 +12,7 @@ import "./get-app.css";
 const FEATURES = [
   { Icon: WifiOff, title: "Plays offline", text: "Built-in games work with no connection. Scores sync when you're back online." },
   { Icon: Gauge, title: "Faster & full screen", text: "Opens straight into your games: no browser bars, no waiting." },
-  { Icon: UserRound, title: "Same account", text: "Your tokens, levels, shop items and friends come with you." },
+  { Icon: UserRound, title: "Same account", text: "Your chips, levels, shop items and friends come with you." },
   { Icon: Smartphone, title: "Light on your phone", text: `A small download that runs smoothly on most phones (${APK_NOTE}).` },
 ];
 
@@ -50,7 +50,7 @@ export default function GetApp() {
           </h1>
           <p className="ga-sub">
             Every Senevon game in one app: carrom, chess, ludo, arrows and more. Play offline, pick up where you left off and
-            keep your tokens and progress.
+            keep your chips and progress.
           </p>
 
           <div className="ga-buttons">

@@ -394,7 +394,7 @@ const TABS: [Tab, string][] = [
   ["engagement", "Engagement"],
   ["leads", "Leads"],
   ["ads", "Ads"],
-  ["tokens", "Tokens"],
+  ["tokens", "Chips"],
   ["pro", "Pro"],
   ["settings", "Settings"],
 ];

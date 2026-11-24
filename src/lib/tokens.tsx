@@ -21,6 +21,8 @@ export type Subscription = {
 
 export type Wallet = {
   balance: number;
+  /** the part of `balance` that wasn't bought (rewards, wins, gifts): only these can be bet or gifted */
+  earned?: number;
   /** redeemed the developer / admin code: premium games are free */
   unlimited: boolean;
   subscription: Subscription | null;
@@ -110,7 +112,7 @@ export function tokenErrorText(err: unknown) {
   if (msg.includes("razorpay:")) return "The payment service had a problem. Please try again.";
   if (msg.includes("ad_no_fill") || msg.includes("ads_unavailable")) return "No ad is available right now. Please try again later.";
   if (msg.includes("ad_cap_reached")) return "You've reached today's ad limit — come back tomorrow.";
-  if (msg.includes("ad_not_finished")) return "Watch the whole ad to earn tokens.";
+  if (msg.includes("ad_not_finished")) return "Watch the whole ad to earn chips.";
   if (msg.includes("too_many_open_ads")) return "Finish the ad you already started first.";
   if (msg.includes("bad_code")) return "That code isn't valid.";
   if (msg.includes("bad_pack")) return "That pack isn't available any more.";
@@ -119,13 +121,14 @@ export function tokenErrorText(err: unknown) {
   if (msg.includes("already_subscribed")) return "You already have a subscription.";
   if (msg.includes("mock_payments_disabled")) return "Payments aren't available yet.";
   if (msg.includes("not_signed_in")) return "Sign in first.";
-  if (msg.includes("insufficient_tokens")) return "Not enough tokens.";
+  if (msg.includes("insufficient_tokens")) return "Not enough chips.";
+  if (msg.includes("insufficient_earned")) return "Not enough earned chips. Bought chips can't be bet or gifted.";
   if (msg.includes("none_left")) return "You don't have any left.";
   if (msg.includes("level_required")) return "Reach the level shown to unlock this.";
   if (msg.includes("not_owned")) return "Buy this item first.";
   if (msg.includes("bad_item") || msg.includes("bad_slot")) return "That item isn't available.";
   if (msg.includes("Could not find the function") && msg.includes("shop_")) return "The shop isn't set up on the server yet (run supabase/shop.sql).";
-  if (msg.includes("Could not find the function")) return "Tokens aren't set up on the server yet (run supabase/tokens.sql).";
+  if (msg.includes("Could not find the function")) return "Chips aren't set up on the server yet (run supabase/tokens.sql).";
   return "Something went wrong. Please try again.";
 }
 
@@ -266,7 +269,7 @@ export function TokensProvider({ children }: { children: ReactNode }) {
   const buyPack = useCallback(async (pack: string, currency: string) => {
     if (live) {
       const rp = await import("./razorpay");
-      await rp.razorpayBuyPack(pack, currency, `Token pack · ${pack}`);
+      await rp.razorpayBuyPack(pack, currency, `Chip pack · ${pack}`);
       setWallet(await rpc<Wallet>("token_wallet"));
     } else {
       setWallet(await rpc<Wallet>("mock_buy_pack", { p_pack: pack, p_currency: currency }));

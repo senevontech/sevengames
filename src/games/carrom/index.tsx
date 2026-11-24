@@ -66,6 +66,10 @@ import ShopSheet from "../../components/ShopSheet";
 import { useCustomGameShop } from "../gameShop";
 import { useMatchChat } from "../../components/chat/MatchChat";
 import { MatchRewardLine, newMatchId, useMatchReport } from "../../lib/matchReport";
+import { matchStake, useCpuBet } from "../../lib/bets";
+import { useTokens } from "../../lib/tokens";
+import { StakePicker } from "../../components/RoomBet";
+import { CpuBetLine, CpuBetToggle } from "../../components/CpuBet";
 import { BoardPreview } from "./Preview";
 import PlayFlow, { HelpLine } from "../PlayFlow";
 import { Bot, Globe, Users } from "lucide-react";
@@ -150,6 +154,17 @@ export default function CarromGame({ onFinish }: GameProps) {
   const matchReport = useMatchReport("carrom", prog.syncXp);
   const matchReportRef = useRef(matchReport);
   matchReportRef.current = matchReport;
+  // vs CPU: 1 earned chip a match, if switched on
+  const cpuBet = useCpuBet("carrom");
+  const cpuBetRef = useRef(cpuBet);
+  cpuBetRef.current = cpuBet;
+  // online: my earned chips go to the room; random matches stake 3
+  const { wallet } = useTokens();
+  const earned = wallet?.earned ?? 0;
+  const matchedRef = useRef(false);
+  useEffect(() => {
+    netRef.current?.setChips(earned);
+  }, [earned]);
   const progRef = useRef(prog);
   progRef.current = prog;
   const [muted, setMuted] = useState(carromAudio.muted);
@@ -287,6 +302,7 @@ export default function CarromGame({ onFinish }: GameProps) {
       }
       return;
     }
+    if (mode === "cpu") void cpuBetRef.current.settle(won ? "win" : "lose");
     const t = tallyRef.current;
     const xp = matchXp(t.coins, t.queen, won, t.combos);
     const res = progRef.current.addXp(xp);
@@ -556,6 +572,8 @@ export default function CarromGame({ onFinish }: GameProps) {
 
   /** Start a new match (or, with `nextBoard`, the next board of the current match). */
   function startLocal(mode: "cpu" | "local2" | "local4", nextBoard = false) {
+    // a new match against the CPU stakes a chip (if switched on); the next board of a match doesn't
+    if (mode === "cpu" && !nextBoard) void cpuBet.open();
     carromAudio.unlock();
     modeRef.current = mode;
     mySeatRef.current = 0;
@@ -658,6 +676,9 @@ export default function CarromGame({ onFinish }: GameProps) {
         setReward(null);
         netMatchRef.current = { mid: typeof cfg.mid === "string" ? cfg.mid.slice(0, 60) : "", uids: (cfg.uids ?? []).map((u) => (typeof u === "string" ? u : null)) };
         matchReportRef.current.reset();
+        const stake = Math.max(0, Math.floor(Number(cfg.bet) || 0));
+        if (stake > 0 && netMatchRef.current.mid)
+          void matchReportRef.current.joinBet(netMatchRef.current.mid, netMatchRef.current.uids, cfg.bk === "random" ? "random" : "room", stake);
         // a guest's seat comes from the host's roster (the host is always seat 0)
         if (modeRef.current === "join" && netRef.current) mySeatRef.current = netRef.current.mySeatIndex;
         // online: equal strikers for everyone, so upgrades never decide a match
@@ -730,11 +751,13 @@ export default function CarromGame({ onFinish }: GameProps) {
     mySeatRef.current = 0;
     hostMatchRef.current = match ?? null;
     autoStartRef.current = Boolean(match);
+    matchedRef.current = Boolean(match);
     setMatchWith(match ? { name: match.partnerName, role: "host" } : null);
     setPhase("net-lobby");
     setNetStatus("connecting");
     setNetNote(null);
     const net = CarromNet.createHost(match ? myName : "You", seats, netEvents(), auth.user?.id ?? "");
+    net.setChips(earned);
     netRef.current = net;
     setRoomCode(net.roomCode);
   }
@@ -748,11 +771,13 @@ export default function CarromGame({ onFinish }: GameProps) {
     modeRef.current = "join";
     hostMatchRef.current = null;
     autoStartRef.current = false;
+    matchedRef.current = Boolean(match);
     setMatchWith(match ? { name: match.m.partnerName, role: "guest" } : null);
     setPhase("net-lobby");
     setNetStatus("connecting");
     setNetNote(null);
     const net = CarromNet.createGuest(match ? myName : "You", match ? match.code : joinCode, netEvents(), auth.user?.id ?? "");
+    net.setChips(earned);
     netRef.current = net;
     setRoomCode(net.roomCode);
   }
@@ -768,7 +793,10 @@ export default function CarromGame({ onFinish }: GameProps) {
     while (players.length < seats) players.push({ name: "CPU", kind: "cpu" });
     const uids = net.rosterList.map((entry) => entry.userId ?? null);
     while (uids.length < seats) uids.push(null);
-    const cfg: StartCfg = { seats, players, mid: newMatchId(), uids };
+    // chips: 3 each in random matches (if both can), the host's pick in friend rooms
+    const humans = net.rosterList;
+    const stake = humans.length >= 2 ? matchStake(matchedRef.current, net.bet, humans.map((r) => r.chips ?? 0)) : 0;
+    const cfg: StartCfg = { seats, players, mid: newMatchId(), uids, bet: stake, bk: matchedRef.current ? "random" : "room" };
     net.broadcastStart(cfg);
     netEvents().onStart(cfg);
   }
@@ -1186,7 +1214,12 @@ export default function CarromGame({ onFinish }: GameProps) {
                   label: "vs CPU",
                   icon: <Bot size={15} />,
                   start: () => startLocal("cpu"),
-                  settings: formatPicker,
+                  settings: (
+                    <>
+                      {formatPicker}
+                      <CpuBetToggle bet={cpuBet} />
+                    </>
+                  ),
                 },
                 {
                   key: "local",
@@ -1406,6 +1439,15 @@ export default function CarromGame({ onFinish }: GameProps) {
                 </li>
               ))}
             </ul>
+            {netRef.current ? (
+              <StakePicker
+                isHost={isHost}
+                matched={Boolean(matchWith)}
+                chosen={netRef.current.bet}
+                chips={roster.map((r) => r.chips ?? 0)}
+                onChoose={(n) => netRef.current?.setBet(n)}
+              />
+            ) : null}
             {matchWith ? (
               <p className="carrom-hint">
                 {roster.length >= roomSeats
@@ -1524,6 +1566,7 @@ export default function CarromGame({ onFinish }: GameProps) {
           {reward.combos > 0 ? <span className="carrom-combo">Combo bonus ×{reward.combos}</span> : null}
           {reward.after > reward.before ? <span className="carrom-levelup">Level up! Level {reward.after}</span> : null}
           <LevelBar level={prog.level} xp={prog.xp} pro={prog.pro} />
+          {modeRef.current === "cpu" ? <CpuBetLine bet={cpuBet} /> : null}
         </div>
       ) : null}
       {screen === "over" && matchReport.reward ? (

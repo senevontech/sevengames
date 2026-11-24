@@ -1,6 +1,7 @@
 /* A player's public profile: avatar, counts, Follow / Add friend, stats, best games, levels.
    Used in a popup (PlayerCardModal) and on the public page /player/:id. Data: lib/social.ts. */
 import { useEffect, useState } from "react";
+import GiftChipsButton from "./GiftChips";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { X } from "lucide-react";
@@ -121,6 +122,7 @@ export function ProfileDetails({ userId, full = false }: { userId: string; full?
               {p.is_following ? "Following" : "Follow"}
             </button>
             <FriendButton p={p} busy={busy} add={() => void addFriend()} remove={() => void removeFriend()} respond={(a) => void respond(a)} />
+            <GiftChipsButton to={p.id} name={p.name} />
           </>
         )}
       </div>

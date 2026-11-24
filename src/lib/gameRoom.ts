@@ -11,9 +11,10 @@ import { supabase, isSupabaseConfigured } from "../supabase";
 import { parseAvatar, type AvatarChoice } from "./avatar";
 
 export type RoomStatus = "connecting" | "lobby" | "error";
-export type RoomPeer = { clientId: string; userId: string; name: string; avatar: AvatarChoice | null; isHost: boolean; look?: string | null };
+export type RoomPeer = { clientId: string; userId: string; name: string; avatar: AvatarChoice | null; isHost: boolean; look?: string | null; chips?: number | null };
 /** `look`: a cosmetic the game shows everyone (e.g. a Ludo token colour id). */
-export type RoomMe = { userId: string; name: string; avatar: AvatarChoice | null; look?: string | null };
+/** `chips`: the player's earned chips (what they could bet); the server checks every stake anyway. */
+export type RoomMe = { userId: string; name: string; avatar: AvatarChoice | null; look?: string | null; chips?: number | null };
 export type RoomMsg = { t: string; from: string; [k: string]: unknown };
 
 export type RoomEvents = {
@@ -123,6 +124,12 @@ export class GameRoom {
     return this.channel?.track(p);
   }
 
+  /** Update what the others see of me (e.g. my chips once the wallet has loaded). */
+  setMe(me: Partial<RoomMe>) {
+    this.me = { ...this.me, ...me };
+    void this.track();
+  }
+
   /** Host: change the room settings (guests see them through presence). */
   setMeta(meta: Record<string, unknown>) {
     if (!this.isHost) return;
@@ -150,6 +157,7 @@ export class GameRoom {
         name: clip(p.name, 40) || "Player",
         avatar: parseAvatar(p.avatar),
         look: clip(p.look, 32) || null,
+        chips: Number.isFinite(Number(p.chips)) ? Math.max(0, Math.floor(Number(p.chips))) : null,
         isHost: p.host === true,
         at: Number(p.at) || 0,
         meta: p.meta,
@@ -164,7 +172,7 @@ export class GameRoom {
     all.sort((a, b) => Number(b.isHost) - Number(a.isHost) || a.at - b.at || a.clientId.localeCompare(b.clientId));
     const seated = all.slice(0, this.seats);
     if (this.isHost) for (const extra of all.slice(this.seats)) this.send("room-full", { to: extra.clientId });
-    this.peers = seated.map(({ clientId, userId, name, avatar, isHost, look }) => ({ clientId, userId, name, avatar, isHost, look }));
+    this.peers = seated.map(({ clientId, userId, name, avatar, isHost, look, chips }) => ({ clientId, userId, name, avatar, isHost, look, chips }));
 
     if (!this.isHost && host && this.noRoomTimer && seated.some((p) => p.clientId === this.clientId)) {
       window.clearTimeout(this.noRoomTimer);

@@ -77,7 +77,7 @@ export default function EngagementTab() {
       <div className="card adm-card adm-settings">
         <h3>Weekly competition</h3>
         <p className="adm-note">
-          Weeks run Monday to Sunday (India time). Best score in the week's game wins: 2,000 / 1,000 / 500 tokens, then 100 for places 4–10, paid
+          Weeks run Monday to Sunday (India time). Best score in the week's game wins: 2,000 / 1,000 / 500 chips, then 100 for places 4–10, paid
           automatically when the week ends. "Automatic" picks from a rotation of score games.
         </p>
         <table className="adm-table">
@@ -185,7 +185,7 @@ function Tournaments({ d, call }: { d: Data; call: (a: string, b: Record<string,
         Show tournaments to players
       </label>
       <p className="adm-note">
-        ⚠️ Players pay an entry fee in tokens and win tokens. Tokens can be bought with real money, so paid-entry contests may fall under India's online
+        ⚠️ Players pay an entry fee in chips and win chips. Chips can be bought with real money, so paid-entry contests may fall under India's online
         money-gaming rules. Get legal advice before switching this on. Entry-free tournaments with a bonus prize (entry fee 0) are the safer option.
       </p>
 
@@ -224,7 +224,7 @@ function Tournaments({ d, call }: { d: Data; call: (a: string, b: Record<string,
           </select>
         </label>
         <label>
-          Entry fee (tokens)
+          Entry fee (chips)
           <input type="number" min={0} value={f.entry_fee} onChange={set("entry_fee")} />
         </label>
         <label>

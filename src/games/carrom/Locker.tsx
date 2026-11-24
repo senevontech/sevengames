@@ -184,7 +184,7 @@ export default function CarromLocker({
     if (equipped) return { kind: "equipped" as const };
     if (prog.owns(kind, id)) return { kind: "use" as const };
     if (!signedIn) return { kind: "signin" as const };
-    if (level < shop.minLevel) return { kind: "level" as const, need: shop.minLevel };
+    // no level gate any more: chips buy any item (strength upgrades keep theirs)
     const price = free ? 0 : shop.price;
     return { kind: "buy" as const, price, afford: price <= balance };
   };
@@ -194,8 +194,6 @@ export default function CarromLocker({
       <span className="carrom-item-tag on">Equipped</span>
     ) : st.kind === "use" ? (
       <span className="carrom-item-tag">Owned</span>
-    ) : st.kind === "level" ? (
-      <span className="carrom-item-tag lock">🔒 Lv {st.need}</span>
     ) : (
       <span className={`carrom-item-tag price${shop.pro ? " pro" : ""}`}>{free ? (
           "Free for you"
@@ -221,7 +219,6 @@ export default function CarromLocker({
           Sign in to buy
         </Link>
       );
-    if (st.kind === "level") return <span className="carrom-shop-need">Reach level {st.need} to buy</span>;
     return (
       <SpendButton
         cost={st.price}
@@ -267,7 +264,7 @@ export default function CarromLocker({
           </>
         )}
         {signedIn ? (
-          <Link to="/tokens" className="carrom-wallet" title="Get more tokens">
+          <Link to="/chips" className="carrom-wallet" title="Get more chips">
             <TokenIcon size={16} /> {wallet?.unlimited ? "∞" : formatTokens(wallet?.balance ?? 0)}
           </Link>
         ) : null}
@@ -372,7 +369,7 @@ export default function CarromLocker({
                 <button
                   key={s.id}
                   type="button"
-                  className={`carrom-item${focus === s.id ? " is-on" : ""}${st.kind === "level" ? " is-locked" : ""}`}
+                  className={`carrom-item${focus === s.id ? " is-on" : ""}`}
                   onClick={() => setFocus(s.id)}
                   aria-pressed={focus === s.id}
                   title={s.name}
@@ -390,7 +387,7 @@ export default function CarromLocker({
                 const equipped = prog.coinSet.id === c.id;
                 const st = stateOf("coins", c.id, c.shop, equipped);
                 return (
-                  <div key={c.id} className={`carrom-item is-static${equipped ? " is-on" : ""}${st.kind === "level" ? " is-locked" : ""}`}>
+                  <div key={c.id} className={`carrom-item is-static${equipped ? " is-on" : ""}`}>
                     <span className="carrom-item-art carrom-coin-trio">
                       <DiscPreview draw={(px) => coinSprite(c, "white", px)} size={30} />
                       <DiscPreview draw={(px) => coinSprite(c, "queen", px)} size={30} />
@@ -406,7 +403,7 @@ export default function CarromLocker({
                 const equipped = prog.board.id === b.id;
                 const st = stateOf("board", b.id, b.shop, equipped);
                 return (
-                  <div key={b.id} className={`carrom-item is-static${equipped ? " is-on" : ""}${st.kind === "level" ? " is-locked" : ""}`}>
+                  <div key={b.id} className={`carrom-item is-static${equipped ? " is-on" : ""}`}>
                     <span className="carrom-item-art">
                       <BoardSwatch b={b} />
                     </span>
@@ -419,12 +416,12 @@ export default function CarromLocker({
       </div>
 
       {pro ? (
-        <p className="carrom-hint">You're Pro: every striker, coin set and board is yours. Upgrades still use tokens.</p>
+        <p className="carrom-hint">You're Pro: every striker, coin set and board is yours. Upgrades still use chips.</p>
       ) : null}
       {!signedIn ? (
         <p className="carrom-hint">
           Playing as guest: you can use the free items and your level is saved on this device. <Link to="/login?next=/game/carrom">Sign in</Link> to
-          buy items and upgrade strikers with tokens.
+          buy items and upgrade strikers with chips.
         </p>
       ) : null}
     </div>

@@ -44,13 +44,13 @@ export default function PlayGate({
     const res = await spendForPlay(gameId);
     setBusy(false);
     if (res.ok) onPaid();
-    else if (res.reason === "insufficient") setError("Not enough tokens.");
+    else if (res.reason === "insufficient") setError("Not enough chips.");
     else if (res.reason === "signin") setError("Sign in to play.");
     else setError(res.message ?? "Something went wrong.");
   }
 
   const Cost = (
-    <span className="tk-cost" aria-label={`${formatTokens(cost)} tokens`}>
+    <span className="tk-cost" aria-label={`${formatTokens(cost)} chips`}>
       <TokenIcon size={18} />
       {formatTokens(cost)}
     </span>
@@ -83,7 +83,7 @@ export default function PlayGate({
         ) : !user ? (
           <Link className="tk-start" to={`/login?next=/game/${gameId}`}>
             <LogIn size={18} aria-hidden="true" />
-            <span>Sign in · get 1,000</span>
+            <span>Sign in · get 100</span>
             <TokenIcon size={18} />
           </Link>
         ) : (
@@ -100,7 +100,7 @@ export default function PlayGate({
                 <TokenIcon size={14} />
               </button>
             ) : null}
-            <Link className="tk-mini" to="/tokens#buy" title="Get tokens" aria-label="Get tokens">
+            <Link className="tk-mini" to="/chips#buy" title="Get chips" aria-label="Get chips">
               <Plus size={15} aria-hidden="true" />
               <TokenIcon size={14} />
             </Link>
@@ -110,7 +110,7 @@ export default function PlayGate({
       {error ? <p className="tk-gatebar-error">{error}</p> : null}
       {!user && !short ? (
         <p className="tk-gatebar-note">
-          <Link to={`/login?next=/game/${gameId}`}>Sign in</Link> for 1,000 free tokens
+          <Link to={`/login?next=/game/${gameId}`}>Sign in</Link> for 100 free chips
         </p>
       ) : null}
       <AdRewardModal open={adOpen} onClose={() => setAdOpen(false)} />

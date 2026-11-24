@@ -77,7 +77,7 @@ export function playErrorText(e: unknown) {
   const msg = (e as { message?: string })?.message ?? String(e);
   if (/cancel/i.test(msg)) return "Purchase cancelled.";
   if (msg.includes("already_subscribed")) return "You already have a subscription.";
-  if (msg.includes("pending")) return "Your payment is pending. Tokens arrive as soon as Google confirms it.";
+  if (msg.includes("pending")) return "Your payment is pending. Chips arrive as soon as Google confirms it.";
   if (msg.includes("wrong_account")) return "That purchase belongs to another account.";
   if (msg.includes("not_signed_in")) return "Sign in first.";
   return "The purchase couldn't be confirmed yet. It'll be retried next time you open the app.";

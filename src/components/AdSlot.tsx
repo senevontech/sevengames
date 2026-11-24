@@ -42,7 +42,7 @@ export default function AdSlot({ placement, className = "" }: { placement: strin
     <aside className={`ad-slot ${className}`.trim()} aria-label="Advertisement" data-placement={placement}>
       <div className="ad-slot-top">
         <span className="ad-slot-label">Advertisement</span>
-        <Link className="ad-slot-remove" to="/tokens#adfree">
+        <Link className="ad-slot-remove" to="/chips#adfree">
           Remove ads · <TokenIcon size={12} /> {AD_FREE_PRICE}/month
         </Link>
       </div>

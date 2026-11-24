@@ -26,7 +26,7 @@ export default function About() {
       <h2>What we care about</h2>
       <ul>
         <li>Games that open instantly and run smoothly, even on older phones.</li>
-        <li>Play as a guest, or sign in to keep your tokens, levels and scores everywhere.</li>
+        <li>Play as a guest, or sign in to keep your chips, levels and scores everywhere.</li>
         <li>Only collecting what the games need to work. See our <Link to="/privacy">privacy policy</Link>.</li>
       </ul>
 

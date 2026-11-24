@@ -23,7 +23,7 @@ const KEY = "senevon:shop-hub-tab";
 const isTab = (v: unknown): v is HubTab => TABS.some((t) => t.id === v);
 
 function initialTab(hash: string): HubTab {
-  // "/tokens#shop-chess" opens that game's shop
+  // "/chips#shop-chess" opens that game's shop
   const fromHash = hash.startsWith("#shop-") ? hash.slice(6) : null;
   if (isTab(fromHash)) return fromHash;
   try {

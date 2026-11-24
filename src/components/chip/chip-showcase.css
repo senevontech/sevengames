@@ -1,0 +1,50 @@
+/* The floating 3D chip: no box and no background, the page shows through. Size it from outside. */
+.chip-float {
+  position: relative;
+  flex: none;
+  width: 160px;
+  height: 160px;
+  /* the glow may spill a little past the box */
+  overflow: visible;
+}
+
+.chip-float canvas {
+  display: block;
+  /* the glow fades out before the canvas edge, so no square shows on light pages */
+  -webkit-mask-image: radial-gradient(closest-side, #000 72%, transparent 100%);
+  mask-image: radial-gradient(closest-side, #000 72%, transparent 100%);
+  cursor: grab;
+  touch-action: none;
+}
+
+.chip-float canvas:active {
+  cursor: grabbing;
+}
+
+/* no WebGL (or still loading): the flat chip, gently floating */
+.chip-float-flat {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.chip-float-flat .token-icon {
+  width: 72%;
+  height: auto;
+  aspect-ratio: 1;
+  filter: drop-shadow(0 0 14px rgba(255, 101, 0, 0.35));
+  animation: chip-bob 3.6s ease-in-out infinite;
+}
+
+@keyframes chip-bob {
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chip-float-flat .token-icon {
+    animation: none;
+  }
+}

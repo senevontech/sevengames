@@ -86,7 +86,7 @@ export default function RewardsPage() {
       setAch(r.list);
       if (r.new.length) {
         const sum = r.new.reduce((a, x) => a + x.reward, 0);
-        setNote({ ok: true, text: `Unlocked ${r.new.map((x) => `${x.icon} ${x.title}`).join(", ")} · +${formatTokens(sum)} tokens` });
+        setNote({ ok: true, text: `Unlocked ${r.new.map((x) => `${x.icon} ${x.title}`).join(", ")} · +${formatTokens(sum)} chips` });
         void refreshTokens();
       }
     }, miss);
@@ -118,7 +118,7 @@ export default function RewardsPage() {
         </span>
         <div className="rw-hero-text">
           <h1>Rewards</h1>
-          <p className="ac-sub">Free tokens every day: log in, finish challenges, compete and invite friends.</p>
+          <p className="ac-sub">Free chips every day: log in, finish challenges, compete and invite friends.</p>
         </div>
         {user && !setupMissing ? (
           <ul className="rw-stats" aria-label="Your progress">
@@ -190,9 +190,9 @@ export default function RewardsPage() {
               type="button"
               className="ac-btn ac-btn-primary"
               disabled={daily.claimed || busy === "daily"}
-              onClick={() => void act("daily", async () => `+${formatTokens((await dailyClaim()).amount)} tokens. See you tomorrow!`)}
+              onClick={() => void act("daily", async () => `+${formatTokens((await dailyClaim()).amount)} chips. See you tomorrow!`)}
             >
-              {daily.claimed ? "Claimed today ✓" : `Claim ${formatTokens(daily.reward)} tokens`}
+              {daily.claimed ? "Claimed today ✓" : `Claim ${formatTokens(daily.reward)} chips`}
             </button>
             <span className="ac-sub">
               {daily.plus ? "Plus: double rewards + 50 bonus every day." : "Miss a day and the streak starts again. Plus members get double."}
@@ -229,7 +229,7 @@ export default function RewardsPage() {
                       <Check size={14} /> +{c.reward}
                     </span>
                   ) : done && user ? (
-                    <button type="button" className="ac-btn ac-btn-sm ac-btn-primary" disabled={busy === c.id} onClick={() => void act(c.id, async () => `+${formatTokens((await challengeClaim(c.id)).amount)} tokens`)}>
+                    <button type="button" className="ac-btn ac-btn-sm ac-btn-primary" disabled={busy === c.id} onClick={() => void act(c.id, async () => `+${formatTokens((await challengeClaim(c.id)).amount)} chips`)}>
                       Claim <TokenIcon size={13} /> {c.reward}
                     </button>
                   ) : (
@@ -365,7 +365,7 @@ function FriendChallenges({ list, onChanged, setNote }: { list: FriendChallenge[
         <Users size={20} aria-hidden="true" />
         <h2 className="ac-h2">Friend challenges</h2>
       </div>
-      <p className="ac-sub">Dare a friend to beat your best score within 48 hours. The winner gets 50 tokens.</p>
+      <p className="ac-sub">Dare a friend to beat your best score within 48 hours. The winner gets 50 chips.</p>
       {friends.length ? (
         <div className="rw-form">
           <select value={to} onChange={(e) => setTo(e.target.value)} aria-label="Friend">
@@ -434,7 +434,7 @@ function Invite({ state, onApplied, setNote }: { state: ReferralState; onApplied
         <h2 className="ac-h2">Invite friends</h2>
       </div>
       <p className="ac-sub">
-        When a friend signs up with your link, you both get <TokenIcon size={12} /> {state.reward} tokens (up to {state.cap} friends).
+        When a friend signs up with your link, you both get <TokenIcon size={12} /> {state.reward} chips (up to {state.cap} friends).
       </p>
       <div className="rw-form">
         <input readOnly value={link} aria-label="Your invite link" onFocus={(e) => e.currentTarget.select()} />
@@ -462,7 +462,7 @@ function Invite({ state, onApplied, setNote }: { state: ReferralState; onApplied
             setBusy(true);
             void referralClaim(code.trim())
               .then(
-                (r) => setNote({ ok: true, text: r.paid ? `+${r.amount} tokens for joining with a friend's code!` : "Code saved." }),
+                (r) => setNote({ ok: true, text: r.paid ? `+${r.amount} chips for joining with a friend's code!` : "Code saved." }),
                 (err) => setNote({ ok: false, text: engagementErrorText(err) }),
               )
               .finally(() => {
@@ -484,15 +484,15 @@ function Invite({ state, onApplied, setNote }: { state: ReferralState; onApplied
 /** How players earn: shown while the rewards server isn't ready (or to guests before data loads). */
 function EarnGuide({ soon }: { soon: boolean }) {
   const ways = [
-    { icon: CalendarCheck, title: "Daily reward", text: "Log in every day: 20 → 100 tokens over a 7-day streak." },
-    { icon: Target, title: "Daily challenges", text: "Three quick tasks a day, 30–80 tokens each, +50 for all three." },
-    { icon: Trophy, title: "Weekly competition", text: "Top the week's game: 2,000 / 1,000 / 500 tokens for the podium." },
+    { icon: CalendarCheck, title: "Daily reward", text: "Log in every day: 20 → 100 chips over a 7-day streak." },
+    { icon: Target, title: "Daily challenges", text: "Three quick tasks a day, 30–80 chips each, +50 for all three." },
+    { icon: Trophy, title: "Weekly competition", text: "Top the week's game: 2,000 / 1,000 / 500 chips for the podium." },
     { icon: Users, title: "Friend challenges", text: "Dare a friend to beat your score in 48 hours. Winner gets 50." },
-    { icon: UserPlus, title: "Invite friends", text: "You both get 250 tokens when a friend signs up with your link." },
-    { icon: Swords, title: "Achievements", text: "26 badges for playing, winning and streaks, each with a token reward." },
+    { icon: UserPlus, title: "Invite friends", text: "You both get 250 chips when a friend signs up with your link." },
+    { icon: Swords, title: "Achievements", text: "26 badges for playing, winning and streaks, each with a chip reward." },
   ];
   return (
-    <section className="rw-guide" aria-label="Ways to earn tokens">
+    <section className="rw-guide" aria-label="Ways to earn chips">
       {ways.map(({ icon: Icon, title, text }) => (
         <div key={title} className="ac-card rw-way">
           <span className="rw-way-icon" aria-hidden="true">

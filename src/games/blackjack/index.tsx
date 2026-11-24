@@ -261,7 +261,7 @@ export default function BlackjackGame(_props: GameProps) {
       <div className="bj-controls">
         {!signedIn && !loading ? (
           <div className="bj-note">
-            <p>Sign in to get 10,000 free chips and play.</p>
+            <p>Sign in to get 10,000 free table chips and play.</p>
             <Link className="bj-btn bj-btn-main" to={`/login?next=${encodeURIComponent(location.pathname)}`}>
               Sign in
             </Link>
@@ -283,10 +283,10 @@ export default function BlackjackGame(_props: GameProps) {
           </div>
         ) : broke ? (
           <div className="bj-note">
-            <p>You're out of chips.</p>
+            <p>You're out of table chips.</p>
             {chips?.refill_ready ? (
               <button type="button" className="bj-btn bj-btn-main" onClick={() => void claim("refill")}>
-                Get {shortChips(chips.refill_amount)} free chips
+                Get {shortChips(chips.refill_amount)} free table chips
               </button>
             ) : chips?.daily_ready ? (
               <button type="button" className="bj-btn bj-btn-main" onClick={() => void claim("daily")}>
@@ -325,7 +325,7 @@ export default function BlackjackGame(_props: GameProps) {
             {error}
           </p>
         ) : null}
-        <p className="bj-fine">Chips are free play money: they can't be bought or exchanged for anything.</p>
+        <p className="bj-fine">Table chips are free play money: they can't be bought or exchanged for anything, and they're separate from the Chips in your wallet.</p>
       </div>
     </div>
   );
@@ -350,7 +350,7 @@ function refillIn(at: string | null) {
 
 function ChipBalance({ amount }: { amount: number }) {
   return (
-    <span className="bj-pill bj-balance" title="Your chips">
+    <span className="bj-pill bj-balance" title="Your table chips">
       <Chip value={500} size={20} /> {amount.toLocaleString()}
     </span>
   );

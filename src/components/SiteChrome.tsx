@@ -93,11 +93,11 @@ function SiteMenu({ pathname }: { pathname: string }) {
             </span>
             Rewards
           </Link>
-          <Link to="/tokens" className="site-menu-item">
+          <Link to="/chips" className="site-menu-item">
             <span className="site-menu-icon" aria-hidden="true">
               <Coins size={16} />
             </span>
-            Tokens & frames
+            Chips & frames
           </Link>
           <Link to="/business" className="site-menu-item">
             <span className="site-menu-icon" aria-hidden="true">
@@ -133,7 +133,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   // Light/dark mode: game pages plus the account pages (profile, tokens); other pages keep the dark frame.
   const isGame =
-    pathname.startsWith("/game/") || pathname === "/profile" || pathname === "/tokens" || pathname === "/leaderboards" || pathname === "/login" || pathname.startsWith("/player/");
+    pathname.startsWith("/game/") || pathname === "/profile" || pathname === "/chips" || pathname === "/leaderboards" || pathname === "/login" || pathname.startsWith("/player/");
   const { theme, toggle } = useGameTheme();
 
   return (

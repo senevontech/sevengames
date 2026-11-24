@@ -81,9 +81,9 @@ function HeaderShop() {
     );
   }
   return (
-    <Link to="/tokens#buy" className="gp-shop" aria-label="Get tokens" title="Get tokens">
+    <Link to="/chips#buy" className="gp-shop" aria-label="Get chips" title="Get chips">
       <Store size={15} />
-      <span>Tokens</span>
+      <span>Chips</span>
     </Link>
   );
 }
@@ -303,7 +303,7 @@ export default function GamePage() {
               <li className={premium ? "gp-chip-cost" : "gp-chip-free"}>
                 {premium ? (
                   <>
-                    <TokenIcon size={14} title="tokens" /> {formatTokens(cost)} / play
+                    <TokenIcon size={14} title="chips" /> {formatTokens(cost)} / play
                   </>
                 ) : (cost ?? 0) > 0 ? (
                   "Unlimited"
@@ -406,9 +406,9 @@ export default function GamePage() {
                 <p>
                   {access === "early"
                     ? `${game.title} is in early access. Senevon Plus members play it first; everyone else gets it soon.`
-                    : `${game.title} is included with Senevon Plus, along with no ads, 5,000 tokens a month and a bigger daily reward.`}
+                    : `${game.title} is included with Senevon Plus, along with no ads, 5,000 chips a month and a bigger daily reward.`}
                 </p>
-                <Link className="primary-btn" to={user ? "/tokens#plus" : `/login?next=/game/${game.id}`}>
+                <Link className="primary-btn" to={user ? "/chips#plus" : `/login?next=/game/${game.id}`}>
                   {user ? "See Senevon Plus" : "Sign in"}
                 </Link>
               </div>

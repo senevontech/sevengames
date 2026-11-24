@@ -249,12 +249,12 @@ export default function DashboardTab() {
           </section>
 
           <section className="dash-group">
-            <h3>Tokens</h3>
+            <h3>Chips</h3>
             <div className="dash-grid">
-              <Card label="Tokens earned" value={fmt(c.tokens_earned)} cur={c.tokens_earned} prev={p?.tokens_earned} onOpen={go("tokens", "Tokens")} />
-              <Card label="Tokens spent" value={fmt(c.tokens_spent)} cur={c.tokens_spent} prev={p?.tokens_spent} onOpen={go("tokens", "Tokens")} />
-              <Card label="Shop sales" value={fmt(c.shop_sales)} cur={c.shop_sales} prev={p?.shop_sales} onOpen={go("tokens", "Tokens")} />
-              <Card label="Rewarded ads watched" value={fmt(c.ad_rewards)} cur={c.ad_rewards} prev={p?.ad_rewards} onOpen={go("tokens", "Tokens")} />
+              <Card label="Chips earned" value={fmt(c.tokens_earned)} cur={c.tokens_earned} prev={p?.tokens_earned} onOpen={go("tokens", "Chips")} />
+              <Card label="Chips spent" value={fmt(c.tokens_spent)} cur={c.tokens_spent} prev={p?.tokens_spent} onOpen={go("tokens", "Chips")} />
+              <Card label="Shop sales" value={fmt(c.shop_sales)} cur={c.shop_sales} prev={p?.shop_sales} onOpen={go("tokens", "Chips")} />
+              <Card label="Rewarded ads watched" value={fmt(c.ad_rewards)} cur={c.ad_rewards} prev={p?.ad_rewards} onOpen={go("tokens", "Chips")} />
             </div>
           </section>
         </>

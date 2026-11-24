@@ -477,7 +477,7 @@ export const games: Game[] = [
     difficulty: "Easy",
     minutes: 5,
     accent: "#17703f",
-    description: "Beat the dealer to 21 on a real felt table. Bet free chips, hit, stand, double or split. Blackjack pays 3 to 2.",
+    description: "Beat the dealer to 21 on a real felt table. Bet free table chips, hit, stand, double or split. Blackjack pays 3 to 2.",
   },
   {
     id: "pool",

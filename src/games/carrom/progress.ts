@@ -68,7 +68,7 @@ function writeGuest(g: GuestState) {
 /** Friendly text for the carrom RPC errors. */
 export function carromErrorText(err: unknown) {
   const msg = (err as { message?: string })?.message ?? String(err);
-  if (msg.includes("insufficient_tokens")) return "Not enough tokens.";
+  if (msg.includes("insufficient_tokens")) return "Not enough chips.";
   if (msg.includes("level_required")) return "Reach the required level first.";
   if (msg.includes("max_level")) return "That stat is already maxed.";
   if (msg.includes("not_owned")) return "Buy this item first.";

@@ -141,9 +141,9 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
     setStage({ kind: "loading" });
 
     void (async () => {
-      if (!wallet) return setStage({ kind: "message", text: "Sign in to earn tokens." });
+      if (!wallet) return setStage({ kind: "message", text: "Sign in to earn chips." });
       if (wallet.ads_today >= wallet.ad_daily_cap) {
-        return setStage({ kind: "message", text: "You've watched today's ads — come back tomorrow for more tokens." });
+        return setStage({ kind: "message", text: "You've watched today's ads — come back tomorrow for more chips." });
       }
       try {
         // the app: an AdMob rewarded ad, credited by the server (admob-ssv)
@@ -155,7 +155,7 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
           return setStage(
             res === "rewarded"
               ? { kind: "done", reward: wallet.ad_reward ?? 50 }
-              : { kind: "message", text: "The ad was closed early, so no tokens this time." },
+              : { kind: "message", text: "The ad was closed early, so no chips this time." },
           );
         }
         if (GAM_UNIT) {
@@ -165,7 +165,7 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
           const res = await runNetworkAd();
           if (!alive()) return;
           if (res === "granted") return void claim();
-          if (res === "closed") return setStage({ kind: "message", text: "The ad was closed early, so no tokens this time." });
+          if (res === "closed") return setStage({ kind: "message", text: "The ad was closed early, so no chips this time." });
           // no fill → fall through to a house ad, reusing the same view
         }
         const pool = ads.length ? ads : [];
@@ -222,7 +222,7 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
   if (!open) return null;
 
   return createPortal(
-    <div className="tk-modal" role="dialog" aria-modal="true" aria-label="Watch an ad to earn tokens">
+    <div className="tk-modal" role="dialog" aria-modal="true" aria-label="Watch an ad to earn chips">
       <div className="tk-modal-card">
         <button type="button" className="tk-modal-x" onClick={onClose} aria-label="Close">
           <X size={18} />
@@ -231,7 +231,7 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
         {stage.kind === "loading" || stage.kind === "claiming" ? (
           <div className="tk-modal-center">
             <span className="tk-spinner" aria-hidden="true" />
-            <p>{stage.kind === "loading" ? "Loading an ad…" : "Adding your tokens…"}</p>
+            <p>{stage.kind === "loading" ? "Loading an ad…" : "Adding your chips…"}</p>
           </div>
         ) : null}
 
@@ -256,7 +256,7 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
               </div>
               <button type="button" className="tk-btn tk-btn-primary" disabled={stage.left > 0} onClick={() => void claim()}>
                 <TokenIcon size={18} />
-                {stage.left > 0 ? `Claim in ${stage.left}s` : `Claim ${wallet?.ad_reward ?? 50} tokens`}
+                {stage.left > 0 ? `Claim in ${stage.left}s` : `Claim ${wallet?.ad_reward ?? 50} chips`}
               </button>
             </div>
           </div>
@@ -267,7 +267,7 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
             <span className="tk-reward-coin" aria-hidden="true">
               <TokenIcon size={66} />
             </span>
-            <h3>+{stage.reward} tokens</h3>
+            <h3>+{stage.reward} chips</h3>
             <p>
               {wallet ? `${wallet.ads_today} of ${wallet.ad_daily_cap} ads watched today.` : null}
             </p>

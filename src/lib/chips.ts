@@ -18,13 +18,13 @@ export type ChipsState = {
 /** Friendly text for the server's error codes. */
 export function chipsErrorText(err: unknown) {
   const msg = (err as { message?: string })?.message ?? String(err);
-  if (msg.includes("insufficient_chips")) return "Not enough chips for that.";
-  if (msg.includes("already_claimed")) return "You've already had today's free chips.";
+  if (msg.includes("insufficient_chips")) return "Not enough table chips for that.";
+  if (msg.includes("already_claimed")) return "You've already had today's free table chips.";
   if (msg.includes("refill_wait")) return "Free refill is once an hour.";
-  if (msg.includes("not_broke")) return "Refills are for when you've run out of chips.";
+  if (msg.includes("not_broke")) return "Refills are for when you've run out of table chips.";
   if (msg.includes("round_open")) return "Finish the current hand first.";
   if (msg.includes("bad_bet")) return "That bet is outside the table limits.";
-  if (msg.includes("not_signed_in")) return "Sign in to play with chips.";
+  if (msg.includes("not_signed_in")) return "Sign in to play with table chips.";
   if (msg.includes("table_full")) return "That table is full (5 players).";
   if (msg.includes("no_table")) return "No table with that code.";
   if (msg.includes("betting_closed")) return "Bets are closed for this round.";

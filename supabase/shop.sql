@@ -23,7 +23,7 @@
 -- token ledger: allow 'shop' (keep this list in sync with tokens.sql, adfree.sql and carrom.sql)
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
-  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament'));
+  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'bet', 'gift'));
 
 -- 1) Catalog ---------------------------------------------------------
 create table if not exists public.shop_items (
@@ -318,7 +318,7 @@ begin
   if not found then raise exception 'bad_item'; end if;
   if r.kind <> 'booster' and _shop_owns(v_user, p_item) then return _shop_state(v_user); end if;
   if r.plus_only then raise exception 'plus_only'; end if;
-  if r.game is not null and _shop_level(v_user, r.game) < r.min_level then raise exception 'level_required'; end if;
+  -- no level gate: chips buy any item (min_level is now only a hint shown in the shop)
   if r.price > 0 and not _shop_free(v_user) then
     perform token_wallet(); -- wallet exists, signup bonus in
     perform _tok_credit(v_user, -r.price, 'shop', p_item); -- raises insufficient_tokens

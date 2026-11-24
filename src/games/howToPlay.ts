@@ -179,7 +179,7 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
       { icon: "👆", title: "Move a piece", text: "Tap a piece to see where it can go, then tap a highlighted square." },
       { icon: "👑", title: "Checkmate wins", text: "Trap the enemy king so it can't escape check. Stalemate and repetition are draws." },
       { icon: "♜", title: "Special moves", text: "Castling, en passant and pawn promotion all work as in real chess." },
-      { icon: "⏱️", title: "Online", text: "Online games have a clock. Win for XP and a token; a loss costs some XP." },
+      { icon: "⏱️", title: "Online", text: "Online games have a clock. Win for XP and a chip; a loss costs some XP." },
     ],
     controls: ["Tap a piece, then a square", "Control the centre, develop pieces, castle early"],
   },
@@ -205,7 +205,7 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
   },
   blackjack: {
     steps: [
-      { icon: "🪙", title: "Place a bet", text: "Bet free chips (never tokens), then deal." },
+      { icon: "🪙", title: "Place a bet", text: "Bet free table chips (never the Chips you buy), then deal." },
       { icon: "🃏", title: "Get close to 21", text: "Cards 2–10 count face value, J/Q/K count 10, an Ace counts 1 or 11." },
       { icon: "✋", title: "Hit or stand", text: "Hit for another card or stand to keep your total. Go over 21 and you bust." },
       { icon: "✌️", title: "Double and split", text: "Double your bet for exactly one more card, or split a pair into two hands." },

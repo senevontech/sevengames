@@ -181,6 +181,7 @@ export function RoomWaiting({
   title,
   blurb,
   hostSettings,
+  bet,
   canStart,
   startLabel = "Start game",
   onStart,
@@ -198,6 +199,8 @@ export function RoomWaiting({
   title: string;
   blurb?: string;
   hostSettings?: ReactNode;
+  /** the chip stake (RoomBet), shown to everyone */
+  bet?: ReactNode;
   canStart: boolean;
   startLabel?: string;
   onStart: () => void;
@@ -244,6 +247,7 @@ export function RoomWaiting({
         <p className="ol-sub">{blurb}</p>
       ) : null}
       {isHost && !matched ? hostSettings : null}
+      {bet ?? null}
       <ul className="ol-peers">
         {peers.map((p) => (
           <li key={p.clientId}>

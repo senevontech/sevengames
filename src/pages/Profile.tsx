@@ -166,21 +166,21 @@ export default function Profile() {
 
       {/* ---------- wallet + stats ---------- */}
       <div className="pf-overview">
-        <section className="ac-card ac-coin-card pf-wallet" aria-label="Token wallet">
+        <section className="ac-card ac-coin-card pf-wallet" aria-label="Chip wallet">
           <div className="pf-wallet-top">
             <TokenIcon size={52} className="ac-token" />
             <div>
-              <span className="pf-wallet-label">Token balance</span>
+              <span className="pf-wallet-label">Chip balance</span>
               <strong className="pf-wallet-num">
                 {wallet ? (wallet.unlimited ? "∞" : formatTokens(wallet.balance)) : walletLoading ? "…" : "—"}
               </strong>
             </div>
           </div>
           <div className="pf-wallet-actions">
-            <Link className="ac-btn ac-btn-sm" to="/tokens#buy">
-              Buy tokens
+            <Link className="ac-btn ac-btn-sm" to="/chips#buy">
+              Buy chips
             </Link>
-            <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/tokens">
+            <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/chips">
               Wallet <ArrowRight size={14} aria-hidden="true" />
             </Link>
             {showAds ? (

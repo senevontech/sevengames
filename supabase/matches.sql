@@ -18,7 +18,7 @@
 -- the token ledger gets a 'match' reason (keep this list in sync with tokens.sql and friends)
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
-  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament'));
+  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'bet', 'gift'));
 
 -- Arrows and Pool get their own XP
 alter table public.game_xp drop constraint if exists game_xp_game_check;
@@ -159,6 +159,10 @@ begin
   end if;
 
   perform _match_pay(p_game, p_match);
+  -- chip bets on this match (bets.sql) settle once every player's report agrees
+  if to_regprocedure('public._bet_try_settle(text,text,boolean)') is not null then
+    perform _bet_try_settle(p_game, p_match, false);
+  end if;
 
   if p_game = 'carrom' then
     select xp into v_xp from carrom_profiles where user_id = v_user;

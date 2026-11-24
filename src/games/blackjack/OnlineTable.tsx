@@ -97,7 +97,7 @@ export function OnlineLobby({ onSeated }: { onSeated: (v: TableView) => void }) 
   return (
     <div className="ol-card bjo-lobby">
       <h3>Online table</h3>
-      <p className="ol-sub">Up to five players against one dealer. The server deals every card; everyone bets their own free chips.</p>
+      <p className="ol-sub">Up to five players against one dealer. The server deals every card; everyone bets their own free table chips.</p>
       <button type="button" className="bj-btn bj-btn-main" disabled={busy} onClick={() => void go("bjt_quick", {})}>
         <Zap size={16} /> Quick seat
       </button>
@@ -247,7 +247,7 @@ export function OnlineTable({ initial, onLeave }: { initial: TableView; onLeave:
   return (
     <div className="bjo">
       <div className="bj-top">
-        <span className="bj-pill bj-balance" title="Your chips">
+        <span className="bj-pill bj-balance" title="Your table chips">
           <Chip value={500} size={20} /> {balance.toLocaleString()}
         </span>
         <span className="bj-pill bjo-code" title={view.private ? "Private table: share this code" : "Table code"}>
@@ -315,8 +315,8 @@ export function OnlineTable({ initial, onLeave }: { initial: TableView; onLeave:
             </div>
           ) : balance < view.chips.min_bet ? (
             <div className="bj-note">
-              <p>You're out of chips.</p>
-              <p className="bj-sub">Leave the table to claim free chips.</p>
+              <p>You're out of table chips.</p>
+              <p className="bj-sub">Leave the table to claim free table chips.</p>
             </div>
           ) : (
             <>
@@ -358,7 +358,7 @@ export function OnlineTable({ initial, onLeave }: { initial: TableView; onLeave:
             {error}
           </p>
         ) : null}
-        <p className="bj-fine">Chips are free play money: they can't be bought or exchanged for anything.</p>
+        <p className="bj-fine">Table chips are free play money: they can't be bought or exchanged for anything, and they're separate from the Chips in your wallet.</p>
       </div>
     </div>
   );

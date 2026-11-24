@@ -70,17 +70,17 @@ export default function TokenPill({ variant = "default" }: { variant?: "default"
   if (user && !wallet && !loading) return null;
 
   const label = unlimited
-    ? "Unlimited tokens"
+    ? "Unlimited chips"
     : value === null
-      ? "Your tokens"
-      : `${formatTokens(value)} ${user ? "tokens — get more" : "guest tokens"}`;
+      ? "Your chips"
+      : `${formatTokens(value)} ${user ? "chips — get more" : "guest chips"}`;
 
   return (
     <Link
-      to="/tokens"
+      to="/chips"
       className={`tk-pill${variant === "solid" ? " tk-pill-solid" : ""}${change ? (change.delta > 0 ? " is-up" : " is-down") : ""}`}
       aria-label={label}
-      title={user ? "Get more tokens" : "Guest tokens: sign in for 1,000 free"}
+      title={user ? "Get more chips" : "Guest chips: sign in for 100 free"}
     >
       <span className="tk-pill-coin" aria-hidden="true">
         <TokenIcon size={variant === "solid" ? 22 : 18} />

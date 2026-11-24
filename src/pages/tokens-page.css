@@ -38,8 +38,8 @@
 }
 
 .tw-hero-coin svg {
-  width: 52%;
-  height: 52%;
+  width: 78%;
+  height: 78%;
 }
 
 @keyframes tw-coin-spin {
@@ -585,7 +585,7 @@
 .tw-hero-coin {
   display: block;
   flex: none;
-  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 18px rgba(158, 255, 0, 0.45));
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 18px rgba(255, 101, 0, 0.45));
 }
 
 .tw-hero-coin svg {
@@ -616,4 +616,57 @@
 
 .g2 .tk-modal-center p {
   color: var(--g2-muted);
+}
+
+/* the floating 3D chip beside the balance */
+.tw-hero-chip {
+  width: clamp(104px, 15vw, 150px);
+  height: clamp(104px, 15vw, 150px);
+  margin: -14px -6px -14px -10px;
+}
+
+/* the balance hero sits straight on the page: no orange card, the floating chip carries the colour */
+.acct .tw-hero.ac-coin-card {
+  color: var(--ac-text);
+  background: none;
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.acct .tw-hero.ac-coin-card::before,
+.acct .tw-hero.ac-coin-card::after {
+  display: none;
+}
+
+.acct .tw-hero .tw-hero-label {
+  color: var(--ac-accent, #e25a00);
+  opacity: 1;
+}
+
+.acct .tw-hero .tw-balance {
+  text-shadow: none;
+}
+
+.acct .tw-hero .tw-hero-sub {
+  opacity: 0.7;
+}
+
+.acct .tw-hero .tw-pill {
+  color: var(--ac-text);
+  background: var(--ac-bg);
+  box-shadow: var(--ac-well);
+}
+
+/* buttons: the page's own (orange main action, soft secondary) */
+.acct .tw-hero.ac-coin-card .ac-btn {
+  color: #fff !important;
+  background: linear-gradient(145deg, #ff9d52, #ec5f00);
+  box-shadow: 0 10px 22px -10px rgba(236, 95, 0, 0.75);
+}
+
+.acct .tw-hero.ac-coin-card .ac-btn-ghost {
+  color: var(--ac-text) !important;
+  background: var(--ac-bg);
+  box-shadow: var(--ac-raise-sm);
 }

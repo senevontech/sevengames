@@ -42,6 +42,10 @@ import "./chess.css";
 import { GameShopButton } from "../gameShop";
 import { useMatchChat } from "../../components/chat/MatchChat";
 import { MatchRewardLine, useMatchReport } from "../../lib/matchReport";
+import { matchStake, useCpuBet, type BetKind } from "../../lib/bets";
+import { useTokens } from "../../lib/tokens";
+import RoomBet from "../../components/RoomBet";
+import { CpuBetLine, CpuBetToggle } from "../../components/CpuBet";
 
 type Mode = "cpu" | "pass" | "online";
 type Result = { winner: Color | null; reason: string };
@@ -400,6 +404,11 @@ export default function ChessGame(_props: GameProps) {
 
   /* ----- XP + rating when a game ends ----- */
   const matchReport = useMatchReport("chess", () => void shop.refresh());
+  // vs CPU: 1 earned chip a game, if switched on
+  const cpuBet = useCpuBet("chess");
+  const { wallet } = useTokens();
+  const earnedRef = useRef(0);
+  earnedRef.current = wallet?.earned ?? 0;
   const myColor: Color = mode === "online" ? online?.myColor ?? 1 : mode === "cpu" ? (-cpuColor as Color) : 1;
   useEffect(() => {
     if (!g.result || awarded.current || mode === "pass") return;
@@ -413,6 +422,7 @@ export default function ChessGame(_props: GameProps) {
         void matchReport.report(`${o.matchId}:${o.round}`, [user?.id, opp], g.result.winner === null ? [] : [g.result.winner === myColor ? user?.id : opp], g.result.winner === null);
       }
     } else if (user) {
+      if (mode === "cpu") void cpuBet.settle(outcomeFor === "loss" ? "lose" : outcomeFor);
       const amount = XP.cpu[level][outcomeFor];
       setXpGain(amount);
       void shop.awardXp("chess", amount);
@@ -429,6 +439,9 @@ export default function ChessGame(_props: GameProps) {
     if (resume) setLevel(resume.level);
     setCpuColor(-color as Color);
     setMode("cpu");
+    // a resumed game keeps the bet it had; a new one stakes again (if switched on)
+    if (resume) cpuBet.resume();
+    else void cpuBet.open();
     setG(resume ? replay(resume.moves) : newGame());
     awarded.current = false;
     setXpGain(null);
@@ -443,7 +456,7 @@ export default function ChessGame(_props: GameProps) {
   }
 
   /* ----- online ----- */
-  const me = () => ({ userId: user?.id ?? "", name: myName, avatar: myAvatar });
+  const me = () => ({ userId: user?.id ?? "", name: myName, avatar: myAvatar, chips: earnedRef.current });
 
   const onRoomMessage = useCallback(
     (msg: RoomMsg) => {
@@ -454,7 +467,7 @@ export default function ChessGame(_props: GameProps) {
         case "start": {
           const white = String(msg.white);
           const minutes = Math.max(1, Math.min(30, Number(msg.tc) || 5));
-          beginOnline(room, white, minutes, String(msg.match), Number(msg.round) || 1);
+          beginOnline(room, white, minutes, String(msg.match), Number(msg.round) || 1, Math.max(0, Math.floor(Number(msg.bet) || 0)), msg.bk === "random" ? "random" : "room");
           break;
         }
         case "move": {
@@ -500,7 +513,7 @@ export default function ChessGame(_props: GameProps) {
     sfx.end();
   }
 
-  function beginOnline(room: GameRoom, white: string, minutes: number, matchId: string, round: number) {
+  function beginOnline(room: GameRoom, white: string, minutes: number, matchId: string, round: number, stake = 0, kind: BetKind = "room") {
     const opp = room.players.find((p) => p.clientId !== room.clientId) ?? null;
     const o: Online = {
       room,
@@ -518,6 +531,8 @@ export default function ChessGame(_props: GameProps) {
     awarded.current = false;
     setXpGain(null);
     matchReport.reset();
+    // the host's chip stake for this game (the server checks it)
+    if (stake > 0 && opp) void matchReport.joinBet(`${matchId}:${round}`, [user?.id, opp.userId], kind, stake);
     setDrawOffer(null);
     setRematch([]);
     setClocks({ w: minutes * 60_000, b: minutes * 60_000, since: performance.now() });
@@ -562,8 +577,12 @@ export default function ChessGame(_props: GameProps) {
     const minutes = Number(room.settings.tc) || 5;
     const match = randomId();
     const round = (o?.round ?? 0) + 1;
-    room.send("start", { white, tc: minutes, match, round });
-    beginOnline(room, white, minutes, match, round);
+    // chips: 3 each in random matches (if both can), the host's pick in friend rooms
+    const matched = Boolean(o?.matched);
+    const kind: BetKind = matched ? "random" : "room";
+    const stake = matchStake(matched, room.settings.bet, room.players.map((p) => p.chips));
+    room.send("start", { white, tc: minutes, match, round, bet: stake, bk: kind });
+    beginOnline(room, white, minutes, match, round, stake, kind);
   }
 
   const roomEvents = () => ({
@@ -734,6 +753,7 @@ export default function ChessGame(_props: GameProps) {
           canStart={peers.length === 2}
           onStart={() => hostStart()}
           onLeave={leaveOnline}
+          bet={<RoomBet room={room} peers={peers} isHost={room.isHost} matched={online.matched} />}
         />
       </div>
     );
@@ -788,6 +808,7 @@ export default function ChessGame(_props: GameProps) {
                 </button>
               ))}
             </div>
+            <CpuBetToggle bet={cpuBet} />
                 </div>
               ),
             },
@@ -930,6 +951,7 @@ export default function ChessGame(_props: GameProps) {
               <h3>{resultTitle}</h3>
               <p>{result.reason}</p>
               {mode === "online" ? <MatchRewardLine reward={matchReport.reward} /> : xpGain ? <p className="ch-xp-gain">+{xpGain} XP</p> : null}
+              {mode === "cpu" ? <CpuBetLine bet={cpuBet} /> : null}
               <div className="ch-actions">
                 {mode === "online" ? (
                   <>

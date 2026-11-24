@@ -1,5 +1,5 @@
 /* Admin → Engagement → Custom sticker packs: upload artwork (PNG / WebP / GIF / SVG) as a chat pack,
-   priced in tokens or Plus-only. Built-in packs are priced in Admin → Tokens → Shop. */
+   priced in chips or Plus-only. Built-in packs are priced in Admin → Chips → Shop. */
 import { useCallback, useEffect, useState } from "react";
 import { adminCall, uploadImage } from "../../lib/adminApi";
 import { loadCustomPacks } from "../../lib/chatPacks";
@@ -78,8 +78,8 @@ export default function ChatPacksAdmin() {
     <div className="card adm-card adm-settings">
       <h3>Custom sticker packs</h3>
       <p className="adm-note">
-        Upload your own sticker art (square PNG, WebP, GIF or SVG, up to 24 per pack). Price in tokens, or Plus only (free for members). Players use them
-        in online matches, lobbies and friends chat. Built-in packs are priced in Tokens → Shop.
+        Upload your own sticker art (square PNG, WebP, GIF or SVG, up to 24 per pack). Price in chips, or Plus only (free for members). Players use them
+        in online matches, lobbies and friends chat. Built-in packs are priced in Chips → Shop.
       </p>
       {msg ? <p className="adm-note adm-msg">{msg}</p> : null}
 
@@ -93,7 +93,7 @@ export default function ChatPacksAdmin() {
           <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} maxLength={40} placeholder="Diwali stickers" />
         </label>
         <label>
-          Price (tokens)
+          Price (chips)
           <input type="number" min={0} value={f.price} onChange={(e) => setF({ ...f, price: e.target.value })} disabled={f.plus_only} />
         </label>
         <label className="adm-check">
@@ -161,7 +161,7 @@ export default function ChatPacksAdmin() {
                       ))}
                     </span>
                   </td>
-                  <td>{p.shop?.plus_only ? "Plus only" : `${p.shop?.price ?? 0} tokens`}</td>
+                  <td>{p.shop?.plus_only ? "Plus only" : `${p.shop?.price ?? 0} chips`}</td>
                   <td>
                     <input type="checkbox" checked={p.shop?.active !== false} onChange={(e) => void setActive(p, e.target.checked)} aria-label={`${p.name} on sale`} />
                   </td>

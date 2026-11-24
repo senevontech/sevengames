@@ -108,7 +108,7 @@ function PromoCard({ source, onClose }: { source: PromoSource; onClose: () => vo
 
   const buyPlus = () => {
     if (!user) return;
-    const success = `You're ad-free, and ${formatTokens(perMonth)} tokens are on their way.`;
+    const success = `You're ad-free, and ${formatTokens(perMonth)} chips are on their way.`;
     if (isNative) {
       void run(
         async () => {
@@ -187,7 +187,7 @@ function PromoCard({ source, onClose }: { source: PromoSource; onClose: () => vo
                     <Check size={14} aria-hidden="true" /> No ads, ever
                   </li>
                   <li>
-                    <Check size={14} aria-hidden="true" /> <TokenIcon size={13} /> {formatTokens(perMonth)} tokens every month
+                    <Check size={14} aria-hidden="true" /> <TokenIcon size={13} /> {formatTokens(perMonth)} chips every month
                   </li>
                   <li>
                     <Check size={14} aria-hidden="true" /> Cancel any time
@@ -227,12 +227,12 @@ function PromoCard({ source, onClose }: { source: PromoSource; onClose: () => vo
                   </b>
                 </div>
                 <p className="afp-opt-sub">
-                  30 days without ads for <TokenIcon size={13} /> {AD_FREE_PRICE} tokens. Renews automatically; cancel any time.
+                  30 days without ads for <TokenIcon size={13} /> {AD_FREE_PRICE} chips. Renews automatically; cancel any time.
                 </p>
                 {user ? (
                   <div className="afp-row">
                     <button type="button" className="tk-btn" disabled={busy || !canAffordPass} onClick={() => void run(buyAdFree, "No ads for the next 30 days.")}>
-                      Use <TokenIcon size={14} /> {AD_FREE_PRICE} tokens
+                      Use <TokenIcon size={14} /> {AD_FREE_PRICE} chips
                     </button>
                     {isNative && play?.adfree ? (
                       <button type="button" className="tk-btn" disabled={busy} onClick={buyPlayAdFree}>
@@ -243,8 +243,8 @@ function PromoCard({ source, onClose }: { source: PromoSource; onClose: () => vo
                 ) : null}
                 {user && wallet && !canAffordPass ? (
                   <p className="afp-hint">
-                    You have {formatTokens(balance)} tokens.{" "}
-                    <Link to="/tokens#buy" onClick={onClose}>
+                    You have {formatTokens(balance)} chips.{" "}
+                    <Link to="/chips#buy" onClick={onClose}>
                       Get more
                     </Link>
                   </p>

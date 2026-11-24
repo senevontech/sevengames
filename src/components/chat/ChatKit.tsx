@@ -156,7 +156,7 @@ export function ChatPicker({ onPick, cooldown = 0, onClose }: { onPick: (pack: C
         </div>
       ) : state === "plus" ? (
         <div className="cp-foot">
-          <Link className="ac-btn ac-btn-sm ac-btn-primary" to="/tokens#plus">
+          <Link className="ac-btn ac-btn-sm ac-btn-primary" to="/chips#plus">
             ⭐ Get Senevon Plus
           </Link>
           <small>Free for Plus members.</small>

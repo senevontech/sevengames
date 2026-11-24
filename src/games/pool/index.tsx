@@ -26,6 +26,10 @@ import { useMatchChat } from "../../components/chat/MatchChat";
 import { OutcomeIcon, type Outcome } from "../ResultBanner";
 import "../result-banner.css";
 import { MatchRewardLine, newMatchId, useMatchReport } from "../../lib/matchReport";
+import { matchStake, useCpuBet } from "../../lib/bets";
+import { useTokens } from "../../lib/tokens";
+import RoomBet from "../../components/RoomBet";
+import { CpuBetToggle, CpuBetLine } from "../../components/CpuBet";
 import PlayFlow from "../PlayFlow";
 import "./pool.css";
 
@@ -288,6 +292,8 @@ export default function PoolGame(_props: GameProps) {
   const awarded = useRef(false);
   const [cpuThinking, setCpuThinking] = useState(false);
   const matchReport = useMatchReport("pool", () => void shop.refresh());
+  // vs CPU: 1 earned chip on each game, if the player switched it on
+  const cpuBet = useCpuBet("pool");
 
   // canvas
   const viewRef = useRef<PoolView | null>(null);
@@ -316,6 +322,11 @@ export default function PoolGame(_props: GameProps) {
   const [roomNote, setRoomNote] = useState<string | null>(null);
   const [peers, setPeers] = useState<RoomPeer[]>([]);
   const [matched, setMatched] = useState(false);
+  // (callbacks made when the room opened read this, not the state)
+  const matchedRef = useRef(false);
+  const { wallet } = useTokens();
+  const earnedRef = useRef(0);
+  earnedRef.current = wallet?.earned ?? 0;
   const [oppGone, setOppGone] = useState(false);
   const [guestWait, setGuestWait] = useState<string | null>(null);
   const hostMatch = useRef<Matched | null>(null);
@@ -603,6 +614,10 @@ export default function PoolGame(_props: GameProps) {
 
   /* ---------------- XP at the end ---------------- */
   useEffect(() => {
+    if (st.over && mode === "cpu") void cpuBet.settle(st.winner === 0 ? "win" : "lose");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [st.over]);
+  useEffect(() => {
     if (!st.over || awarded.current || mode === "pass" || !user) return;
     awarded.current = true;
     if (mode === "online") {
@@ -638,8 +653,15 @@ export default function PoolGame(_props: GameProps) {
     seatsRef.current = list;
     modeRef.current = m;
     endlessShot.current = null;
+    if (m === "cpu") void cpuBet.open();
     if (m === "endless") setRun(freshRun());
     begin(newRack(Math.random, m === "cpu" ? (Math.random() < 0.5 ? 0 : 1) : 0));
+  }
+
+  /** back to the menu from a local game (walking out of a CPU game loses its stake) */
+  function leaveLocal() {
+    if (mode === "cpu" && !stRef.current.over) cpuBet.forfeit();
+    setScreen("menu");
   }
 
   /* ---------------- Endless: the clock ---------------- */
@@ -709,7 +731,7 @@ export default function PoolGame(_props: GameProps) {
 
   /* ---------------- online ---------------- */
   // `look` carries your cue to the other player (they see it when you aim)
-  const me = () => ({ userId: user?.id ?? "", name: myName, avatar: myAvatar, look: myCueId });
+  const me = () => ({ userId: user?.id ?? "", name: myName, avatar: myAvatar, look: myCueId, chips: earnedRef.current });
 
   const onMessage = useCallback(
     (msg: RoomMsg) => {
@@ -727,6 +749,9 @@ export default function PoolGame(_props: GameProps) {
           matchIdRef.current = msg.mid.slice(0, 60);
           playersRef.current = list.filter((x) => x.userId).map((x) => x.userId!);
           matchReport.reset();
+          // the host's stake for this match (the server checks it)
+          const stake = Math.max(0, Math.floor(Number(msg.bet) || 0));
+          if (stake > 0) void matchReport.joinBet(matchIdRef.current, playersRef.current, msg.bk === "random" ? "random" : "room", stake);
           awarded.current = false;
           setXpGain(null);
           // a new rack
@@ -783,9 +808,13 @@ export default function PoolGame(_props: GameProps) {
     matchIdRef.current = newMatchId();
     playersRef.current = list.filter((x) => x.userId).map((x) => x.userId!);
     matchReport.reset();
+    // the chip stake: 3 each in random matches (if both can), the host's pick in friend rooms
+    const kind = matchedRef.current ? "random" : "room";
+    const stake = matchStake(matchedRef.current, room.settings.bet, room.players.slice(0, 2).map((p) => p.chips));
+    if (stake > 0) void matchReport.joinBet(matchIdRef.current, playersRef.current, kind, stake);
     const s = newRack(Math.random, Math.random() < 0.5 ? 0 : 1);
     begin(s);
-    room.send("state", { st: s, seats: list, mid: matchIdRef.current, timeLeft: TURN_MS });
+    room.send("state", { st: s, seats: list, mid: matchIdRef.current, timeLeft: TURN_MS, bet: stake, bk: kind });
   }
 
   // the shot clock: online the host runs it, otherwise this device (the CPU has no clock).
@@ -860,6 +889,7 @@ export default function PoolGame(_props: GameProps) {
     hostMatch.current = match ?? null;
     autoStart.current = Boolean(match);
     setMatched(Boolean(match));
+    matchedRef.current = Boolean(match);
     setOppGone(false);
     setPeers([]);
     setRoomStatus(null);
@@ -871,6 +901,7 @@ export default function PoolGame(_props: GameProps) {
   function joinRoom(code: string, wasMatched = false) {
     roomRef.current?.leave();
     setMatched(wasMatched);
+    matchedRef.current = wasMatched;
     setOppGone(false);
     setPeers([]);
     setRoomStatus(null);
@@ -1134,6 +1165,7 @@ export default function PoolGame(_props: GameProps) {
       <label className="pl-check">
         <input type="checkbox" checked={prefs.guide} onChange={(e) => setPrefs({ guide: e.target.checked })} /> Aiming guide
       </label>
+      {withLevel ? <CpuBetToggle bet={cpuBet} /> : null}
       <CueCard cue={myCue} onShop={gameShop ? gameShop.open : undefined} />
     </div>
   );
@@ -1174,6 +1206,7 @@ export default function PoolGame(_props: GameProps) {
           startLabel={peers.length < 2 ? "Waiting for a player…" : "Start game"}
           onStart={hostStartOnline}
           onLeave={leaveOnline}
+          bet={<RoomBet room={room} peers={peers} isHost={room.isHost} matched={matched} />}
         />
       </div>
     );
@@ -1244,7 +1277,7 @@ export default function PoolGame(_props: GameProps) {
 
   const clockFor = (i: number) => (clockOn && st.turn === i && !st.over && !animating && !oppGone ? <ShotClock deadline={deadline} total={turnMs} /> : null);
   const menuBtn = (
-    <button type="button" className="pl-tool pl-tool-sm" onClick={online ? leaveOnline : () => setScreen("menu")} aria-label={online ? "Leave game" : "Menu"} title={online ? "Leave game" : "Menu"}>
+    <button type="button" className="pl-tool pl-tool-sm" onClick={online ? leaveOnline : leaveLocal} aria-label={online ? "Leave game" : "Menu"} title={online ? "Leave game" : "Menu"}>
       {online ? <LogOut size={16} /> : <MenuIcon size={16} />}
     </button>
   );
@@ -1337,6 +1370,7 @@ export default function PoolGame(_props: GameProps) {
                 </h3>
                 <p className="rb-detail">{endless ? `${st.note ?? ""} · best ${run.best}` : st.note ?? ""}</p>
                 {mode === "online" ? <MatchRewardLine reward={matchReport.reward} /> : xpGain ? <p className="pl-xp-gain">+{xpGain} XP</p> : null}
+                {mode === "cpu" ? <CpuBetLine bet={cpuBet} /> : null}
                 <div className="rb-actions pl-result-actions">
                   {online ? (
                     <>

@@ -78,7 +78,7 @@ export default function DynamicAvatar({
 
           <div className="popover-stats-grid">
             <div className="popover-stat-box">
-              <span className="stat-label">Tokens</span>
+              <span className="stat-label">Chips</span>
               <strong className="stat-val">
                 <TokenIcon size={15} /> <TokenBalance />
               </strong>

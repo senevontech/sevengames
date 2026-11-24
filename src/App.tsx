@@ -25,6 +25,12 @@ const GetApp = lazy(() => import("./pages/GetApp"));
 const RewardsPage = lazy(() => import("./pages/RewardsPage"));
 const BusinessPage = lazy(() => import("./pages/BusinessPage"));
 const AdFreePromo = lazy(() => import("./components/AdFreePromo"));
+
+/** /tokens → /chips, keeping ?query and #hash */
+function ToChips() {
+  const { search, hash } = useLocation();
+  return <Navigate to={`/chips${search}${hash}`} replace />;
+}
 import { TokensProvider } from "./lib/tokens";
 import { ShopProvider } from "./lib/shop";
 import { startOfflineSync } from "./lib/offlineQueue";
@@ -144,8 +150,10 @@ export default function App() {
         />
         <Route path="/" element={<Landing />} />
         {/* soft page in the home page's frame (header, light/dark, footer) */}
+        {/* the currency is now called Chips: old /tokens links (and their #buy / #plus) still land */}
+        <Route path="/tokens" element={<ToChips />} />
         <Route
-          path="/tokens"
+          path="/chips"
           element={
             <Suspense fallback={<div style={{ minHeight: "100vh" }} />}>
               <Tracked>

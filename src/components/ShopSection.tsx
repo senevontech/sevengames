@@ -417,8 +417,7 @@ export default function ShopSection({ scope, embedded = false }: { scope: ShopSc
         : slot === "arrow_fx"
           ? shop.arrowFx === id
           : (shop.equippedIn(slot) ?? SLOT_DEFAULT[slot] ?? null) === id;
-    const need = shop.levelNeeded(id);
-    const locked = need.game !== null && need.level > 1 && shop.levelOf(need.game) < need.level;
+    // (no level gate: chips buy any item, the server agrees)
     if (!shop.signedIn) {
       return (
         <div className="shop-foot">
@@ -452,19 +451,9 @@ export default function ShopSection({ scope, embedded = false }: { scope: ShopSc
       return (
         <div className="shop-foot">
           <span className="shop-plus">⭐ Plus</span>
-          <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/tokens#plus">
+          <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/chips#plus">
             Get Plus
           </Link>
-        </div>
-      );
-    }
-    if (locked && !owned) {
-      return (
-        <div className="shop-foot">
-          <span className="shop-price">
-            <TokenIcon size={14} /> {price === null ? "—" : formatTokens(price)}
-          </span>
-          <span className="shop-lock">🔒 {GAME_NAMES[need.game ?? ""] ?? need.game} Lv {need.level}</span>
         </div>
       );
     }
@@ -493,12 +482,12 @@ export default function ShopSection({ scope, embedded = false }: { scope: ShopSc
     const short = price !== null && balance < price;
     if (short) {
       return embedded ? (
-        <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/tokens#buy">
-          Get tokens
+        <Link className="ac-btn ac-btn-sm ac-btn-ghost" to="/chips#buy">
+          Get chips
         </Link>
       ) : (
         <a className="ac-btn ac-btn-sm ac-btn-ghost" href="#buy">
-          Get tokens
+          Get chips
         </a>
       );
     }
@@ -528,7 +517,7 @@ export default function ShopSection({ scope, embedded = false }: { scope: ShopSc
           <p className="ac-sub">{conf.sub}</p>
         </div>
         {embedded && shop.signedIn ? (
-          <Link className="shop-wallet" to="/tokens#buy" title="Get more tokens">
+          <Link className="shop-wallet" to="/chips#buy" title="Get more chips">
             <TokenIcon size={15} /> {wallet?.unlimited ? "∞" : formatTokens(wallet?.balance ?? 0)}
           </Link>
         ) : null}
