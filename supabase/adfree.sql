@@ -6,13 +6,12 @@
 -- (History: this used to be an 85-token pass per 30 days, auto-renewing.)
 -- Run in: Supabase Dashboard → SQL Editor, AFTER tokens.sql. Safe to re-run.
 --
---   * ad_free_state()  → is this player ad-free, why, until when, does it renew.
---                        Also takes the renewal payment when a pass has run out.
---   * ad_free_buy()    → start a pass (85 tokens), or switch renewal back on.
---   * ad_free_cancel() → stop renewing; the paid days still count.
---   * Free for: active token subscribers, Pro members, unlimited (redeem-code) accounts.
---   * Renewal is taken when the player next opens the site after expiry. If they can't
---     afford it, the pass lapses and renewal switches OFF (so it never surprises them later).
+--   * ad_free_state()  → is this player ad-free, why, until when. Switches off any old
+--                        chip renewal; chips are never taken.
+--   * ad_free_buy()    → kept for old app versions: returns the state if the player already
+--                        has a perk, otherwise refuses with 'adfree_not_for_chips'.
+--   * ad_free_cancel() → stop renewing; the remaining days still count.
+--   * Free for: active Plus subscribers, Pro members, unlimited (redeem-code) accounts.
 -- ============================================================
 
 -- token ledger: allow 'adfree' (keep this list in sync with tokens.sql, carrom.sql and shop.sql)
