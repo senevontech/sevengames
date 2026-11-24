@@ -78,27 +78,27 @@ export default function FriendChat({ friend, onClose }: { friend: MiniPlayer; on
 
   const host = document.querySelector(".site") ?? document.body;
   return createPortal(
-    <div className="fc" role="dialog" aria-label={`Chat with ${friend.name}`} onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="fc-panel acct">
-        <header className="fc-head">
-          <button type="button" className="fc-back" onClick={onClose} aria-label="Close chat">
+    <div className="fchat" role="dialog" aria-label={`Chat with ${friend.name}`} onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="fchat-panel acct">
+        <header className="fchat-head">
+          <button type="button" className="fchat-back" onClick={onClose} aria-label="Close chat">
             <ChevronLeft size={18} />
           </button>
           <PlayerAvatar id={friend.id} name={friend.name} avatar={friend.avatar} size={32} />
           <b>{friend.name}</b>
-          <button type="button" className={`fc-block${blocked ? " on" : ""}`} onClick={() => void toggleBlock()} title={blocked ? "Unblock" : "Block messages"}>
+          <button type="button" className={`fchat-block${blocked ? " on" : ""}`} onClick={() => void toggleBlock()} title={blocked ? "Unblock" : "Block messages"}>
             <ShieldBan size={15} /> {blocked ? "Blocked" : "Block"}
           </button>
         </header>
 
-        <div className="fc-body">
-          {msgs === null ? <p className="fc-empty">{err || "Loading…"}</p> : null}
-          {msgs?.length === 0 ? <p className="fc-empty">Say hi with a sticker 👋</p> : null}
+        <div className="fchat-body">
+          {msgs === null ? <p className="fchat-empty">{err || "Loading…"}</p> : null}
+          {msgs?.length === 0 ? <p className="fchat-empty">Say hi with a sticker 👋</p> : null}
           {msgs?.map((m) => {
             const found = findItem(packs, m.pack, m.item);
             return (
-              <div key={m.id} className={`fc-msg${m.mine ? " is-mine" : ""}`}>
-                {found ? <ChatItemView pack={found.pack} item={found.item} /> : <span className="fc-unknown">(sticker)</span>}
+              <div key={m.id} className={`fchat-msg${m.mine ? " is-mine" : ""}`}>
+                {found ? <ChatItemView pack={found.pack} item={found.item} /> : <span className="fchat-unknown">(sticker)</span>}
                 <time>{new Date(m.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>
               </div>
             );
@@ -106,11 +106,11 @@ export default function FriendChat({ friend, onClose }: { friend: MiniPlayer; on
           <div ref={endRef} />
         </div>
 
-        {err && msgs ? <p className="fc-err">{err}</p> : null}
+        {err && msgs ? <p className="fchat-err">{err}</p> : null}
         {blocked ? (
-          <p className="fc-empty">You've blocked {friend.name}'s messages.</p>
+          <p className="fchat-empty">You've blocked {friend.name}'s messages.</p>
         ) : (
-          <div className="fc-picker">
+          <div className="fchat-picker">
             <ChatPicker cooldown={cool} onPick={(pack, item) => void send(pack.id, item.id)} />
           </div>
         )}

@@ -14,10 +14,10 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "../supabase";
 import { parseAvatar, type AvatarChoice } from "../lib/avatar";
-import { matchStake } from "../lib/bets";
+import { matchFee } from "../lib/entries";
 
 export type MatchMode = "race" | "infinite";
-/** `chips`: the player's earned chips (what they could bet; the server checks every stake). */
+/** `chips`: the player's earned chips (what they could use for entries; the server checks every entry). */
 export type Peer = { clientId: string; userId: string; name: string; avatar: AvatarChoice | null; isHost: boolean; chips?: number };
 export type Progress = { cleared: number; left: number; lives: number; ms: number };
 export type MatchResult = { winner: string | null; reason: "finish" | "out" | "left" };
@@ -26,15 +26,15 @@ export type NetStatus = "connecting" | "lobby" | "playing" | "error";
 export type ArrowsNetEvents = {
   onStatus: (status: NetStatus, note?: string) => void;
   onPeers: (peers: Peer[], mode: MatchMode) => void;
-  /** `bet`: chips each player stakes on this round (0: none); `bk`: random match or friend room */
-  onStart: (cfg: { mode: MatchMode; seed: number; round: number; bet: number; bk: "room" | "random" }) => void;
+  /** `fee`: the chip entry each player pays this round (0: free); `ek`: random match or friend room */
+  onStart: (cfg: { mode: MatchMode; seed: number; round: number; fee: number; ek: "room" | "random" }) => void;
   onProgress: (clientId: string, p: Progress) => void;
   onResult: (r: MatchResult) => void;
   /** Who has asked for a rematch so far. */
   onRematch: (clientIds: string[]) => void;
 };
 
-type Presence = { userId: string; name: string; avatar: AvatarChoice | null; host: boolean; mode?: MatchMode; at: number; chips?: number; bet?: number };
+type Presence = { userId: string; name: string; avatar: AvatarChoice | null; host: boolean; mode?: MatchMode; at: number; chips?: number; fee?: number };
 
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const FINISH_GRACE = 500; // ms to wait for the other finish before judging a race
@@ -66,8 +66,8 @@ export class ArrowsNet {
   private rematch = new Set<string>();
   private noRoomTimer = 0;
   private left = false;
-  /** the host's chip stake for friend rooms (0 = none); random matches stake 3 */
-  private stake = 0;
+  /** the host's chip fee for friend rooms (0 = none); random matches fee 3 */
+  private fee = 0;
   private matched = false;
 
   private constructor(
@@ -111,36 +111,36 @@ export class ArrowsNet {
     return this.mode;
   }
 
-  /** the stake the host picked (friend rooms) */
-  get bet() {
-    return this.stake;
+  /** the fee the host picked (friend rooms) */
+  get entry() {
+    return this.fee;
   }
 
   get players() {
     return this.peers;
   }
 
-  /** A random match (stakes 3) rather than a friend room. */
+  /** A random match (3-chip entry) rather than a friend room. */
   setMatched(on: boolean) {
     this.matched = on;
   }
 
-  /** My earned chips (the host caps the stake to what everyone has). */
+  /** My earned chips (the host caps the fee to what everyone has). */
   setChips(n: number) {
     this.me = { ...this.me, chips: Math.max(0, Math.floor(n) || 0) };
     void this.track();
   }
 
-  /** Host: the chip stake per player (guests see it through presence). */
-  setBet(n: number) {
+  /** Host: the chip fee per player (guests see it through presence). */
+  setFee(n: number) {
     if (!this.isHost) return;
-    this.stake = Math.max(0, Math.floor(n) || 0);
+    this.fee = Math.max(0, Math.floor(n) || 0);
     void this.track();
     this.events.onPeers([...this.peers], this.mode);
   }
 
   private track() {
-    const p: Presence = { ...this.me, host: this.isHost, mode: this.isHost ? this.mode : undefined, at: this.joinedAt, bet: this.isHost ? this.stake : undefined };
+    const p: Presence = { ...this.me, host: this.isHost, mode: this.isHost ? this.mode : undefined, at: this.joinedAt, fee: this.isHost ? this.fee : undefined };
     return this.channel?.track(p);
   }
 
@@ -165,8 +165,8 @@ export class ArrowsNet {
     });
     ch.on("broadcast", { event: "start" }, ({ payload }) => {
       if (this.isHost) return;
-      const p = payload as { mode: MatchMode; seed: number; round: number; bet?: number; bk?: string };
-      this.beginRound(p.mode === "infinite" ? "infinite" : "race", num(p.seed, 2 ** 31), num(p.round, 1e6), num(p.bet, 1e7), p.bk === "random" ? "random" : "room");
+      const p = payload as { mode: MatchMode; seed: number; round: number; fee?: number; ek?: string };
+      this.beginRound(p.mode === "infinite" ? "infinite" : "race", num(p.seed, 2 ** 31), num(p.round, 1e6), num(p.fee, 1e7), p.ek === "random" ? "random" : "room");
     });
     ch.on("broadcast", { event: "prog" }, ({ payload }) => {
       const p = payload as Progress & { from: string };
@@ -218,7 +218,7 @@ export class ArrowsNet {
     const ch = this.channel;
     if (!ch) return;
     const state = ch.presenceState<Presence>();
-    const all: (Peer & { at: number; mode?: MatchMode; bet: number })[] = [];
+    const all: (Peer & { at: number; mode?: MatchMode; fee: number })[] = [];
     for (const [key, metas] of Object.entries(state)) {
       const p = metas[metas.length - 1];
       if (!p) continue;
@@ -231,12 +231,12 @@ export class ArrowsNet {
         at: Number(p.at) || 0,
         mode: p.mode,
         chips: num(p.chips, 1e9),
-        bet: num(p.bet, 1e7),
+        fee: num(p.fee, 1e7),
       });
     }
     const host = all.find((p) => p.isHost);
     if (!this.isHost && host?.mode) this.mode = host.mode === "infinite" ? "infinite" : "race";
-    if (!this.isHost && host) this.stake = host.bet;
+    if (!this.isHost && host) this.fee = host.fee;
     // host first, then the earliest guest; anyone else is turned away
     all.sort((a, b) => Number(b.isHost) - Number(a.isHost) || a.at - b.at || a.clientId.localeCompare(b.clientId));
     const seated = all.slice(0, 2);
@@ -259,7 +259,7 @@ export class ArrowsNet {
     void this.channel?.send({ type: "broadcast", event, payload: { ...payload, from: this.clientId } });
   }
 
-  private beginRound(mode: MatchMode, seed: number, round: number, bet = 0, bk: "room" | "random" = "room") {
+  private beginRound(mode: MatchMode, seed: number, round: number, fee = 0, ek: "room" | "random" = "room") {
     this.mode = mode;
     this.round = round;
     this.decided = false;
@@ -270,7 +270,7 @@ export class ArrowsNet {
     this.rematch.clear();
     this.events.onRematch([]);
     this.events.onStatus("playing");
-    this.events.onStart({ mode, seed, round, bet, bk });
+    this.events.onStart({ mode, seed, round, fee, ek });
   }
 
   /** Host: start a round (first match, or a rematch) once both players are in. */
@@ -279,10 +279,10 @@ export class ArrowsNet {
     const seed = (Math.random() * 2 ** 31) | 0;
     const round = this.round + 1;
     // chips: 3 each in random matches (if both can), the host's pick in friend rooms
-    const bet = matchStake(this.matched, this.stake, this.peers.map((p) => p.chips ?? 0));
-    const bk = this.matched ? "random" : "room";
-    this.send("start", { mode: this.mode, seed, round, bet, bk });
-    this.beginRound(this.mode, seed, round, bet, bk);
+    const fee = matchFee(this.matched, this.fee, this.peers.map((p) => p.chips ?? 0));
+    const ek = this.matched ? "random" : "room";
+    this.send("start", { mode: this.mode, seed, round, fee, ek });
+    this.beginRound(this.mode, seed, round, fee, ek);
   }
 
   /** Stream this player's progress (call on change; it's small). */

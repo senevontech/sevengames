@@ -17,7 +17,7 @@ import { useShop } from "../lib/shop";
 import { levelForXp } from "../lib/shopCatalog";
 import { MatchRewardLine, useMatchReport } from "../lib/matchReport";
 import { useTokens } from "../lib/tokens";
-import { StakePicker } from "../components/RoomBet";
+import { EntryPicker } from "../components/RoomEntry";
 import { useMatchChat } from "../components/chat/MatchChat";
 
 const MODES: { id: MatchMode; label: string; blurb: string }[] = [
@@ -98,15 +98,15 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
     void matchReport.report(matchKey, matchPlayers(), result.winner ? [winnerId] : [], result.winner === null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, matchKey]);
-  // a new round: clear the last result, then stake the round's chips (set by onStart)
-  const pendingBet = useRef<{ key: string; bet: number; bk: "room" | "random"; players: string[] } | null>(null);
+  // a new round: clear the last result, then pay the round's chip entry (set by onStart)
+  const pendingEntry = useRef<{ key: string; fee: number; ek: "room" | "random"; players: string[] } | null>(null);
   useEffect(() => {
     matchReport.reset();
-    const p = pendingBet.current;
-    if (p && p.key === matchKey && p.bet > 0) void matchReport.joinBet(p.key, p.players, p.bk, p.bet);
+    const p = pendingEntry.current;
+    if (p && p.key === matchKey && p.fee > 0) void matchReport.joinEntry(p.key, p.players, p.ek, p.fee);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchKey, matchReport.reset]);
-  // my earned chips go to the room (the host caps the stake to them)
+  // my earned chips go to the room (the host caps the entry to them)
   const { wallet } = useTokens();
   const earned = wallet?.earned ?? 0;
   const earnedRef = useRef(earned);
@@ -139,13 +139,13 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
           window.setTimeout(() => netRef.current === net && net.start(), 400);
         }
       },
-      onStart: (cfg: { mode: MatchMode; seed: number; round: number; bet: number; bk: "room" | "random" }) => {
+      onStart: (cfg: { mode: MatchMode; seed: number; round: number; fee: number; ek: "room" | "random" }) => {
         const net = netRef.current;
         if (net) {
-          pendingBet.current = {
+          pendingEntry.current = {
             key: `${net.roomCode}-${cfg.seed}-${cfg.round}`,
-            bet: cfg.bet,
-            bk: cfg.bk,
+            fee: cfg.fee,
+            ek: cfg.ek,
             players: net.players.map((p) => p.userId),
           };
         }
@@ -409,12 +409,12 @@ export default function ArrowsOnline({ onBusy }: { onBusy: (busy: boolean) => vo
                 {peers.length < 2 ? <li className="is-empty">Waiting for a player…</li> : null}
               </ul>
               {net ? (
-                <StakePicker
+                <EntryPicker
                   isHost={net.isHost}
                   matched={matchedRoom}
-                  chosen={net.bet}
+                  chosen={net.entry}
                   chips={peers.map((p) => p.chips ?? 0)}
-                  onChoose={(n) => net.setBet(n)}
+                  onChoose={(n) => net.setFee(n)}
                 />
               ) : null}
               {net?.isHost && !matchedRoom ? (

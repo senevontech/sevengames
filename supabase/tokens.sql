@@ -40,7 +40,7 @@ create table if not exists public.token_ledger (
   user_id uuid not null references auth.users(id) on delete cascade,
   delta integer not null,
   balance_after integer not null,
-  reason text not null check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'bet', 'gift')),
+  reason text not null check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'entry', 'gift')),
   ref text,
   created_at timestamptz not null default now()
 );
@@ -48,7 +48,7 @@ create table if not exists public.token_ledger (
 create index if not exists token_ledger_user_time on public.token_ledger (user_id, created_at desc);
 
 -- Earned vs bought chips. `balance` is every chip; `earned` is the part that did NOT come from a
--- purchase or a subscription. Only earned chips can be bet (bets.sql) or gifted, so chips bought
+-- purchase or a subscription. Only earned chips can pay match entries (entries.sql) or be gifted, so chips bought
 -- with money never ride on a game result or change hands. Ordinary spending (shop, premium
 -- plays, ad-free) uses earned chips first. Always 0 <= earned <= balance.
 alter table public.token_wallets add column if not exists earned integer not null default 0;
@@ -59,7 +59,7 @@ create unique index if not exists token_ledger_one_signup on public.token_ledger
 -- databases created before guest carry-over existed: widen the reason check
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
-  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'bet', 'gift'));
+  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'entry', 'gift'));
 -- guest tokens can only be carried over once per account
 create unique index if not exists token_ledger_one_guest on public.token_ledger (user_id) where reason = 'guest';
 -- each subscription credit is unique (stops double credits if two requests race)
@@ -187,7 +187,7 @@ create or replace function public._tok_const(p_name text)
 returns integer language sql immutable as $$
   select case p_name
     when 'signup_bonus' then 100
-    when 'guest_tokens' then 300     -- starting balance of a guest's browser wallet
+    when 'guest_tokens' then 25      -- starting balance of a guest's browser wallet
     when 'sub_tokens' then 5000      -- per month, both plans
     when 'ad_reward' then 50
     when 'ad_daily_cap' then 10
@@ -209,8 +209,8 @@ begin
   if p_delta >= 0 then
     -- bought chips stay out of `earned`; everything else (rewards, wins, gifts, refunds) is earned
     if p_reason not in ('purchase', 'subscription') then v_earned := v_earned + p_delta; end if;
-  elsif p_reason in ('bet', 'gift') then
-    -- stakes and gifts: earned chips only
+  elsif p_reason in ('entry', 'gift') then
+    -- fees and gifts: earned chips only
     if v_earned + p_delta < 0 then raise exception 'insufficient_earned'; end if;
     v_earned := v_earned + p_delta;
   else
@@ -541,7 +541,7 @@ grant execute on function public.mock_subscribe(text, text) to authenticated;
 grant execute on function public.cancel_subscription() to authenticated;
 
 -- 9) Guest carry-over -------------------------------------------------
--- Guests play premium games from a 300-token wallet kept in their browser. On sign-in the
+-- Guests play premium games from a 25-chip wallet kept in their browser. On sign-in the
 -- unspent amount moves to the account. The browser reports the amount, so it is capped at
 -- the guest starting balance and credited at most once per account.
 create or replace function public.claim_guest_tokens(p_amount integer)

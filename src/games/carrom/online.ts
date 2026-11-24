@@ -21,12 +21,12 @@ export type StartCfg = {
   players: Array<{ name: string; kind: "human" | "cpu" }>;
   mid?: string;
   uids?: Array<string | null>;
-  /** chips each player stakes (0: no bet) and how the match was made */
-  bet?: number;
-  bk?: "room" | "random";
+  /** the chip entry each player pays (0: free match) and how the match was made */
+  fee?: number;
+  ek?: "room" | "random";
 };
 
-/** `chips`: the player's earned chips (what they could bet; the server checks every stake). */
+/** `chips`: the player's earned chips (what they could use for entries; the server checks every entry). */
 export type RosterEntry = { clientId: string; name: string; seat: number; isHost: boolean; userId?: string; chips?: number };
 
 export type NetStatus = "idle" | "connecting" | "lobby" | "playing" | "error";
@@ -60,8 +60,8 @@ export class CarromNet {
   private userId = "";
   private chips = 0;
   private myName = "";
-  /** the host's chip stake per player (0 = no bet), shared with the roster */
-  private stake = 0;
+  /** the host's chip entry per player (0 = free match), shared with the roster */
+  private fee = 0;
 
   private constructor(isHost: boolean, events: NetEvents) {
     this.isHostClient = isHost;
@@ -80,20 +80,20 @@ export class CarromNet {
     return this.roster;
   }
 
-  get bet() {
-    return this.stake;
+  get entry() {
+    return this.fee;
   }
 
-  /** My earned chips, shown to the host so the stake fits everyone. */
+  /** My earned chips, shown to the host so the fee fits everyone. */
   setChips(n: number) {
     this.chips = Math.max(0, Math.floor(n) || 0);
     if (this.channel && this.myName) void this.channel.track({ name: this.myName, userId: this.userId, chips: this.chips });
   }
 
-  /** Host: the chip stake per player (guests get it with the roster). */
-  setBet(n: number) {
+  /** Host: the chip fee per player (guests get it with the roster). */
+  setFee(n: number) {
     if (!this.isHostClient) return;
-    this.stake = Math.max(0, Math.floor(n) || 0);
+    this.fee = Math.max(0, Math.floor(n) || 0);
     this.events.onRoster([...this.roster], this.seats);
     this.broadcastRoster(false);
   }
@@ -227,7 +227,7 @@ export class CarromNet {
     ch.on("broadcast", { event: "roster" }, ({ payload }) => {
       const roster = (payload as { roster: RosterEntry[]; seats: Seats }).roster;
       const seats = (payload as { seats: Seats }).seats;
-      this.stake = Math.max(0, Math.floor(Number((payload as { bet?: number }).bet) || 0));
+      this.fee = Math.max(0, Math.floor(Number((payload as { fee?: number }).fee) || 0));
       this.roster = roster;
       this.seats = seats;
       const mine = roster.find((entry) => entry.clientId === this.clientId);
@@ -291,7 +291,7 @@ export class CarromNet {
   }
 
   broadcastRoster(started: boolean) {
-    this.send("roster", { roster: this.roster, seats: this.seats, started, bet: this.stake });
+    this.send("roster", { roster: this.roster, seats: this.seats, started, fee: this.fee });
   }
 
   broadcastStart(cfg: StartCfg) {

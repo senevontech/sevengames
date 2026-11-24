@@ -66,10 +66,10 @@ import ShopSheet from "../../components/ShopSheet";
 import { useCustomGameShop } from "../gameShop";
 import { useMatchChat } from "../../components/chat/MatchChat";
 import { MatchRewardLine, newMatchId, useMatchReport } from "../../lib/matchReport";
-import { matchStake, useCpuBet } from "../../lib/bets";
+import { matchFee, useCpuEntry } from "../../lib/entries";
 import { useTokens } from "../../lib/tokens";
-import { StakePicker } from "../../components/RoomBet";
-import { CpuBetLine, CpuBetToggle } from "../../components/CpuBet";
+import { EntryPicker } from "../../components/RoomEntry";
+import { CpuEntryLine, CpuEntryToggle } from "../../components/CpuEntry";
 import { BoardPreview } from "./Preview";
 import PlayFlow, { HelpLine } from "../PlayFlow";
 import { Bot, Globe, Users } from "lucide-react";
@@ -155,10 +155,10 @@ export default function CarromGame({ onFinish }: GameProps) {
   const matchReportRef = useRef(matchReport);
   matchReportRef.current = matchReport;
   // vs CPU: 1 earned chip a match, if switched on
-  const cpuBet = useCpuBet("carrom");
-  const cpuBetRef = useRef(cpuBet);
-  cpuBetRef.current = cpuBet;
-  // online: my earned chips go to the room; random matches stake 3
+  const cpuEntry = useCpuEntry("carrom");
+  const cpuEntryRef = useRef(cpuEntry);
+  cpuEntryRef.current = cpuEntry;
+  // online: my earned chips go to the room; random matches have a 3-chip entry
   const { wallet } = useTokens();
   const earned = wallet?.earned ?? 0;
   const matchedRef = useRef(false);
@@ -302,7 +302,7 @@ export default function CarromGame({ onFinish }: GameProps) {
       }
       return;
     }
-    if (mode === "cpu") void cpuBetRef.current.settle(won ? "win" : "lose");
+    if (mode === "cpu") void cpuEntryRef.current.finish(won ? "win" : "lose");
     const t = tallyRef.current;
     const xp = matchXp(t.coins, t.queen, won, t.combos);
     const res = progRef.current.addXp(xp);
@@ -572,8 +572,8 @@ export default function CarromGame({ onFinish }: GameProps) {
 
   /** Start a new match (or, with `nextBoard`, the next board of the current match). */
   function startLocal(mode: "cpu" | "local2" | "local4", nextBoard = false) {
-    // a new match against the CPU stakes a chip (if switched on); the next board of a match doesn't
-    if (mode === "cpu" && !nextBoard) void cpuBet.open();
+    // a new match against the CPU pays a 1-chip entry (if switched on); the next board of a match doesn't
+    if (mode === "cpu" && !nextBoard) void cpuEntry.open();
     carromAudio.unlock();
     modeRef.current = mode;
     mySeatRef.current = 0;
@@ -676,9 +676,9 @@ export default function CarromGame({ onFinish }: GameProps) {
         setReward(null);
         netMatchRef.current = { mid: typeof cfg.mid === "string" ? cfg.mid.slice(0, 60) : "", uids: (cfg.uids ?? []).map((u) => (typeof u === "string" ? u : null)) };
         matchReportRef.current.reset();
-        const stake = Math.max(0, Math.floor(Number(cfg.bet) || 0));
-        if (stake > 0 && netMatchRef.current.mid)
-          void matchReportRef.current.joinBet(netMatchRef.current.mid, netMatchRef.current.uids, cfg.bk === "random" ? "random" : "room", stake);
+        const fee = Math.max(0, Math.floor(Number(cfg.fee) || 0));
+        if (fee > 0 && netMatchRef.current.mid)
+          void matchReportRef.current.joinEntry(netMatchRef.current.mid, netMatchRef.current.uids, cfg.ek === "random" ? "random" : "room", fee);
         // a guest's seat comes from the host's roster (the host is always seat 0)
         if (modeRef.current === "join" && netRef.current) mySeatRef.current = netRef.current.mySeatIndex;
         // online: equal strikers for everyone, so upgrades never decide a match
@@ -795,8 +795,8 @@ export default function CarromGame({ onFinish }: GameProps) {
     while (uids.length < seats) uids.push(null);
     // chips: 3 each in random matches (if both can), the host's pick in friend rooms
     const humans = net.rosterList;
-    const stake = humans.length >= 2 ? matchStake(matchedRef.current, net.bet, humans.map((r) => r.chips ?? 0)) : 0;
-    const cfg: StartCfg = { seats, players, mid: newMatchId(), uids, bet: stake, bk: matchedRef.current ? "random" : "room" };
+    const fee = humans.length >= 2 ? matchFee(matchedRef.current, net.entry, humans.map((r) => r.chips ?? 0)) : 0;
+    const cfg: StartCfg = { seats, players, mid: newMatchId(), uids, fee, ek: matchedRef.current ? "random" : "room" };
     net.broadcastStart(cfg);
     netEvents().onStart(cfg);
   }
@@ -1217,7 +1217,7 @@ export default function CarromGame({ onFinish }: GameProps) {
                   settings: (
                     <>
                       {formatPicker}
-                      <CpuBetToggle bet={cpuBet} />
+                      <CpuEntryToggle entry={cpuEntry} />
                     </>
                   ),
                 },
@@ -1440,12 +1440,12 @@ export default function CarromGame({ onFinish }: GameProps) {
               ))}
             </ul>
             {netRef.current ? (
-              <StakePicker
+              <EntryPicker
                 isHost={isHost}
                 matched={Boolean(matchWith)}
-                chosen={netRef.current.bet}
+                chosen={netRef.current.entry}
                 chips={roster.map((r) => r.chips ?? 0)}
-                onChoose={(n) => netRef.current?.setBet(n)}
+                onChoose={(n) => netRef.current?.setFee(n)}
               />
             ) : null}
             {matchWith ? (
@@ -1566,7 +1566,7 @@ export default function CarromGame({ onFinish }: GameProps) {
           {reward.combos > 0 ? <span className="carrom-combo">Combo bonus ×{reward.combos}</span> : null}
           {reward.after > reward.before ? <span className="carrom-levelup">Level up! Level {reward.after}</span> : null}
           <LevelBar level={prog.level} xp={prog.xp} pro={prog.pro} />
-          {modeRef.current === "cpu" ? <CpuBetLine bet={cpuBet} /> : null}
+          {modeRef.current === "cpu" ? <CpuEntryLine entry={cpuEntry} /> : null}
         </div>
       ) : null}
       {screen === "over" && matchReport.reward ? (

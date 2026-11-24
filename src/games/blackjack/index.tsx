@@ -1,9 +1,9 @@
 /* Blackjack against the dealer, played with free chips. Every card is dealt on the server
    (supabase/cards.sql): this screen only shows what the server sends and asks it to act, so
    the deck and the dealer's hidden card can't be seen or changed from the browser. */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Bot, Gift, Globe, RotateCcw } from "lucide-react";
+import { Bot, Gift, Globe, RotateCcw, Spade } from "lucide-react";
 import type { GameProps } from "../index";
 import PlayFlow from "../PlayFlow";
 import { CardDefs, PlayingCard } from "../cards/Card";
@@ -37,6 +37,8 @@ const RESULT_TEXT: Record<Result, string> = {
   bust: "Bust",
   dealer_blackjack: "Dealer blackjack",
 };
+// Call Break: another mode of the card table (loaded when picked)
+const CallBreak = lazy(() => import("../callbreak/CallBreak"));
 const DEAL_GAP = 170; // ms between cards in the opening deal
 
 /** True for cards of the same rank (what the server allows to split). */
@@ -45,7 +47,7 @@ const sameRank = (a: number, b: number) => a % 13 === b % 13;
 export default function BlackjackGame(_props: GameProps) {
   const location = useLocation();
   const { chips, setChips, error, setError, claim, signedIn, loading, refresh: refreshChips } = useChips();
-  const [screen, setScreen] = useState<"menu" | "table" | "online">("menu");
+  const [screen, setScreen] = useState<"menu" | "table" | "online" | "callbreak">("menu");
   const [table, setTable] = useState<TableView | null>(null);
   const [round, setRound] = useState<Round | null>(null);
   const [bet, setBet] = useState(0);
@@ -132,7 +134,20 @@ export default function BlackjackGame(_props: GameProps) {
           preview={<BlackjackPreview />}
           corner={chips ? <ChipBalance amount={chips.balance} /> : null}
           modes={[
-            { key: "dealer", label: "vs Dealer", icon: <Bot size={15} />, start: () => setScreen("table") },
+            { key: "dealer", label: "Blackjack", icon: <Bot size={15} />, start: () => setScreen("table") },
+            {
+              key: "callbreak",
+              label: "Call Break",
+              icon: <Spade size={15} />,
+              start: () => setScreen("callbreak"),
+              settings: (
+                <div className="ol-card">
+                  <p className="ol-sub">
+                    You and three CPU players, 5 rounds, spades are trumps. Call your tricks each round: make your call to score it, miss it and you lose it.
+                  </p>
+                </div>
+              ),
+            },
             {
               key: "online",
               label: "Online table",
@@ -149,6 +164,15 @@ export default function BlackjackGame(_props: GameProps) {
           ]}
         />
       </div>
+    );
+  }
+
+  /* ---------- Call Break ---------- */
+  if (screen === "callbreak") {
+    return (
+      <Suspense fallback={<div className="game-surface bj-surface" />}>
+        <CallBreak onExit={() => setScreen("menu")} />
+      </Suspense>
     );
   }
 
@@ -218,7 +242,7 @@ export default function BlackjackGame(_props: GameProps) {
           {round?.status === "done" && round.outcome ? (
             <div className={`bj-result ${net > 0 ? "is-win" : net < 0 ? "is-loss" : "is-push"}`} role="status">
               <b>{round.outcome.length > 1 ? (net > 0 ? "You win" : net < 0 ? "You lose" : "Even") : RESULT_TEXT[round.outcome[0].result]}</b>
-              <span>{net > 0 ? `+${net.toLocaleString()}` : net < 0 ? `−${Math.abs(net).toLocaleString()}` : "Bet returned"}</span>
+              <span>{net > 0 ? `+${net.toLocaleString()}` : net < 0 ? `−${Math.abs(net).toLocaleString()}` : "Chips returned"}</span>
             </div>
           ) : null}
 
@@ -248,7 +272,7 @@ export default function BlackjackGame(_props: GameProps) {
                 })}
               </div>
             ) : (
-              <div className="bj-betspot">{bet > 0 ? <ChipStack amount={bet} /> : <span>Place your bet</span>}</div>
+              <div className="bj-betspot">{bet > 0 ? <ChipStack amount={bet} /> : <span>Place your chips</span>}</div>
             )}
             {!playing && round ? (
               <div className="bj-betspot bj-betspot-next">{bet > 0 ? <ChipStack amount={bet} size={30} /> : null}</div>
@@ -298,7 +322,7 @@ export default function BlackjackGame(_props: GameProps) {
           </div>
         ) : (
           <>
-            <div className="bj-chips" role="group" aria-label="Add chips to your bet">
+            <div className="bj-chips" role="group" aria-label="Add chips to your hand">
               {CHIP_VALUES.map((v) => (
                 <button key={v} type="button" className="bj-chip-btn" disabled={bet + v > maxBet} onClick={() => addChip(v)} aria-label={`Add ${v}`}>
                   <Chip value={v} size={46} />

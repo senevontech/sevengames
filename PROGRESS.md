@@ -2,31 +2,43 @@
 
 What's built, what's waiting, and what's planned. Newest first.
 
-## Chips: betting and gifts (2026-11-24)
+## Chips: chip matches and gifts (2026-11-24)
 
-The site currency is **Chips** (stored as "tokens" in the database). Rules:
+The site currency is **Chips** (stored as "tokens" in the database). Players can play a match for
+chips: everyone pays the same **match entry**, and the winner gets the **prize**. (The words "bet",
+"stake" and "wager" are not used anywhere, by choice.)
 
 | | |
 |---|---|
-| Welcome bonus | 100 chips for a new account (was 1,000) |
-| Earned vs bought | Bought chips (packs, Plus) only buy shop items and premium plays. **Only earned chips** (rewards, wins, gifts) can be bet or gifted. Spending uses earned chips first. |
-| vs CPU | Optional, 1 chip a game: win +1, lose −1. At most +20 a day from CPU bets; a "win" faster than a real game refunds the stake. Leaving a CPU game early loses the stake (Chess keeps it for a resumed game). |
-| Friend rooms (invite codes) | The host picks a stake: Off, or 5+ chips each, capped at the poorest player's earned chips. The winner takes the pot. |
-| Random online matches | 3 chips each when both players have 3 earned chips; the winner takes the 6. |
-| Same device | No betting (one account). |
-| Settling | On the server, from the results every player's device already reports. Draws, results that don't match, or a player who never staked: everyone's stake comes back. A player who leaves forfeits. |
+| Welcome bonus | 100 chips for a new account (was 1,000). Guests get 25 to try premium games (was 300). |
+| Earned vs bought | Bought chips (packs, Plus) only buy shop items and premium plays. **Only earned chips** (rewards, wins, gifts) can pay match entries or be gifted. Spending uses earned chips first. |
+| vs CPU | "Play for chips", switched on in the vs-CPU settings: a 1-chip entry, win +1, lose −1. At most +20 a day from CPU matches; a "win" faster than a real game just returns the entry. Leaving a CPU game early loses the entry (Chess keeps it for a resumed game). |
+| Friend rooms (invite codes) | The host sets the entry: Free, or 5+ chips each, capped at the poorest player's earned chips. The winner gets every entry as the prize. |
+| Random online matches | A 3-chip entry each when both players have 3 earned chips; the winner gets the prize of 6. |
+| Same device | Always free (one account). |
+| Settling | On the server, from the results every player's device already reports. Draws, results that don't match, or a player who never paid: every entry is returned. A player who leaves forfeits. |
 | Gifts | Earned chips to any player, from their profile. Up to 500 a day, account 3+ days old. |
 | Shop | Chips buy any item: no level requirement (Carrom strength upgrades keep theirs). |
 
-Games with bets: Chess, Ludo, Carrom, Eight Ball (CPU and online), Arrows (online).
+Games with chip matches: Chess, Ludo, Carrom, Eight Ball (CPU and online), Arrows (online).
 
-**To switch it on (Supabase SQL Editor, in this order):** `tokens.sql`, `adfree.sql`, `shop.sql`, `carrom.sql`, `engagement.sql`, `matches.sql`, then the new `bets.sql`.
+**To switch it on (Supabase SQL Editor, in this order):** `tokens.sql`, `adfree.sql`, `shop.sql`, `carrom.sql`, `engagement.sql`, `matches.sql`, then the new `entries.sql`.
 
 Not done yet / to check:
 - [ ] Run the SQL above on the live database.
-- [ ] Two-player test of a room bet and a random-match bet on real devices.
+- [ ] Two-player test of a friend-room chip match and a random chip match on real devices.
 - [ ] Google Play listing text and product names still say "tokens".
-- [ ] Guests still start with 300 guest chips (more than the 100 welcome); decide whether to lower it.
+
+## Card table: Blackjack & Call Break (2026-11-24)
+
+- The card game (id `blackjack`) is now **Blackjack & Call Break**: two modes on one felt table.
+- Blackjack's screens no longer say "bet" ("Place your chips", "Chips returned"); its server code
+  keeps its internal names (no SQL to re-run).
+- **Call Break** vs three CPU players: 5 rounds, spades are trumps, call 1–8 tricks, follow suit and
+  beat the best card if you can, else trump. Made call → call + 0.1 a trick over; missed → −call.
+  Rules and CPU in `src/games/callbreak/engine.ts` (simulated: no illegal plays; CPUs make their
+  call about 80% of the time).
+- Not done yet: Call Break online (server-dealt, like the Blackjack tables), XP / leaderboard for it.
 
 ## Planned: community clans (later phase)
 
@@ -35,7 +47,7 @@ Players build a **club** (clan); other players can join it. Members can:
 - share chips with the club (a shared club wallet, earned chips only),
 - create club tournaments.
 
-Open questions for when we start: club size limit, who can spend the club wallet (owner / officers / votes), joining by invite or open, tournament entry and prizes (earned chips only, same rules as bets), moderation (kick / ban, club names).
+Open questions for when we start: club size limit, who can spend the club wallet (owner / officers / votes), joining by invite or open, tournament entry and prizes (earned chips only, same rules as chip matches), moderation (kick / ban, club names).
 
 ## Earlier
 

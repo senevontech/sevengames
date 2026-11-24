@@ -42,10 +42,10 @@ import "./chess.css";
 import { GameShopButton } from "../gameShop";
 import { useMatchChat } from "../../components/chat/MatchChat";
 import { MatchRewardLine, useMatchReport } from "../../lib/matchReport";
-import { matchStake, useCpuBet, type BetKind } from "../../lib/bets";
+import { matchFee, useCpuEntry, type EntryKind } from "../../lib/entries";
 import { useTokens } from "../../lib/tokens";
-import RoomBet from "../../components/RoomBet";
-import { CpuBetLine, CpuBetToggle } from "../../components/CpuBet";
+import RoomEntry from "../../components/RoomEntry";
+import { CpuEntryLine, CpuEntryToggle } from "../../components/CpuEntry";
 
 type Mode = "cpu" | "pass" | "online";
 type Result = { winner: Color | null; reason: string };
@@ -405,7 +405,7 @@ export default function ChessGame(_props: GameProps) {
   /* ----- XP + rating when a game ends ----- */
   const matchReport = useMatchReport("chess", () => void shop.refresh());
   // vs CPU: 1 earned chip a game, if switched on
-  const cpuBet = useCpuBet("chess");
+  const cpuEntry = useCpuEntry("chess");
   const { wallet } = useTokens();
   const earnedRef = useRef(0);
   earnedRef.current = wallet?.earned ?? 0;
@@ -422,7 +422,7 @@ export default function ChessGame(_props: GameProps) {
         void matchReport.report(`${o.matchId}:${o.round}`, [user?.id, opp], g.result.winner === null ? [] : [g.result.winner === myColor ? user?.id : opp], g.result.winner === null);
       }
     } else if (user) {
-      if (mode === "cpu") void cpuBet.settle(outcomeFor === "loss" ? "lose" : outcomeFor);
+      if (mode === "cpu") void cpuEntry.finish(outcomeFor === "loss" ? "lose" : outcomeFor);
       const amount = XP.cpu[level][outcomeFor];
       setXpGain(amount);
       void shop.awardXp("chess", amount);
@@ -439,9 +439,9 @@ export default function ChessGame(_props: GameProps) {
     if (resume) setLevel(resume.level);
     setCpuColor(-color as Color);
     setMode("cpu");
-    // a resumed game keeps the bet it had; a new one stakes again (if switched on)
-    if (resume) cpuBet.resume();
-    else void cpuBet.open();
+    // a resumed game keeps the entry it had; a new one pays a new entry (if switched on)
+    if (resume) cpuEntry.resume();
+    else void cpuEntry.open();
     setG(resume ? replay(resume.moves) : newGame());
     awarded.current = false;
     setXpGain(null);
@@ -467,7 +467,7 @@ export default function ChessGame(_props: GameProps) {
         case "start": {
           const white = String(msg.white);
           const minutes = Math.max(1, Math.min(30, Number(msg.tc) || 5));
-          beginOnline(room, white, minutes, String(msg.match), Number(msg.round) || 1, Math.max(0, Math.floor(Number(msg.bet) || 0)), msg.bk === "random" ? "random" : "room");
+          beginOnline(room, white, minutes, String(msg.match), Number(msg.round) || 1, Math.max(0, Math.floor(Number(msg.fee) || 0)), msg.ek === "random" ? "random" : "room");
           break;
         }
         case "move": {
@@ -513,7 +513,7 @@ export default function ChessGame(_props: GameProps) {
     sfx.end();
   }
 
-  function beginOnline(room: GameRoom, white: string, minutes: number, matchId: string, round: number, stake = 0, kind: BetKind = "room") {
+  function beginOnline(room: GameRoom, white: string, minutes: number, matchId: string, round: number, fee = 0, kind: EntryKind = "room") {
     const opp = room.players.find((p) => p.clientId !== room.clientId) ?? null;
     const o: Online = {
       room,
@@ -531,8 +531,8 @@ export default function ChessGame(_props: GameProps) {
     awarded.current = false;
     setXpGain(null);
     matchReport.reset();
-    // the host's chip stake for this game (the server checks it)
-    if (stake > 0 && opp) void matchReport.joinBet(`${matchId}:${round}`, [user?.id, opp.userId], kind, stake);
+    // the host's chip entry for this game (the server checks it)
+    if (fee > 0 && opp) void matchReport.joinEntry(`${matchId}:${round}`, [user?.id, opp.userId], kind, fee);
     setDrawOffer(null);
     setRematch([]);
     setClocks({ w: minutes * 60_000, b: minutes * 60_000, since: performance.now() });
@@ -579,10 +579,10 @@ export default function ChessGame(_props: GameProps) {
     const round = (o?.round ?? 0) + 1;
     // chips: 3 each in random matches (if both can), the host's pick in friend rooms
     const matched = Boolean(o?.matched);
-    const kind: BetKind = matched ? "random" : "room";
-    const stake = matchStake(matched, room.settings.bet, room.players.map((p) => p.chips));
-    room.send("start", { white, tc: minutes, match, round, bet: stake, bk: kind });
-    beginOnline(room, white, minutes, match, round, stake, kind);
+    const kind: EntryKind = matched ? "random" : "room";
+    const fee = matchFee(matched, room.settings.fee, room.players.map((p) => p.chips));
+    room.send("start", { white, tc: minutes, match, round, fee, ek: kind });
+    beginOnline(room, white, minutes, match, round, fee, kind);
   }
 
   const roomEvents = () => ({
@@ -753,7 +753,7 @@ export default function ChessGame(_props: GameProps) {
           canStart={peers.length === 2}
           onStart={() => hostStart()}
           onLeave={leaveOnline}
-          bet={<RoomBet room={room} peers={peers} isHost={room.isHost} matched={online.matched} />}
+          entry={<RoomEntry room={room} peers={peers} isHost={room.isHost} matched={online.matched} />}
         />
       </div>
     );
@@ -808,7 +808,7 @@ export default function ChessGame(_props: GameProps) {
                 </button>
               ))}
             </div>
-            <CpuBetToggle bet={cpuBet} />
+            <CpuEntryToggle entry={cpuEntry} />
                 </div>
               ),
             },
@@ -951,7 +951,7 @@ export default function ChessGame(_props: GameProps) {
               <h3>{resultTitle}</h3>
               <p>{result.reason}</p>
               {mode === "online" ? <MatchRewardLine reward={matchReport.reward} /> : xpGain ? <p className="ch-xp-gain">+{xpGain} XP</p> : null}
-              {mode === "cpu" ? <CpuBetLine bet={cpuBet} /> : null}
+              {mode === "cpu" ? <CpuEntryLine entry={cpuEntry} /> : null}
               <div className="ch-actions">
                 {mode === "online" ? (
                   <>

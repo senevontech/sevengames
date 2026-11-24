@@ -205,13 +205,15 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
   },
   blackjack: {
     steps: [
-      { icon: "🪙", title: "Place a bet", text: "Bet free table chips (never the Chips you buy), then deal." },
+      { icon: "🪙", title: "Place your chips", text: "Put down free table chips (never the Chips you buy), then deal." },
       { icon: "🃏", title: "Get close to 21", text: "Cards 2–10 count face value, J/Q/K count 10, an Ace counts 1 or 11." },
       { icon: "✋", title: "Hit or stand", text: "Hit for another card or stand to keep your total. Go over 21 and you bust." },
-      { icon: "✌️", title: "Double and split", text: "Double your bet for exactly one more card, or split a pair into two hands." },
+      { icon: "✌️", title: "Double and split", text: "Double your chips for exactly one more card, or split a pair into two hands." },
       { icon: "🏆", title: "Beat the dealer", text: "The dealer draws to 17. Higher total wins 1:1; a blackjack pays 3:2; ties push." },
+      { icon: "♠️", title: "Call Break", text: "4 players, 13 cards each, spades are trumps. Call how many tricks you'll take; make it to score your call (+0.1 per extra), miss and you lose it. 5 rounds." },
+      { icon: "📏", title: "Call Break play", text: "Follow the suit led and beat the best card if you can. Out of that suit? Play a spade. The best spade, else the best card of the suit led, wins the trick." },
     ],
-    controls: ["Bet · Hit · Stand · Double · Split", "Stand on 17+, hit on 11 or less"],
+    controls: ["Blackjack: Chips · Hit · Stand · Double · Split", "Call Break: call your tricks, then tap a raised card to play it"],
   },
   pool: {
     steps: [

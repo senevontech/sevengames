@@ -86,8 +86,8 @@ export function ChatPicker({ onPick, cooldown = 0, onClose }: { onPick: (pack: C
   }
 
   return (
-    <div className="cp" role="dialog" aria-label="Send a message">
-      <div className="cp-tabs" role="tablist">
+    <div className="chp" role="dialog" aria-label="Send a message">
+      <div className="chp-tabs" role="tablist">
         {visible.map((p) => {
           const st = access(p.id);
           const sample = p.items[0];
@@ -97,7 +97,7 @@ export function ChatPicker({ onPick, cooldown = 0, onClose }: { onPick: (pack: C
               type="button"
               role="tab"
               aria-selected={p.id === pack.id}
-              className={`cp-tab${p.id === pack.id ? " on" : ""}${st !== "owned" ? " locked" : ""}`}
+              className={`chp-tab${p.id === pack.id ? " on" : ""}${st !== "owned" ? " locked" : ""}`}
               title={p.name}
               onClick={() => {
                 setTab(p.id);
@@ -106,32 +106,32 @@ export function ChatPicker({ onPick, cooldown = 0, onClose }: { onPick: (pack: C
               }}
             >
               {p.kind === "phrase" ? "Aa" : p.kind === "image" ? <img src={sample?.art} alt="" /> : p.kind === "sticker" ? sample?.art : sample?.text}
-              {st === "plus" ? <i className="cp-tab-tag">⭐</i> : st === "buy" ? <i className="cp-tab-tag">🔒</i> : null}
+              {st === "plus" ? <i className="chp-tab-tag">⭐</i> : st === "buy" ? <i className="chp-tab-tag">🔒</i> : null}
             </button>
           );
         })}
       </div>
 
-      <div className="cp-head">
+      <div className="chp-head">
         <b>{pack.name}</b>
-        {cooldown > 0 ? <span className="cp-cool">wait {cooldown}s</span> : null}
-        <button type="button" className="cp-off" onClick={() => setChatOff(!off)} title={off ? "Show messages from others" : "Hide messages from others"}>
+        {cooldown > 0 ? <span className="chp-cool">wait {cooldown}s</span> : null}
+        <button type="button" className="chp-off" onClick={() => setChatOff(!off)} title={off ? "Show messages from others" : "Hide messages from others"}>
           {off ? <BellOff size={15} /> : <Bell size={15} />}
           {off ? "Chat off" : "Chat on"}
         </button>
         {onClose ? (
-          <button type="button" className="cp-x" onClick={onClose} aria-label="Close">
+          <button type="button" className="chp-x" onClick={onClose} aria-label="Close">
             ×
           </button>
         ) : null}
       </div>
 
-      <div className={`cp-grid kind-${pack.kind}${state !== "owned" ? " is-locked" : ""}`}>
+      <div className={`chp-grid kind-${pack.kind}${state !== "owned" ? " is-locked" : ""}`}>
         {pack.items.map((it) => (
           <button
             key={it.id}
             type="button"
-            className="cp-item"
+            className="chp-item"
             disabled={state !== "owned" || cooldown > 0}
             onClick={() => onPick(pack, it)}
             aria-label={it.text || "sticker"}
@@ -142,7 +142,7 @@ export function ChatPicker({ onPick, cooldown = 0, onClose }: { onPick: (pack: C
       </div>
 
       {state === "buy" ? (
-        <div className="cp-foot">
+        <div className="chp-foot">
           {user ? (
             <button type="button" className={`ac-btn ac-btn-sm ac-btn-primary${armed ? " is-armed" : ""}`} disabled={busy} onClick={() => void buy()}>
               {armed ? "Confirm" : "Unlock"} · <TokenIcon size={13} /> {formatTokens(price ?? 0)}
@@ -155,14 +155,14 @@ export function ChatPicker({ onPick, cooldown = 0, onClose }: { onPick: (pack: C
           <small>Buy once, keep forever.</small>
         </div>
       ) : state === "plus" ? (
-        <div className="cp-foot">
+        <div className="chp-foot">
           <Link className="ac-btn ac-btn-sm ac-btn-primary" to="/chips#plus">
             ⭐ Get Senevon Plus
           </Link>
           <small>Free for Plus members.</small>
         </div>
       ) : null}
-      {note ? <p className="cp-note">{note}</p> : null}
+      {note ? <p className="chp-note">{note}</p> : null}
     </div>
   );
 }

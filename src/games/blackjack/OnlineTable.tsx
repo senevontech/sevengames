@@ -97,7 +97,7 @@ export function OnlineLobby({ onSeated }: { onSeated: (v: TableView) => void }) 
   return (
     <div className="ol-card bjo-lobby">
       <h3>Online table</h3>
-      <p className="ol-sub">Up to five players against one dealer. The server deals every card; everyone bets their own free table chips.</p>
+      <p className="ol-sub">Up to five players against one dealer. The server deals every card; everyone plays their own free table chips.</p>
       <button type="button" className="bj-btn bj-btn-main" disabled={busy} onClick={() => void go("bjt_quick", {})}>
         <Zap size={16} /> Quick seat
       </button>
@@ -234,10 +234,10 @@ export function OnlineTable({ initial, onLeave }: { initial: TableView; onLeave:
   const status =
     view.phase === "betting"
       ? me && me.bet > 0
-        ? `Bet placed · cards in ${Math.ceil((msLeft ?? 0) / 1000)}s or when everyone's in`
+        ? `Chips placed · cards in ${Math.ceil((msLeft ?? 0) / 1000)}s or when everyone's in`
         : view.seats.some((s) => s.bet > 0)
-          ? `Place your bet · ${Math.ceil((msLeft ?? 0) / 1000)}s`
-          : "Place your bet to start the round"
+          ? `Place your chips · ${Math.ceil((msLeft ?? 0) / 1000)}s`
+          : "Place your chips to start the round"
       : view.phase === "playing"
         ? myTurn
           ? `Your move · ${Math.ceil((msLeft ?? 0) / 1000)}s`
@@ -320,7 +320,7 @@ export function OnlineTable({ initial, onLeave }: { initial: TableView; onLeave:
             </div>
           ) : (
             <>
-              <div className="bj-chips" role="group" aria-label="Add chips to your bet">
+              <div className="bj-chips" role="group" aria-label="Add chips to your hand">
                 {CHIP_VALUES.map((v) => (
                   <button
                     key={v}
@@ -347,7 +347,7 @@ export function OnlineTable({ initial, onLeave }: { initial: TableView; onLeave:
                   </button>
                 ) : null}
                 <button type="button" className="bj-btn bj-btn-main" disabled={busy || pending < view.chips.min_bet} onClick={() => placeBet(pending)}>
-                  Bet{pending > 0 ? ` ${pending.toLocaleString()}` : ""}
+                  Place{pending > 0 ? ` ${pending.toLocaleString()}` : ""}
                 </button>
               </div>
             </>
@@ -415,7 +415,7 @@ function SeatBox({
         </div>
       ) : (
         <div className={`bj-betspot${small ? " bjo-spot-small" : ""}`}>
-          {s.bet > 0 ? <ChipStack amount={s.bet} size={small ? 24 : 34} /> : pending > 0 ? <ChipStack amount={pending} size={34} /> : <span>{sitting ? "Sitting out" : mine ? "Your bet" : "Betting…"}</span>}
+          {s.bet > 0 ? <ChipStack amount={s.bet} size={small ? 24 : 34} /> : pending > 0 ? <ChipStack amount={pending} size={34} /> : <span>{sitting ? "Sitting out" : mine ? "Your chips" : "Placing chips…"}</span>}
         </div>
       )}
     </div>

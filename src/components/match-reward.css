@@ -45,18 +45,18 @@
   opacity: 0.7;
 }
 
-/* the chip bet: neutral until it's a win or a loss */
-.match-reward .is-bet {
+/* the match entry: neutral until it's a win or a loss */
+.match-reward .is-entry {
   color: inherit;
   background: rgba(127, 127, 127, 0.16);
 }
 
-.match-reward .is-bet.is-up {
+.match-reward .is-entry.is-up {
   color: #15803d;
   background: rgba(74, 222, 128, 0.18);
 }
 
-.match-reward .is-bet.is-down {
+.match-reward .is-entry.is-down {
   color: #c2410c;
   background: rgba(255, 138, 107, 0.18);
 }

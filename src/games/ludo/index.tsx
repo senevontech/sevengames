@@ -22,10 +22,10 @@ import { useMatchChat } from "../../components/chat/MatchChat";
 import { OutcomeIcon, type Outcome } from "../ResultBanner";
 import "../result-banner.css";
 import { MatchRewardLine, newMatchId, useMatchReport } from "../../lib/matchReport";
-import { matchStake, useCpuBet, type BetKind } from "../../lib/bets";
+import { matchFee, useCpuEntry, type EntryKind } from "../../lib/entries";
 import { useTokens } from "../../lib/tokens";
-import RoomBet from "../../components/RoomBet";
-import { CpuBetLine, CpuBetToggle } from "../../components/CpuBet";
+import RoomEntry from "../../components/RoomEntry";
+import { CpuEntryLine, CpuEntryToggle } from "../../components/CpuEntry";
 import PlayFlow from "../PlayFlow";
 import { Bot, Globe, Users } from "lucide-react";
 
@@ -122,13 +122,13 @@ export default function LudoGame(_props: GameProps) {
   const [matched, setMatched] = useState(false);
   // (callbacks made when the room opened read this, not the state)
   const matchedRef = useRef(false);
-  // the chip stake of the current online match, sent with every state so late joiners see it
-  const betRef = useRef<{ stake: number; kind: BetKind }>({ stake: 0, kind: "room" });
+  // the chip entry of the current online match, sent with every state so late joiners see it
+  const entryRef = useRef<{ fee: number; kind: EntryKind }>({ fee: 0, kind: "room" });
   const { wallet } = useTokens();
   const earnedRef = useRef(0);
   earnedRef.current = wallet?.earned ?? 0;
   // vs CPU: 1 earned chip a game, if switched on
-  const cpuBet = useCpuBet("ludo");
+  const cpuEntry = useCpuEntry("ludo");
   const [hostGone, setHostGone] = useState(false);
   const [guestWait, setGuestWait] = useState<string | null>(null);
   const hostMatch = useRef<Matched | null>(null);
@@ -153,7 +153,7 @@ export default function LudoGame(_props: GameProps) {
   const matchIdRef = useRef("");
   const playersRef = useRef<string[]>([]);
   const broadcast = useCallback((s: LudoState, seatList: Seat[], timeLeft: number) => {
-    roomRef.current?.send("state", { st: s, seats: seatList, timeLeft, mid: matchIdRef.current, bet: betRef.current.stake, bk: betRef.current.kind });
+    roomRef.current?.send("state", { st: s, seats: seatList, timeLeft, mid: matchIdRef.current, fee: entryRef.current.fee, ek: entryRef.current.kind });
   }, []);
 
   const commit = useCallback(
@@ -264,7 +264,7 @@ export default function LudoGame(_props: GameProps) {
   useEffect(() => {
     if (st.phase !== "over" || mode !== "cpu") return;
     const myColor = st.colors[0];
-    void cpuBet.settle(st.winner === myColor ? "win" : "lose");
+    void cpuEntry.finish(st.winner === myColor ? "win" : "lose");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [st.phase, mode]);
   useEffect(() => {
@@ -302,7 +302,7 @@ export default function LudoGame(_props: GameProps) {
     setSt(s);
     awarded.current = false;
     setXpGain(null);
-    if (m === "cpu") void cpuBet.open();
+    if (m === "cpu") void cpuEntry.open();
     setScreen("game");
   }
 
@@ -322,9 +322,9 @@ export default function LudoGame(_props: GameProps) {
           matchIdRef.current = msg.mid.slice(0, 60);
           playersRef.current = list.filter((x) => x.kind === "human" && x.userId).map((x) => x.userId!);
           matchReport.reset();
-          // the host's chip stake (the server checks it)
-          const stake = Math.max(0, Math.floor(Number(msg.bet) || 0));
-          if (stake > 0) void matchReport.joinBet(matchIdRef.current, playersRef.current, msg.bk === "random" ? "random" : "room", stake);
+          // the host's chip entry (the server checks it)
+          const fee = Math.max(0, Math.floor(Number(msg.fee) || 0));
+          if (fee > 0) void matchReport.joinEntry(matchIdRef.current, playersRef.current, msg.ek === "random" ? "random" : "room", fee);
         }
         if (stRef.current.phase === "over" && s.phase !== "over") {
           awarded.current = false;
@@ -373,11 +373,11 @@ export default function LudoGame(_props: GameProps) {
     playersRef.current = list.filter((x) => x.kind === "human" && x.userId).map((x) => x.userId!);
     matchReport.reset();
     // chips: 3 each in random matches (if all can), the host's pick in friend rooms
-    const kind: BetKind = matchedRef.current ? "random" : "room";
+    const kind: EntryKind = matchedRef.current ? "random" : "room";
     const humans = room.players.slice(0, n);
-    const stake = humans.length >= 2 ? matchStake(matchedRef.current, room.settings.bet, humans.map((p) => p.chips)) : 0;
-    betRef.current = { stake, kind };
-    if (stake > 0) void matchReport.joinBet(matchIdRef.current, playersRef.current, kind, stake);
+    const fee = humans.length >= 2 ? matchFee(matchedRef.current, room.settings.fee, humans.map((p) => p.chips)) : 0;
+    entryRef.current = { fee, kind };
+    if (fee > 0) void matchReport.joinEntry(matchIdRef.current, playersRef.current, kind, fee);
     const s = newGame(n);
     stRef.current = s;
     setSt(s);
@@ -568,7 +568,7 @@ export default function LudoGame(_props: GameProps) {
           startLabel={peers.length < roomSeats ? `Start · ${roomSeats - peers.length} CPU` : "Start game"}
           onStart={hostStartOnline}
           onLeave={leaveOnline}
-          bet={<RoomBet room={room} peers={peers} isHost={room.isHost} matched={matched} />}
+          entry={<RoomEntry room={room} peers={peers} isHost={room.isHost} matched={matched} />}
         />
       </div>
     );
@@ -605,7 +605,7 @@ export default function LudoGame(_props: GameProps) {
                 <div className="ol-card">
             <p className="ol-sub">You get a random colour, in the bottom-right corner.</p>
             {seatPicker(cpuPlayers, setCpuPlayers, [2, 3, 4], "Players")}
-            <CpuBetToggle bet={cpuBet} />
+            <CpuEntryToggle entry={cpuEntry} />
                 </div>
               ),
             },
@@ -728,7 +728,7 @@ export default function LudoGame(_props: GameProps) {
                       : "All four tokens home."}
                   </p>
                   {mode === "online" ? <MatchRewardLine reward={matchReport.reward} /> : xpGain ? <p className="lu-xp-gain">+{xpGain} XP</p> : null}
-                  {mode === "cpu" ? <CpuBetLine bet={cpuBet} /> : null}
+                  {mode === "cpu" ? <CpuEntryLine entry={cpuEntry} /> : null}
                 </>
               )}
               <div className="rb-actions lu-result-actions">
@@ -785,7 +785,7 @@ export default function LudoGame(_props: GameProps) {
             type="button"
             className="ghost-btn"
             onClick={() => {
-              if (mode === "cpu" && stRef.current.phase !== "over") cpuBet.forfeit();
+              if (mode === "cpu" && stRef.current.phase !== "over") cpuEntry.forfeit();
               setScreen("menu");
             }}
           >

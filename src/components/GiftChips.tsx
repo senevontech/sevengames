@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Gift } from "lucide-react";
-import { BET, betErrorText, giftChips, useGiftLimits } from "../lib/bets";
+import { ENTRY, entryErrorText, giftChips, useGiftLimits } from "../lib/entries";
 import { useTokens } from "../lib/tokens";
 import TokenIcon from "./TokenIcon";
 import "./gift-chips.css";
@@ -19,7 +19,7 @@ export default function GiftChipsButton({ to, name }: { to: string; name: string
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const left = limits ? Math.max(0, limits.cap - limits.sent_today) : BET.giftDailyCap;
+  const left = limits ? Math.max(0, limits.cap - limits.sent_today) : ENTRY.giftDailyCap;
   const max = limits ? Math.min(left, limits.earned) : 0;
   const n = Math.floor(Number(amount));
   const valid = Number.isFinite(n) && n >= 1 && n <= max;
@@ -39,7 +39,7 @@ export default function GiftChipsButton({ to, name }: { to: string; name: string
       setNote("");
       void refresh();
     } catch (e) {
-      setMsg({ ok: false, text: betErrorText(e) });
+      setMsg({ ok: false, text: entryErrorText(e) });
     } finally {
       setBusy(false);
       setSure(false);

@@ -13,7 +13,7 @@ import { parseAvatar, type AvatarChoice } from "./avatar";
 export type RoomStatus = "connecting" | "lobby" | "error";
 export type RoomPeer = { clientId: string; userId: string; name: string; avatar: AvatarChoice | null; isHost: boolean; look?: string | null; chips?: number | null };
 /** `look`: a cosmetic the game shows everyone (e.g. a Ludo token colour id). */
-/** `chips`: the player's earned chips (what they could bet); the server checks every stake anyway. */
+/** `chips`: the player's earned chips (what they could use for match entries); the server checks every entry anyway. */
 export type RoomMe = { userId: string; name: string; avatar: AvatarChoice | null; look?: string | null; chips?: number | null };
 export type RoomMsg = { t: string; from: string; [k: string]: unknown };
 

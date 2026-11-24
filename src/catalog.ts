@@ -470,14 +470,14 @@ export const games: Game[] = [
   },
   {
     id: "blackjack",
-    title: "Blackjack",
+    title: "Blackjack & Call Break",
     category: "Cards",
     kind: "builtin",
     engine: "blackjack",
     difficulty: "Easy",
     minutes: 5,
     accent: "#17703f",
-    description: "Beat the dealer to 21 on a real felt table. Bet free table chips, hit, stand, double or split. Blackjack pays 3 to 2.",
+    description: "Two card games on a real felt table: beat the dealer to 21 at Blackjack with free table chips, or call your tricks at Call Break against three CPU players.",
   },
   {
     id: "pool",

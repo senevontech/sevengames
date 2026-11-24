@@ -23,11 +23,11 @@ export function chipsErrorText(err: unknown) {
   if (msg.includes("refill_wait")) return "Free refill is once an hour.";
   if (msg.includes("not_broke")) return "Refills are for when you've run out of table chips.";
   if (msg.includes("round_open")) return "Finish the current hand first.";
-  if (msg.includes("bad_bet")) return "That bet is outside the table limits.";
+  if (msg.includes("bad_bet")) return "That amount is outside the table limits.";
   if (msg.includes("not_signed_in")) return "Sign in to play with table chips.";
   if (msg.includes("table_full")) return "That table is full (5 players).";
   if (msg.includes("no_table")) return "No table with that code.";
-  if (msg.includes("betting_closed")) return "Bets are closed for this round.";
+  if (msg.includes("betting_closed")) return "The round has started: chips can't be placed now.";
   if (msg.includes("not_your_turn")) return "It's not your turn.";
   if (msg.includes("not_seated")) return "You're not sitting at this table.";
   if (msg.includes("cant_double") || msg.includes("cant_split")) return "You can't do that with this hand.";

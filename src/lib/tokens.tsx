@@ -21,7 +21,7 @@ export type Subscription = {
 
 export type Wallet = {
   balance: number;
-  /** the part of `balance` that wasn't bought (rewards, wins, gifts): only these can be bet or gifted */
+  /** the part of `balance` that wasn't bought (rewards, wins, gifts): only these can pay match entries or be gifted */
   earned?: number;
   /** redeemed the developer / admin code: premium games are free */
   unlimited: boolean;
@@ -42,7 +42,7 @@ export type SpendResult = { ok: true; cost: number } | { ok: false; reason: "ins
    Guests get GUEST_TOKENS once per device, kept in localStorage. It can be reset by clearing
    site data, which is accepted: on sign-in the server credits at most GUEST_TOKENS, once per
    account (claim_guest_tokens). After any sign-in on this device the guest wallet is spent. */
-export const GUEST_TOKENS = 300;
+export const GUEST_TOKENS = 25;
 const GUEST_KEY = "senevon:guest-wallet";
 type GuestWallet = { balance: number; claimed: boolean };
 
@@ -122,7 +122,7 @@ export function tokenErrorText(err: unknown) {
   if (msg.includes("mock_payments_disabled")) return "Payments aren't available yet.";
   if (msg.includes("not_signed_in")) return "Sign in first.";
   if (msg.includes("insufficient_tokens")) return "Not enough chips.";
-  if (msg.includes("insufficient_earned")) return "Not enough earned chips. Bought chips can't be bet or gifted.";
+  if (msg.includes("insufficient_earned")) return "Not enough earned chips. Bought chips can't be used for match entries or gifts.";
   if (msg.includes("none_left")) return "You don't have any left.";
   if (msg.includes("level_required")) return "Reach the level shown to unlock this.";
   if (msg.includes("not_owned")) return "Buy this item first.";

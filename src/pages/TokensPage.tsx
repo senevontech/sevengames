@@ -51,16 +51,16 @@ const REASON: Record<string, { label: string; Icon: LucideIcon }> = {
   weekly: { label: "Weekly competition prize", Icon: Crown },
   friend: { label: "Friend challenge", Icon: Zap },
   tournament: { label: "Tournament", Icon: Crown },
-  bet: { label: "Bet", Icon: Coins },
+  entry: { label: "Chip match", Icon: Coins },
   gift: { label: "Gift", Icon: HandCoins },
 };
 
-const BET_GAMES: Record<string, string> = { chess: "Chess", ludo: "Ludo", carrom: "Carrom", arrows: "Arrows", pool: "Eight Ball" };
+const ENTRY_GAMES: Record<string, string> = { chess: "Chess", ludo: "Ludo", carrom: "Carrom", arrows: "Arrows", pool: "Eight Ball" };
 /** "cpu:pool" → "Eight Ball vs CPU", "pool:match-id" → "Eight Ball" */
-function betRefLabel(ref: string, delta: number) {
+function entryRefLabel(ref: string, delta: number) {
   const [a, b] = ref.split(":");
-  const game = a === "cpu" ? `${BET_GAMES[b] ?? b} vs CPU` : BET_GAMES[a] ?? a;
-  return `${game} · ${delta < 0 ? "stake" : "winnings"}`;
+  const game = a === "cpu" ? `${ENTRY_GAMES[b] ?? b} vs CPU` : ENTRY_GAMES[a] ?? a;
+  return `${game} · ${delta < 0 ? "entry" : "prize"}`;
 }
 
 const PACK_META: Record<string, { name: string; flag?: string; coins: number }> = {
@@ -252,7 +252,7 @@ export default function TokensPage() {
                 <p className="tw-hero-sub">Free games are always free. Premium games use chips per play. Chips never expire.</p>
                 {wallet ? (
                   <p className="tw-hero-sub tw-earned">
-                    <b>{formatTokens(wallet.earned ?? 0)}</b> earned (can be bet or gifted) ·{" "}
+                    <b>{formatTokens(wallet.earned ?? 0)}</b> earned (for chip matches and gifts) ·{" "}
                     <b>{formatTokens(Math.max(0, wallet.balance - (wallet.earned ?? 0)))}</b> bought (shop and premium games only)
                   </p>
                 ) : null}
@@ -611,7 +611,7 @@ export default function TokensPage() {
                 (r.reason === "purchase" && r.ref ? (PACK_META[r.ref]?.name ?? r.ref) + " pack" : null) ??
                 (r.reason === "carrom" && r.ref ? carromRefLabel(r.ref) : null) ??
                 (r.reason === "admin" && r.ref ? r.ref : null) ??
-                (r.reason === "bet" && r.ref ? betRefLabel(r.ref, r.delta) : null) ??
+                (r.reason === "entry" && r.ref ? entryRefLabel(r.ref, r.delta) : null) ??
                 (r.reason === "gift" ? (r.delta < 0 ? "Sent" : "Received") : null);
               return (
                 <li key={r.id}>

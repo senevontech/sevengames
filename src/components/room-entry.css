@@ -1,5 +1,5 @@
-/* the stake in an online waiting room (RoomBet.tsx) */
-.rbet {
+/* the match entry in an online waiting room (RoomEntry.tsx) */
+.rentry {
   display: grid;
   gap: 8px;
   justify-items: center;
@@ -7,7 +7,7 @@
   text-align: center;
 }
 
-.rbet-label {
+.rentry-label {
   font-size: 11.5px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -15,14 +15,14 @@
   opacity: 0.6;
 }
 
-.rbet-row {
+.rentry-row {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 6px;
 }
 
-.rbet-row button {
+.rentry-row button {
   min-width: 44px;
   height: 32px;
   padding: 0 12px;
@@ -37,13 +37,13 @@
   cursor: pointer;
 }
 
-.rbet-row button.is-on {
+.rentry-row button.is-on {
   color: #fff;
   background: linear-gradient(145deg, #ff9d52, #ec5f00);
   box-shadow: 0 6px 14px -8px rgba(236, 95, 0, 0.8);
 }
 
-.rbet-custom input {
+.rentry-custom input {
   width: 96px;
   height: 32px;
   padding: 0 10px;
@@ -56,7 +56,7 @@
   box-shadow: var(--neu-well, inset 0 0 0 1px rgba(127, 127, 127, 0.3));
 }
 
-.rbet-sum {
+.rentry-sum {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
@@ -65,12 +65,12 @@
   font-size: 13.5px;
 }
 
-.rbet-sum .token-icon {
+.rentry-sum .token-icon {
   vertical-align: -0.2em;
 }
 
-/* vs CPU: the bet switch (CpuBet.tsx) */
-.cbet {
+/* vs CPU: the "Play for chips" switch (CpuEntry.tsx) */
+.centry {
   display: flex;
   align-items: flex-start;
   gap: 8px;
@@ -79,11 +79,11 @@
   cursor: pointer;
 }
 
-.cbet input {
+.centry input {
   margin-top: 3px;
 }
 
-.cbet small {
+.centry small {
   display: block;
   margin-top: 2px;
   font-size: 12px;
@@ -91,19 +91,19 @@
   opacity: 0.6;
 }
 
-.cbet .token-icon,
-.cbet-note .token-icon,
-.cbet-line .token-icon {
+.centry .token-icon,
+.centry-note .token-icon,
+.centry-line .token-icon {
   vertical-align: -0.2em;
 }
 
-.cbet-note {
+.centry-note {
   margin: 0;
   font-size: 13px;
   opacity: 0.75;
 }
 
-.cbet-line {
+.centry-line {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -115,17 +115,17 @@
   background: rgba(127, 127, 127, 0.16);
 }
 
-.cbet-line.is-up {
+.centry-line.is-up {
   color: #15803d;
   background: rgba(74, 222, 128, 0.18);
 }
 
-.cbet-line.is-down {
+.centry-line.is-down {
   color: #c2410c;
   background: rgba(255, 138, 107, 0.18);
 }
 
-.cbet-line.is-err {
+.centry-line.is-err {
   font-weight: 600;
   font-size: 12.5px;
 }

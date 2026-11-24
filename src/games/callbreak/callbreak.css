@@ -1,0 +1,430 @@
+/* Call Break table (CallBreak.tsx), on the shared felt + cards kit (cards/cards.css). */
+.cb-surface {
+  display: grid;
+  gap: 10px;
+  width: min(860px, 100%);
+  margin: 0 auto;
+  padding: 4px 0 12px;
+}
+
+.cb-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cb-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  color: inherit;
+  background: var(--neu-bg, rgba(127, 127, 127, 0.14));
+  box-shadow: var(--neu-raise-sm, inset 0 0 0 1px rgba(127, 127, 127, 0.25));
+  cursor: pointer;
+}
+
+.cb-round {
+  font-size: 13.5px;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.cb-trump {
+  white-space: nowrap;
+}
+
+/* ---------- the table ---------- */
+.cb-table {
+  position: relative;
+  padding: 12px;
+}
+
+.cb-felt {
+  display: grid;
+  grid-template-areas:
+    ". n ."
+    "w t e"
+    "st st st"
+    "me me me";
+  grid-template-columns: minmax(70px, auto) minmax(0, 1fr) minmax(70px, auto);
+  align-items: center;
+  justify-items: center;
+  gap: 8px;
+  min-height: clamp(420px, 70vh, 620px);
+  padding: 12px 10px 14px;
+}
+
+.cb-seat {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+.cb-seat.is-n {
+  grid-area: n;
+}
+
+.cb-seat.is-w {
+  grid-area: w;
+}
+
+.cb-seat.is-e {
+  grid-area: e;
+}
+
+.cb-badge {
+  display: grid;
+  justify-items: center;
+  min-width: 78px;
+  padding: 5px 10px;
+  border-radius: 12px;
+  color: #fff6e3;
+  background: rgba(0, 0, 0, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(255, 236, 190, 0.18);
+  line-height: 1.2;
+  transition: box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.cb-badge b {
+  font-size: 12.5px;
+}
+
+.cb-badge span {
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.cb-badge small {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.cb-badge.is-turn {
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 0 0 2px #ffcf6b, 0 0 16px rgba(255, 207, 107, 0.35);
+}
+
+/* the CPUs' cards: small backs, fanned */
+.cb-backs {
+  --cd-w: 26px;
+  display: flex;
+}
+
+.cb-backs .cd + .cd {
+  margin-left: -20px;
+}
+
+.cb-seat.is-w .cb-backs,
+.cb-seat.is-e .cb-backs {
+  flex-direction: column;
+}
+
+.cb-seat.is-w .cb-backs .cd + .cd,
+.cb-seat.is-e .cb-backs .cd + .cd {
+  margin-left: 0;
+  margin-top: -34px;
+}
+
+/* ---------- the trick ---------- */
+.cb-trick {
+  --cd-w: clamp(46px, 8.5vw, 68px);
+  grid-area: t;
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  height: calc(var(--cd-w) * 2.9);
+}
+
+.cb-spot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  animation: cb-in 0.28s cubic-bezier(0.2, 0.8, 0.25, 1) both;
+}
+
+.cb-spot.is-s {
+  transform: translate(-50%, -12%);
+}
+
+.cb-spot.is-n {
+  transform: translate(-50%, -88%);
+}
+
+.cb-spot.is-w {
+  transform: translate(-120%, -50%) rotate(-8deg);
+}
+
+.cb-spot.is-e {
+  transform: translate(20%, -50%) rotate(8deg);
+}
+
+@keyframes cb-in {
+  from {
+    opacity: 0;
+    scale: 0.8;
+  }
+}
+
+.cb-print {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.cb-status {
+  grid-area: st;
+  min-height: 1.4em;
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-align: center;
+  color: #fff6e3;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------- your hand ---------- */
+.cb-me {
+  grid-area: me;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.cb-hand {
+  --cd-w: clamp(40px, 7.4vw, 70px);
+  display: flex;
+  justify-content: center;
+  padding-top: 12px;
+}
+
+.cb-card {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: default;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cb-card + .cb-card {
+  margin-left: calc(var(--cd-w) * -0.42);
+}
+
+.cb-card.is-ok {
+  cursor: pointer;
+  transform: translateY(-10px);
+}
+
+.cb-card.is-ok:hover,
+.cb-card.is-ok:focus-visible {
+  transform: translateY(-18px);
+}
+
+.cb-card.is-ok:focus-visible {
+  outline: 2px solid #ffcf6b;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.cb-card.is-off {
+  filter: brightness(0.62) saturate(0.7);
+}
+
+/* ---------- panels over the table ---------- */
+.cb-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  border-radius: 28px;
+  background: rgba(6, 12, 8, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.cb-panel {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  width: min(420px, 100%);
+  padding: 22px 20px;
+  border-radius: 20px;
+  text-align: center;
+  color: #f3f1f6;
+  background: #18161e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 48px -20px rgba(0, 0, 0, 0.8);
+}
+
+.cb-panel h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.cb-sub {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.cb-calls {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.cb-calls button {
+  height: 46px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+}
+
+.cb-calls button:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.cb-calls button.is-hint {
+  box-shadow: inset 0 0 0 2px #ffcf6b;
+}
+
+.cb-scores {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cb-scores th,
+.cb-scores td {
+  padding: 6px 4px;
+  text-align: center;
+}
+
+.cb-scores thead th {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.cb-scores tbody tr + tr td {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cb-scores tfoot td {
+  font-weight: 800;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.cb-scores .is-neg {
+  color: #ff8a6b;
+}
+
+.cb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.cb-btn {
+  height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 750;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.cb-btn-main {
+  background: linear-gradient(145deg, #ffb34d, #ec7a00);
+}
+
+/* phones: smaller seats and a tighter hand */
+@media (max-width: 560px) {
+  .cb-table {
+    padding: 8px;
+    border-radius: 20px;
+  }
+  .cb-felt {
+    grid-template-columns: minmax(54px, auto) minmax(0, 1fr) minmax(54px, auto);
+    gap: 6px;
+    min-height: 0;
+    padding: 10px 4px 12px;
+  }
+  .cb-badge {
+    min-width: 60px;
+    padding: 4px 6px;
+  }
+  .cb-backs {
+    --cd-w: 18px;
+  }
+  .cb-backs .cd + .cd {
+    margin-left: -14px;
+  }
+  .cb-seat.is-w .cb-backs .cd + .cd,
+  .cb-seat.is-e .cb-backs .cd + .cd {
+    margin-top: -22px;
+  }
+  .cb-hand {
+    --cd-w: clamp(34px, 11vw, 48px);
+  }
+  .cb-card + .cb-card {
+    margin-left: calc(var(--cd-w) * -0.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cb-spot {
+    animation: none;
+  }
+}
+
+/* your call: a compact panel over the middle of the table; your cards stay in view */
+.cb-overlay.is-call {
+  align-items: start;
+  padding-top: clamp(70px, 16%, 130px);
+  background: none;
+  backdrop-filter: none;
+  pointer-events: none;
+}
+
+.cb-overlay.is-call .cb-panel {
+  gap: 8px;
+  width: min(340px, 100%);
+  padding: 14px 16px;
+  pointer-events: auto;
+  background: rgba(24, 22, 30, 0.94);
+}
+
+.cb-overlay.is-call .cb-panel h3 {
+  font-size: 16px;
+}
+
+.cb-overlay.is-call .cb-calls button {
+  height: 38px;
+  font-size: 16px;
+}
