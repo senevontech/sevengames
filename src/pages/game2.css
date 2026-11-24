@@ -1258,6 +1258,17 @@
   pointer-events: none;
 }
 
+/* phones: the one-line wordmark would be cut off at the side, so it goes on two lines */
+@media (max-width: 640px) {
+  .g2-foot-mark {
+    white-space: normal;
+    text-align: left;
+  }
+  .g2-foot-mark > span {
+    display: block;
+  }
+}
+
 .g2-foot-row {
   position: relative;
   display: flex;

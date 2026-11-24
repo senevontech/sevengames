@@ -4,7 +4,7 @@
    The canvas is transparent and sits in a soft neumorphic well that follows the site theme:
    ink is raised on light paper and glows on dark. Notes that sound ripple and bloom a wash of
    their colour into the background. */
-import { COL, DRUM_ZONES, H, INSTRUMENTS, KEYS, STEPS, W, isRoot, midiOf, rowY, rowsOf, type Inst, type Song, type Stroke } from "./music";
+import { COL, H, INSTRUMENTS, KEYS, STEPS, W, isRoot, midiOf, rowY, rowsOf, type Inst, type Song, type Stroke } from "./music";
 
 export const PEN = [7, 12, 18];
 export type Theme = "light" | "dark";
@@ -13,7 +13,18 @@ type Map = { sx: number; sy: number };
 const sOf = (m: Map) => Math.sqrt(m.sx * m.sy);
 
 /** ink colours per theme (the dark ones glow; the light ones are deeper so they read on paper) */
-const LIGHT_INK: Record<Inst, string> = { piano: "#1593d8", bells: "#e09a00", strings: "#8655ee", bass: "#16a862", drums: "#ec4452" };
+const LIGHT_INK: Record<Inst, string> = {
+  piano: "#1593d8",
+  bells: "#e09a00",
+  strings: "#8655ee",
+  bass: "#16a862",
+  drums: "#ec4452",
+  guitar: "#e5780e",
+  sitar: "#dc2f7c",
+  flute: "#0e9f92",
+  synth: "#6f9c00",
+  tabla: "#a35f2c",
+};
 export const inkOf = (i: Inst, t: Theme) => (t === "light" ? LIGHT_INK[i] : INSTRUMENTS[i].color);
 
 function hexRgb(hex: string) {
@@ -77,7 +88,7 @@ export function drawStroke(g: CanvasRenderingContext2D, st: Stroke, theme: Theme
   g.restore();
 }
 
-export function drawGuides(g: CanvasRenderingContext2D, song: Song, m: Map, opts: { theme: Theme; labels: boolean; drums: boolean }) {
+export function drawGuides(g: CanvasRenderingContext2D, song: Song, m: Map, opts: { theme: Theme; labels: boolean; drums: string[] | null }) {
   const ink = opts.theme === "light" ? "30,36,56" : "255,255,255";
   const cw = W * m.sx;
   const ch = H * m.sy;
@@ -114,7 +125,7 @@ export function drawGuides(g: CanvasRenderingContext2D, song: Song, m: Map, opts
     g.font = "800 11px system-ui, sans-serif";
     g.textAlign = "right";
     g.textBaseline = "middle";
-    DRUM_ZONES.forEach((name, z) => g.fillText(name, cw - 8, ch - (z + 0.5) * zh));
+    opts.drums.forEach((name, z) => g.fillText(name, cw - 8, ch - (z + 0.5) * zh));
     g.textAlign = "left";
   }
 }
@@ -143,7 +154,7 @@ export class TuneView {
   private cssW = 0;
   private cssH = 0;
   private song: Song | null = null;
-  private drums = false;
+  private drums: string[] | null = null;
   private ripples: Ripple[] = [];
   private raf = 0;
   theme: Theme = "dark";
@@ -152,6 +163,8 @@ export class TuneView {
   pos = -1;
   eraser: { x: number; y: number } | null = null;
   hover: Hover | null = null;
+  /** mirror pen: show the flipped copy while drawing */
+  mirror = false;
 
   constructor(private cv: HTMLCanvasElement) {
     this.g = cv.getContext("2d")!;
@@ -172,7 +185,7 @@ export class TuneView {
     this.cache.height = this.cv.height;
     this.paintCache();
   }
-  setSong(song: Song, drums: boolean, theme: Theme) {
+  setSong(song: Song, drums: string[] | null, theme: Theme) {
     this.song = song;
     this.drums = drums;
     this.theme = theme;
@@ -239,7 +252,10 @@ export class TuneView {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.drawImage(this.cache, 0, 0);
     g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    if (this.live) drawStroke(g, this.live, this.theme, m);
+    if (this.live) {
+      drawStroke(g, this.live, this.theme, m);
+      if (this.mirror) drawStroke(g, { ...this.live, p: this.live.p.map((v, k) => (k % 2 ? v : W - v)) }, this.theme, m, 0.55);
+    }
     if (this.pos >= 0) {
       const x = this.pos * COL * m.sx;
       const cw = COL * m.sx;

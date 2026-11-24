@@ -1384,3 +1384,17 @@ h3 {
     transform: none;
   }
 }
+
+/* Modals and sheets (over games and pages): no white "neumorphic" highlight. The soft UI's
+   light-side shadow glows like a white halo on a card floating over a dimmed game, so inside
+   any dialog the raised shadows are dark-only (same number of layers, so press animations
+   still blend). */
+[role="dialog"],
+[role="alertdialog"],
+[aria-modal="true"] {
+  --neu-panel: 0 24px 48px -18px rgba(0, 0, 0, 0.45), 0 0 0 transparent;
+  --neu-raise: 0 8px 18px -8px rgba(0, 0, 0, 0.35), 0 0 0 transparent, inset 0 0 0 transparent, inset 0 0 0 transparent;
+  --neu-raise-sm: 0 4px 10px -5px rgba(0, 0, 0, 0.35), 0 0 0 transparent, inset 0 0 0 transparent, inset 0 0 0 transparent;
+  /* games that copy the raise into their own variable (Draw a Tune) */
+  --tn-raise: 0 4px 10px -5px rgba(0, 0, 0, 0.35), 0 0 0 transparent, inset 0 0 0 transparent, inset 0 0 0 transparent;
+}

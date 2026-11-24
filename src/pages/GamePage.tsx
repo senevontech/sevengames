@@ -1,4 +1,5 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import FavoriteButton from "../components/FavoriteButton";
 import { gameFinishedAd } from "../lib/admob";
 import { promptAdFree } from "../lib/adFreePromo";
 import { isNative, openExternal } from "../lib/native";
@@ -321,6 +322,7 @@ export default function GamePage() {
             <Maximize size={15} />
             <span>Full screen</span>
           </button>
+          <FavoriteButton id={game.id} title={game.title} variant="plain" />
           <HowToPlayButton engine={game.kind === "builtin" ? game.engine : undefined} title={game.title} />
           <HeaderShop />
           <MatchChatButton />

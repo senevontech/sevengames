@@ -6,7 +6,7 @@ export default function SoftFooter() {
   return (
     <footer className="g2-foot">
       <span className="g2-foot-mark" aria-hidden="true">
-        Senevon Studio
+        <span>Senevon</span> <span>Studio</span>
       </span>
       <div className="g2-foot-row">
         <p className="g2-foot-copy">© {new Date().getFullYear()} Senevon Inc. All rights reserved</p>

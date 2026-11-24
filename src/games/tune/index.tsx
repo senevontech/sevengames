@@ -1,30 +1,44 @@
 /* Draw a Tune: draw anything, press Play, and hear it. A bar sweeps left → right; height is pitch
    (always in key), each colour is an instrument, a thicker pen is louder. Tempo, loop, scale/key
    and a backing beat. A daily prompt: post your song, play and like everyone else's, remix one,
-   share a link. XP and a posting streak (supabase/tune.sql). No chips.
+   share a link. XP and a posting streak (supabase/tune.sql). Mirror pen and a mixer are free;
+   studio instruments, extra beats, world scales and echo are unlocked with chips in the Music
+   shop (anyone can always listen to songs that use them). Sharing is free: a vertical video clip
+   made on the device (clip.ts) for WhatsApp / Instagram / Facebook, a sound file, and links.
 
    Layout: the canvas is sized to fill the game window exactly (no scrolling); on wide windows the
    controls sit in a panel beside it, on narrow ones below. Everything follows the site theme. */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, Dices, Eraser, Flame, Heart, Library, Play, Repeat, Send, Share2, SlidersHorizontal, Sparkles, Square, Trash2, Undo2, Wand2 } from "lucide-react";
+import { Check, ChevronLeft, Copy, Dices, Download, Film, Eraser, FlipHorizontal2, Flame, Heart, Library, Lock, Play, Plus, Repeat, Send, Share2, ShoppingBag, SlidersHorizontal, Sparkles, Square, Trash2, Undo2, Volume2, VolumeX, Wand2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import type { GameProps } from "../index";
 import { supabase } from "../../supabase";
 import { useAuthContext } from "../../context/AuthContext";
 import { useShop } from "../../lib/shop";
-import { levelForXp } from "../../lib/shopCatalog";
+import { TUNE_ITEMS, levelForXp } from "../../lib/shopCatalog";
+import { useTokens } from "../../lib/tokens";
+import { formatTokens } from "../../lib/currency";
+import TokenIcon from "../../components/TokenIcon";
+import { useGameShop } from "../gameShop";
 import PlayerAvatar from "../../components/PlayerAvatar";
 import { parseAvatar } from "../../lib/avatar";
 import {
   BEATS,
+  BEAT_LOCK,
   COL,
-  DRUM_ZONES,
+  ECHO_ITEM,
+  EXTRA_INST,
   H,
+  INST_LOCK,
+  KIT_ZONES,
+  OCT_SHIFT,
+  SCALE_LOCK,
+  isKit,
   INSTRUMENTS,
   INST_ORDER,
   KEYS,
   POINT_LIMIT,
-  Player,
   SCALES,
   STEPS,
   W,
@@ -32,7 +46,6 @@ import {
   drumZone,
   emptySong,
   midiOf,
-  playNote,
   pointCount,
   rowAt,
   songNotes,
@@ -43,6 +56,8 @@ import {
   type Song,
   type Stroke,
 } from "./music";
+import { Player, playNote, previewSound, renderWav } from "./synth";
+import { CLIP_H, CLIP_W, clipSupported, makeClip } from "./clip";
 import { ERASE_R, PEN, TuneView, drawThumb, inkOf, type Theme } from "./render";
 import "./tune.css";
 
@@ -57,6 +72,11 @@ const INST_HINT: Record<Inst, string> = {
   strings: "Long, smooth notes",
   bass: "Two octaves down",
   drums: "Kick · tom · snare · hat by height",
+  guitar: "Plucked, an octave down",
+  sitar: "Buzzing strings with a bend",
+  flute: "Breathy, an octave up",
+  synth: "Bright electronic lead",
+  tabla: "Ge · na · tin · ti by height",
 };
 
 /* ---------------- the daily prompt ---------------- */
@@ -171,13 +191,38 @@ export default function TuneGame(_props: GameProps) {
   const [compact, setCompact] = useState(false);
   const [soundOpen, setSoundOpen] = useState(false);
   const [canvasH, setCanvasH] = useState(0);
+  const [mirror, setMirror] = useState(false);
+  const [muted, setMuted] = useState<Inst[]>([]);
+  const [unlock, setUnlock] = useState<null | { item: string; then?: () => void; armed?: boolean; busy?: boolean; error?: string }>(null);
+  const [pensOpen, setPensOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [sharing, setSharing] = useState<null | { phase: "making" | "ready" | "failed"; k: number; run: number; file?: File; url?: string }>(null);
+  const [postedId, setPostedId] = useState<{ id: string; title: string | null } | null>(null);
+  const clipRef = useRef<HTMLCanvasElement>(null);
+  const clipAbort = useRef<AbortController | null>(null);
+  const { wallet } = useTokens();
+  const gameShop = useGameShop();
+  /** is this unlocked? (free things always are) */
+  const has = useCallback((item?: string) => !item || shop.owns(item), [shop]);
   const day = useMemo(dayKey, []);
   const prompt = promptFor(day);
 
   const song = viewing?.song ?? draft;
-  const notes = useMemo(() => songNotes(song), [song]);
+  const allNotes = useMemo(() => songNotes(song), [song]);
+  // the mixer: muted instruments don't play
+  const notes = useMemo(() => (muted.length ? allNotes.filter((n) => !muted.includes(n.inst)) : allNotes), [allNotes, muted]);
+  const used = useMemo(() => [...new Set(song.strokes.map((st) => st.i))], [song]);
+  const playOpts = useCallback((s: Song, lp: boolean) => ({ bpm: s.bpm, beat: s.beat, loop: lp, key: s.key, echo: !!s.fx?.echo }), []);
 
   /* ----- keep the draft ----- */
+  const postedFor = useRef<Song | null>(null);
+  useEffect(() => {
+    if (postedId && postedFor.current && postedFor.current !== draft) setPostedId(null);
+  }, [draft, postedId]);
+  useEffect(() => {
+    if (postedId) postedFor.current = draft;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postedId]);
   useEffect(() => {
     const id = window.setTimeout(() => {
       try {
@@ -290,11 +335,14 @@ export default function TuneGame(_props: GameProps) {
   }, [viewing, compact]);
 
   useEffect(() => {
-    viewRef.current?.setSong(song, !viewing && tool === "pen" && inst === "drums", theme);
+    viewRef.current?.setSong(song, !viewing && tool === "pen" && isKit(inst) ? KIT_ZONES[inst as "drums" | "tabla"] : null, theme);
   }, [song, viewing, tool, inst, theme]);
   useEffect(() => {
-    playerRef.current?.set(notes, song.bpm, song.beat, loop);
-  }, [notes, song.bpm, song.beat, loop]);
+    if (viewRef.current) viewRef.current.mirror = mirror && !viewing;
+  }, [mirror, viewing]);
+  useEffect(() => {
+    playerRef.current?.set(notes, playOpts(song, loop));
+  }, [notes, song, loop, playOpts]);
 
   // the bar, and ripples where notes sound
   const notesRef = useRef(notes);
@@ -333,19 +381,18 @@ export default function TuneGame(_props: GameProps) {
       setPlaying(false);
       return;
     }
-    p.set(notesRef.current, song.bpm, song.beat, loop);
+    p.set(notesRef.current, playOpts(song, loop));
     p.start();
     setPlaying(true);
-  }, [song.bpm, song.beat, loop]);
+  }, [song, loop, playOpts]);
 
   /* ----- drawing ----- */
   const drawing = useRef<{ stroke: Stroke; lane: number; at: number } | null>(null);
   const erasing = useRef(false);
-  const laneOf = (y: number) => (inst === "drums" ? drumZone(y) : rowAt(draft.scale, y));
+  const laneOf = (y: number) => (isKit(inst) ? drumZone(y) : rowAt(draft.scale, y));
   const labelOf = (lane: number) => {
-    if (inst === "drums") return DRUM_ZONES[lane];
-    const m = midiOf(draft.scale, draft.key, lane) + (inst === "bells" ? 12 : inst === "bass" ? -24 : 0);
-    return noteName(m);
+    if (isKit(inst)) return KIT_ZONES[inst as "drums" | "tabla"][lane];
+    return noteName(midiOf(draft.scale, draft.key, lane) + (OCT_SHIFT[inst] ?? 0));
   };
   const audition = (x: number, y: number, force = false) => {
     const d = drawing.current;
@@ -355,7 +402,7 @@ export default function TuneGame(_props: GameProps) {
     if (!force && (lane === d.lane || now - d.at < 70)) return;
     d.lane = lane;
     d.at = now;
-    playNote(inst, inst === "drums" ? lane : midiOf(draft.scale, draft.key, lane), [0.45, 0.6, 0.75][size], 0.22);
+    playNote(inst, isKit(inst) ? lane : midiOf(draft.scale, draft.key, lane), [0.45, 0.6, 0.75][size], 0.22, undefined, draft.key);
     viewRef.current?.hit(x, y, inst, 0.4);
   };
   const eraseAt = (x: number, y: number) => {
@@ -428,7 +475,9 @@ export default function TuneGame(_props: GameProps) {
     if (v) v.live = null;
     if (!d) return;
     setHistory((h) => [...h.slice(-49), draft.strokes]);
-    setDraft((s) => ({ ...s, strokes: [...s.strokes, d.stroke] }));
+    // mirror pen: the same shape again, flipped left ↔ right (a call and its answer)
+    const add = mirror ? [d.stroke, { ...d.stroke, p: d.stroke.p.map((v, k) => (k % 2 ? v : W - v)) }] : [d.stroke];
+    setDraft((s) => ({ ...s, strokes: [...s.strokes, ...add] }));
   };
   const onLeave = () => {
     const v = viewRef.current;
@@ -458,16 +507,94 @@ export default function TuneGame(_props: GameProps) {
     window.setTimeout(() => {
       const p = playerRef.current;
       if (!p) return;
-      p.set(songNotes(s), s.bpm, s.beat, loop);
+      p.set(songNotes(s), playOpts(s, loop));
       p.start();
       setPlaying(true);
     }, 50);
   };
-  const setOpt = <K extends "bpm" | "scale" | "key" | "beat">(k: K, v: Song[K]) => setDraft((d) => ({ ...d, [k]: v }));
+  const setOpt = <K extends "bpm" | "scale" | "key" | "beat">(k: K, v: Song[K]) => {
+    const lock = k === "scale" ? SCALE_LOCK[v as ScaleId] : k === "beat" ? BEAT_LOCK[v as BeatId] : undefined;
+    if (!has(lock)) return askUnlock(lock!, () => setDraft((d) => ({ ...d, [k]: v })));
+    setDraft((d) => ({ ...d, [k]: v }));
+  };
   const pickInst = (k: Inst) => {
-    setTool("pen");
-    setInst(k);
-    playNote(k, k === "drums" ? 2 : midiOf(draft.scale, draft.key, 7), 0.6, 0.3);
+    const lock = INST_LOCK[k];
+    const go = () => {
+      setTool("pen");
+      setInst(k);
+      playNote(k, isKit(k) ? 2 : midiOf(draft.scale, draft.key, 7), 0.6, 0.3, undefined, draft.key);
+    };
+    if (!has(lock)) return askUnlock(lock!, go);
+    go();
+  };
+  const toggleEcho = () => {
+    const go = () => setDraft((d) => ({ ...d, fx: d.fx?.echo ? undefined : { echo: true } }));
+    if (!has(ECHO_ITEM)) return askUnlock(ECHO_ITEM, go);
+    go();
+  };
+  const toggleMute = (k: Inst) => setMuted((m) => (m.includes(k) ? m.filter((x) => x !== k) : [...m, k]));
+
+  /* ----- unlocking (chips) ----- */
+  function askUnlock(item: string, then?: () => void) {
+    setUnlock({ item, then });
+  }
+  const buyUnlock = async () => {
+    if (!unlock) return;
+    if (!unlock.armed) return setUnlock({ ...unlock, armed: true, error: undefined });
+    setUnlock({ ...unlock, busy: true, error: undefined });
+    try {
+      await shop.buy(unlock.item);
+      const t = TUNE_ITEMS[unlock.item];
+      unlock.then?.();
+      setUnlock(null);
+      flash(`${t?.name ?? "Unlocked"} is yours`);
+    } catch (e) {
+      setUnlock((u) => (u ? { ...u, busy: false, armed: false, error: e instanceof Error ? e.message : "Couldn't unlock it." } : u));
+    }
+  };
+  const hearIt = (item: string) => {
+    const inst = (Object.keys(INST_LOCK) as Inst[]).find((k) => INST_LOCK[k] === item);
+    const beat = (Object.keys(BEAT_LOCK) as BeatId[]).find((k) => BEAT_LOCK[k] === item);
+    if (inst || beat) previewSound({ inst, beat }, draft.key);
+    else if (item === "tscale:world") {
+      [0, 1, 2, 3, 4, 5, 6, 7].forEach((r, i) => window.setTimeout(() => playNote("piano", midiOf("japanese", draft.key, r + 5), 0.6, 0.3), i * 170));
+    } else if (item === ECHO_ITEM) {
+      [60, 67, 72].forEach((m, i) => window.setTimeout(() => playNote("bells", m - 12 + draft.key, 0.7, 0.3), i * 160));
+    }
+  };
+
+  /* ----- save as audio ----- */
+  const saveAudio = async () => {
+    if (!song.strokes.length) return flash("Draw something first");
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const blob = await renderWav(song, notes);
+      const name = `${(viewing?.row.title || "draw-a-tune").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.wav`;
+      const file = new File([blob], name, { type: "audio/wav" });
+      const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+      if (nav.canShare?.({ files: [file] }) && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
+        try {
+          await navigator.share({ files: [file], title: "Draw a Tune" });
+        } catch {
+          /* cancelled */
+        }
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+        flash("Saved as a sound file");
+      }
+    } catch {
+      flash("Couldn't save the audio");
+    } finally {
+      setExporting(false);
+    }
   };
 
   /* ----- keyboard ----- */
@@ -478,7 +605,7 @@ export default function TuneGame(_props: GameProps) {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
       const k = keyRef.current;
-      if (k.posting || k.gallery || document.querySelector(".tn-sound")) return;
+      if (k.posting || k.gallery || document.querySelector(".tn-sound, .tn-unlock, .tn-pensheet, .tn-share")) return;
       if (e.code === "Space") {
         e.preventDefault();
         k.togglePlay();
@@ -490,6 +617,7 @@ export default function TuneGame(_props: GameProps) {
         const n = Number(e.key);
         if (n >= 1 && n <= 5) k.pickInst(INST_ORDER[n - 1]);
         else if (e.key.toLowerCase() === "e") setTool("eraser");
+        else if (e.key.toLowerCase() === "m") setMirror((v) => !v);
         else if (e.key.toLowerCase() === "l") setLoop((l) => !l);
       }
     };
@@ -516,7 +644,7 @@ export default function TuneGame(_props: GameProps) {
     window.setTimeout(() => {
       const p = playerRef.current;
       if (!p) return;
-      p.set(songNotes(s), s.bpm, s.beat, true);
+      p.set(songNotes(s), playOpts(s, true));
       p.start();
       setPlaying(true);
     }, 60);
@@ -566,6 +694,7 @@ export default function TuneGame(_props: GameProps) {
     }
     const r = data as { id: string; xp: number; streak: number };
     setStreak(r.streak);
+    setPostedId({ id: r.id, title: posting.title.trim() || null });
     void shop.refresh();
     setPosting((p) => (p ? { ...p, busy: false, done: { id: r.id, xp: r.xp } } : p));
   };
@@ -573,6 +702,81 @@ export default function TuneGame(_props: GameProps) {
     if (!user) return navigate(`/login?next=${encodeURIComponent(window.location.pathname)}`);
     if (!draft.strokes.length) return flash("Draw something first");
     setPosting({ title: "", busy: false });
+  };
+
+  /* ----- sharing: a video clip made right here, plus links ----- */
+  const shareLinkUrl = viewing ? `${SITE}?song=${viewing.row.id}` : postedId ? `${SITE}?song=${postedId.id}` : SITE;
+  const shareTitle = viewing?.row.title || postedId?.title || null;
+  const shareText = `🎵 ${shareTitle ? `"${shareTitle}"` : viewing ? "Listen to this tune" : "I drew this tune"} · Draw a Tune`;
+  const openShare = () => {
+    if (!song.strokes.length) return flash("Draw something first");
+    playerRef.current?.stop();
+    setPlaying(false);
+    setSharing({ phase: clipSupported() ? "making" : "failed", k: 0, run: Date.now() });
+  };
+  const closeShare = () => {
+    clipAbort.current?.abort();
+    clipAbort.current = null;
+    if (sharing?.url) URL.revokeObjectURL(sharing.url);
+    setSharing(null);
+  };
+  const run = sharing?.phase === "making" ? sharing.run : 0;
+  useEffect(() => {
+    if (!run || !clipRef.current) return;
+    const ac = new AbortController();
+    clipAbort.current = ac;
+    makeClip(clipRef.current, song, notes, { title: shareTitle || (viewing ? "Untitled" : prompt), by: viewing ? viewing.row.name : null, prompt: viewing ? null : `Today's prompt: ${prompt}` }, {
+      signal: ac.signal,
+      audible: true,
+      onProgress: (k) => setSharing((sh) => (sh && sh.run === run ? { ...sh, k } : sh)),
+    })
+      .then(({ blob, ext }) => {
+        const name = `${(shareTitle || "draw-a-tune").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.${ext}`;
+        const file = new File([blob], name, { type: blob.type });
+        setSharing((sh) => (sh && sh.run === run ? { ...sh, phase: "ready", k: 1, file, url: URL.createObjectURL(blob) } : sh));
+      })
+      .catch((e) => {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        setSharing((sh) => (sh && sh.run === run ? { ...sh, phase: "failed" } : sh));
+      });
+    return () => ac.abort();
+    // the clip is made from the song as it was when Share was pressed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run]);
+  const canShareFile = (f?: File) => {
+    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+    return !!f && !!nav.canShare?.({ files: [f] });
+  };
+  const shareVideo = async () => {
+    if (!sharing?.file) return;
+    try {
+      await navigator.share({ files: [sharing.file], title: "Draw a Tune", text: `${shareText}\n${shareLinkUrl}` });
+    } catch {
+      /* cancelled */
+    }
+  };
+  const downloadVideo = () => {
+    if (!sharing?.url || !sharing.file) return;
+    const a = document.createElement("a");
+    a.href = sharing.url;
+    a.download = sharing.file.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    flash("Video saved");
+  };
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${shareText}\n${shareLinkUrl}`);
+      flash("Link copied");
+    } catch {
+      flash("Couldn't copy the link");
+    }
+  };
+  const social = {
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(`${shareText}\n${shareLinkUrl}`)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLinkUrl)}`,
+    x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareLinkUrl)}`,
   };
 
   const empty = !viewing && !draft.strokes.length;
@@ -592,6 +796,7 @@ export default function TuneGame(_props: GameProps) {
         <select value={draft.scale} onChange={(e) => setOpt("scale", e.target.value as ScaleId)}>
           {(Object.keys(SCALES) as ScaleId[]).map((k) => (
             <option key={k} value={k}>
+              {has(SCALE_LOCK[k]) ? "" : "🔒 "}
               {SCALES[k].name}
             </option>
           ))}
@@ -612,11 +817,55 @@ export default function TuneGame(_props: GameProps) {
         <select value={draft.beat} onChange={(e) => setOpt("beat", e.target.value as BeatId)}>
           {(Object.keys(BEATS) as BeatId[]).map((k) => (
             <option key={k} value={k}>
+              {has(BEAT_LOCK[k]) ? "" : "🔒 "}
               {BEATS[k]}
             </option>
           ))}
         </select>
       </label>
+      <button type="button" className={`tn-toggle${draft.fx?.echo ? " is-on" : ""}`} onClick={toggleEcho} aria-pressed={!!draft.fx?.echo}>
+        <span>Echo</span>
+        {has(ECHO_ITEM) ? <i aria-hidden="true" /> : <Lock size={13} />}
+      </button>
+      {used.length ? (
+        <div className="tn-mixer" aria-label="Mixer: tap to mute">
+          {used.map((k) => (
+            <button
+              key={k}
+              type="button"
+              className={muted.includes(k) ? "is-muted" : ""}
+              style={{ ["--pen" as string]: inkOf(k, theme) } as CSSProperties}
+              onClick={() => toggleMute(k)}
+              aria-pressed={muted.includes(k)}
+              title={muted.includes(k) ? `Unmute ${INSTRUMENTS[k].name}` : `Mute ${INSTRUMENTS[k].name}`}
+            >
+              {muted.includes(k) ? <VolumeX size={12} /> : <Volume2 size={12} />}
+              {INSTRUMENTS[k].name}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+  const lockBadge = (item?: string) => (has(item) ? null : <Lock size={11} className="tn-lock" aria-label="Locked" />);
+  const extraPens = (
+    <div className="tn-extras" role="radiogroup" aria-label="Studio instruments">
+      {EXTRA_INST.map((k) => (
+        <button
+          key={k}
+          type="button"
+          role="radio"
+          aria-checked={tool === "pen" && inst === k}
+          className={`tn-pen tn-pen-sm${tool === "pen" && inst === k ? " active" : ""}${has(INST_LOCK[k]) ? "" : " is-locked"}`}
+          style={{ ["--pen" as string]: inkOf(k, theme) } as CSSProperties}
+          onClick={() => pickInst(k)}
+          title={has(INST_LOCK[k]) ? INSTRUMENTS[k].name : `${INSTRUMENTS[k].name} · unlock with chips`}
+        >
+          <i />
+          <span>{INSTRUMENTS[k].name}</span>
+          {lockBadge(INST_LOCK[k])}
+        </button>
+      ))}
     </div>
   );
   const transport = (
@@ -653,13 +902,14 @@ export default function TuneGame(_props: GameProps) {
         <button type="button" className={`tn-btn${viewing.row.liked ? " is-liked" : ""}`} onClick={() => void like()} disabled={viewing.row.mine} aria-pressed={viewing.row.liked}>
           <Heart size={15} fill={viewing.row.liked ? "currentColor" : "none"} /> {viewing.row.likes}
         </button>
-        <button type="button" className="tn-btn" onClick={() => void shareSong(viewing.row.id, viewing.row.title)}>
+        <button type="button" className="tn-btn" onClick={openShare}>
           <Share2 size={15} /> Share
         </button>
       </div>
       <button type="button" className="tn-btn tn-btn-main" onClick={remix}>
         <Wand2 size={15} /> Remix it
       </button>
+
       <button type="button" className="tn-btn" onClick={closeViewer}>
         <ChevronLeft size={16} /> Back to my drawing
       </button>
@@ -692,6 +942,10 @@ export default function TuneGame(_props: GameProps) {
             <span>Eraser</span>
           </button>
         </div>
+        <span className="tn-label">
+          Studio <em>Unlock with chips</em>
+        </span>
+        {extraPens}
       </div>
       <div className="tn-tools">
         <div className="tn-sizes" role="radiogroup" aria-label="Pen size (thicker is louder)">
@@ -701,6 +955,9 @@ export default function TuneGame(_props: GameProps) {
             </button>
           ))}
         </div>
+        <button type="button" className={`tn-icon${mirror ? " is-on" : ""}`} onClick={() => setMirror((v) => !v)} aria-pressed={mirror} aria-label="Mirror pen (M)" title="Mirror pen · M: draws a flipped copy">
+          <FlipHorizontal2 size={16} />
+        </button>
         <span className="tn-spacer" />
         <button type="button" className="tn-icon" onClick={undo} disabled={!history.length} aria-label="Undo (Ctrl+Z)" title="Undo · Ctrl+Z">
           <Undo2 size={16} />
@@ -720,6 +977,16 @@ export default function TuneGame(_props: GameProps) {
         <button type="button" className="tn-btn" onClick={() => setGallery("today")}>
           <Library size={15} /> Listen
         </button>
+      </div>
+      <div className="tn-row2">
+        <button type="button" className="tn-btn" onClick={openShare}>
+          <Share2 size={15} /> Share
+        </button>
+        {gameShop ? (
+          <button type="button" className="tn-btn" onClick={gameShop.open}>
+            <ShoppingBag size={15} /> Music shop
+          </button>
+        ) : null}
       </div>
     </div>
   );
@@ -745,7 +1012,7 @@ export default function TuneGame(_props: GameProps) {
         <button type="button" className="tn-btn tn-btn-sm tn-btn-main" onClick={remix}>
           <Wand2 size={15} /> Remix
         </button>
-        <button type="button" className="tn-icon" onClick={() => void shareSong(viewing.row.id, viewing.row.title)} aria-label="Share">
+        <button type="button" className="tn-icon" onClick={openShare} aria-label="Share">
           <Share2 size={16} />
         </button>
       </div>
@@ -774,6 +1041,15 @@ export default function TuneGame(_props: GameProps) {
               <i />
             </button>
           ))}
+          <button
+            type="button"
+            aria-label="More instruments"
+            className={`tn-swatch tn-more${tool === "pen" && EXTRA_INST.includes(inst) ? " active" : ""}`}
+            style={tool === "pen" && EXTRA_INST.includes(inst) ? ({ ["--pen" as string]: inkOf(inst, theme) } as CSSProperties) : undefined}
+            onClick={() => setPensOpen(true)}
+          >
+            {tool === "pen" && EXTRA_INST.includes(inst) ? <i /> : <Plus size={16} />}
+          </button>
           <button type="button" role="radio" aria-checked={tool === "eraser"} aria-label="Eraser" className={`tn-swatch tn-eraser${tool === "eraser" ? " active" : ""}`} onClick={() => setTool("eraser")}>
             <Eraser size={15} />
           </button>
@@ -787,15 +1063,15 @@ export default function TuneGame(_props: GameProps) {
             </button>
           ))}
         </div>
+        <button type="button" className={`tn-icon${mirror ? " is-on" : ""}`} onClick={() => setMirror((v) => !v)} aria-pressed={mirror} aria-label="Mirror pen">
+          <FlipHorizontal2 size={16} />
+        </button>
         <span className="tn-spacer" />
         <button type="button" className="tn-icon" onClick={undo} disabled={!history.length} aria-label="Undo">
           <Undo2 size={16} />
         </button>
         <button type="button" className="tn-icon" onClick={clear} disabled={!draft.strokes.length} aria-label="Clear the canvas">
           <Trash2 size={16} />
-        </button>
-        <button type="button" className={`tn-icon${loop ? " is-on" : ""}`} onClick={() => setLoop((l) => !l)} aria-pressed={loop} aria-label="Loop">
-          <Repeat size={16} />
         </button>
         <button type="button" className="tn-icon" onClick={() => setSoundOpen(true)} aria-label="Sound: tempo, scale, key, beat">
           <SlidersHorizontal size={16} />
@@ -863,9 +1139,204 @@ export default function TuneGame(_props: GameProps) {
           <div className="tn-sheet-card tn-sound" onClick={(e) => e.stopPropagation()}>
             <h3>Sound</h3>
             {settings}
+            <div className="tn-row2">
+              <button type="button" className={`tn-btn${loop ? " is-on" : ""}`} onClick={() => setLoop((l) => !l)} aria-pressed={loop}>
+                <Repeat size={15} /> {loop ? "Loop on" : "Loop off"}
+              </button>
+              <button
+                type="button"
+                className="tn-btn"
+                onClick={() => {
+                  setSoundOpen(false);
+                  openShare();
+                }}
+              >
+                <Share2 size={15} /> Share
+              </button>
+            </div>
+            {gameShop ? (
+              <button
+                type="button"
+                className="tn-btn"
+                onClick={() => {
+                  setSoundOpen(false);
+                  gameShop.open();
+                }}
+              >
+                <ShoppingBag size={15} /> Music shop
+              </button>
+            ) : null}
             <button type="button" className="tn-btn tn-btn-main" onClick={() => setSoundOpen(false)}>
               Done
             </button>
+          </div>
+        </div>
+      ) : null}
+
+      {sharing ? (
+        <div className="tn-sheet" role="dialog" aria-label="Share" onClick={() => sharing.phase !== "making" && closeShare()}>
+          <div className="tn-sheet-card tn-share" onClick={(e) => e.stopPropagation()}>
+            <h3>{sharing.phase === "making" ? "Making your video…" : sharing.phase === "ready" ? "Your video is ready" : "Share your tune"}</h3>
+            {sharing.phase === "making" ? (
+              <>
+                <canvas ref={clipRef} className="tn-clip" width={CLIP_W} height={CLIP_H} aria-label="Recording preview" />
+                <span className="tn-clip-bar" aria-label={`${Math.round(sharing.k * 100)}%`}>
+                  <i style={{ width: `${sharing.k * 100}%` }} />
+                </span>
+                <p className="tn-sheet-note">Recording as it plays · keep this open</p>
+                <button type="button" className="tn-btn" onClick={closeShare}>
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                {sharing.phase === "ready" && sharing.url ? <video className="tn-clip" src={`${sharing.url}#t=1.5`} controls playsInline loop preload="metadata" /> : null}
+                {sharing.phase === "failed" ? <p className="tn-sheet-note">This browser can't make a video. You can still share the link or save the sound.</p> : null}
+                {sharing.phase === "ready" && canShareFile(sharing.file) ? (
+                  <button type="button" className="tn-btn tn-btn-main" onClick={() => void shareVideo()}>
+                    <Share2 size={15} /> Share video
+                  </button>
+                ) : null}
+                {sharing.phase === "ready" ? (
+                  <button type="button" className={`tn-btn${canShareFile(sharing.file) ? "" : " tn-btn-main"}`} onClick={downloadVideo}>
+                    <Film size={15} /> Download video
+                  </button>
+                ) : null}
+                <div className="tn-socials">
+                  <a className="tn-social is-wa" href={social.whatsapp} target="_blank" rel="noopener noreferrer" aria-label="Share on WhatsApp">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.6-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z" /></svg>
+                    WhatsApp
+                  </a>
+                  <a className="tn-social is-fb" href={social.facebook} target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.5 22v-8.2h2.8l.4-3.2h-3.2V8.5c0-.9.3-1.6 1.6-1.6h1.7V4.1a23 23 0 0 0-2.5-.1c-2.5 0-4.2 1.5-4.2 4.3v2.4H7.3v3.2h2.8V22h3.4Z" /></svg>
+                    Facebook
+                  </a>
+                  <a className="tn-social is-x" href={social.x} target="_blank" rel="noopener noreferrer" aria-label="Share on X">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.8 3h3l-6.6 7.6L22 21h-6.1l-4.8-6.3L5.6 21h-3l7.1-8.1L2.2 3h6.2l4.4 5.8L17.8 3Zm-1 16.2h1.7L7.3 4.7H5.5l11.3 14.5Z" /></svg>
+                    X
+                  </a>
+                  <button type="button" className="tn-social" onClick={() => void copyLink()} aria-label="Copy link">
+                    <Copy size={18} />
+                    Copy link
+                  </button>
+                </div>
+                <p className="tn-sheet-note">
+                  {viewing || postedId ? "Links open this song." : "Post your song first to share a link straight to it."}
+                  {sharing.phase === "ready" && !canShareFile(sharing.file) ? " For Instagram: download the video, then post it from your phone." : ""}
+                </p>
+                <button type="button" className="tn-btn" onClick={() => void saveAudio()} disabled={exporting}>
+                  <Download size={15} /> {exporting ? "Saving…" : "Save the sound only"}
+                </button>
+                <button type="button" className="tn-btn" onClick={closeShare}>
+                  Done
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {pensOpen ? (
+        <div className="tn-sheet" role="dialog" aria-label="Instruments" onClick={() => setPensOpen(false)}>
+          <div className="tn-sheet-card tn-pensheet" onClick={(e) => e.stopPropagation()}>
+            <h3>Instruments</h3>
+            <div className="tn-penlist">
+              {[...INST_ORDER, ...EXTRA_INST].map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  className={`tn-pen${tool === "pen" && inst === k ? " active" : ""}${has(INST_LOCK[k]) ? "" : " is-locked"}`}
+                  style={{ ["--pen" as string]: inkOf(k, theme) } as CSSProperties}
+                  onClick={() => {
+                    setPensOpen(false);
+                    pickInst(k);
+                  }}
+                >
+                  <i />
+                  <span>
+                    {INSTRUMENTS[k].name}
+                    <small>{INST_HINT[k]}</small>
+                  </span>
+                  {lockBadge(INST_LOCK[k])}
+                </button>
+              ))}
+            </div>
+            <button type="button" className="tn-btn" onClick={() => setPensOpen(false)}>
+              Close
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {unlock ? (
+        <div className="tn-sheet" role="dialog" aria-label="Unlock" onClick={() => !unlock.busy && setUnlock(null)}>
+          <div className="tn-sheet-card tn-unlock" onClick={(e) => e.stopPropagation()}>
+            {(() => {
+              const t = TUNE_ITEMS[unlock.item];
+              const price = shop.priceOf(unlock.item);
+              const balance = wallet?.unlimited ? Infinity : wallet?.balance ?? 0;
+              const canHear = t && (t.group !== "studio" || unlock.item === "tscale:world" || unlock.item === ECHO_ITEM);
+              return (
+                <>
+                  <span className="tn-unlock-icon" style={{ ["--pen" as string]: t?.color ?? "#ff8a3d" } as CSSProperties} aria-hidden="true">
+                    {t?.icon ?? "🔒"}
+                  </span>
+                  <h3>{t?.name ?? "Locked"}</h3>
+                  <p className="tn-sheet-note">{t?.blurb}</p>
+                  {canHear ? (
+                    <button type="button" className="tn-btn" onClick={() => hearIt(unlock.item)}>
+                      <Volume2 size={15} /> Hear it
+                    </button>
+                  ) : null}
+                  {!shop.available || price === null ? (
+                    <p className="tn-sheet-note">The Music shop isn't open yet.</p>
+                  ) : !user ? (
+                    <Link className="tn-btn tn-btn-main" to={`/login?next=${encodeURIComponent(window.location.pathname)}`}>
+                      Sign in to unlock
+                    </Link>
+                  ) : balance < price ? (
+                    <>
+                      <p className="tn-sheet-note">
+                        Costs <TokenIcon size={13} /> {formatTokens(price)} · you have {formatTokens(wallet?.balance ?? 0)}
+                      </p>
+                      <Link className="tn-btn tn-btn-main" to="/chips#buy">
+                        Get chips
+                      </Link>
+                    </>
+                  ) : (
+                    <button type="button" className={`tn-btn tn-btn-main${unlock.armed ? " is-armed" : ""}`} onClick={() => void buyUnlock()} disabled={unlock.busy}>
+                      {unlock.busy ? (
+                        "Unlocking…"
+                      ) : unlock.armed ? (
+                        <>
+                          <Check size={15} /> Confirm · <TokenIcon size={14} /> {formatTokens(price)}
+                        </>
+                      ) : (
+                        <>
+                          Unlock for <TokenIcon size={14} /> {formatTokens(price)}
+                        </>
+                      )}
+                    </button>
+                  )}
+                  {unlock.error ? <p className="tn-sheet-note tn-err">{unlock.error}</p> : null}
+                  {gameShop ? (
+                    <button
+                      type="button"
+                      className="tn-btn"
+                      onClick={() => {
+                        setUnlock(null);
+                        gameShop.open();
+                      }}
+                    >
+                      <ShoppingBag size={15} /> See the Music shop
+                    </button>
+                  ) : null}
+                  <button type="button" className="tn-btn" onClick={() => setUnlock(null)} disabled={unlock.busy}>
+                    Not now
+                  </button>
+                </>
+              );
+            })()}
           </div>
         </div>
       ) : null}
@@ -929,10 +1400,17 @@ export default function TuneGame(_props: GameProps) {
               <>
                 <h3>Posted</h3>
                 <p className="tn-sheet-note">
-                  It's in today's songs{posting.done.xp ? ` · +${posting.done.xp} XP` : ""}. Send it to friends so they can hear it.
+                  It's in today's songs{posting.done.xp ? ` · +${posting.done.xp} XP` : ""}. Share a video of it on WhatsApp, Instagram or Facebook.
                 </p>
-                <button type="button" className="tn-btn tn-btn-main" onClick={() => void shareSong(posting.done!.id, posting.title.trim() || null)}>
-                  <Share2 size={15} /> Share the link
+                <button
+                  type="button"
+                  className="tn-btn tn-btn-main"
+                  onClick={() => {
+                    setPosting(null);
+                    openShare();
+                  }}
+                >
+                  <Share2 size={15} /> Share it
                 </button>
                 <button
                   type="button"

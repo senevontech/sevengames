@@ -15,6 +15,7 @@ const TABS: { id: HubTab; label: string }[] = [
   { id: "ludo", label: "Ludo" },
   { id: "carrom", label: "Carrom" },
   { id: "pool", label: "Pool" },
+  { id: "tune", label: "Draw a Tune" },
   { id: "frames", label: "Avatar frames" },
   { id: "chat", label: "Chat packs" },
 ];

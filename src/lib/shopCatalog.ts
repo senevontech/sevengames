@@ -308,7 +308,24 @@ export const POOL_CUES: Record<string, PoolCue> = {
   "pcue:royal": { name: "Royal", blurb: "Rosewood and mother-of-pearl. Fine aim, big spin.", aim: 4, power: 3, spin: 4, shaft: "#ead2a2", forearm: "#5a1a14", inlay: "#f4efe6", wrap: "#3a0d0a", butt: "#5a1a14", ring: "#f3d58a" },
   "pcue:legend": { name: "Legend", blurb: "Gold-capped tournament cue. The best there is.", aim: 5, power: 4, spin: 5, shaft: "#f0dcae", forearm: "#111111", inlay: "#ffd54a", wrap: "#111111", butt: "#1a1408", ring: "#ffd54a" },
 };
-export const poolCueOf = (id: string | null | undefined) => POOL_CUES[id ?? ""] ?? POOL_CUES["pcue:house"];
+/* ---------------- Draw a Tune: unlocks (kind tune_pack, nothing to equip) ----------------
+   Keep ids in sync with supabase/shop.sql. Owning one unlocks it for making songs; anyone can
+   always listen to a song that uses it. */
+export type TuneItem = { name: string; blurb: string; group: "inst" | "beat" | "studio"; color: string; icon: string };
+export const TUNE_ITEMS: Record<string, TuneItem> = {
+  "tinst:guitar": { name: "Guitar", blurb: "A plucked steel-string acoustic.", group: "inst", color: "#ff9f43", icon: "🎸" },
+  "tinst:sitar": { name: "Sitar", blurb: "Buzzing strings with a little bend into every note.", group: "inst", color: "#ff5fa2", icon: "🪕" },
+  "tinst:flute": { name: "Flute", blurb: "Breathy bansuri-style flute, an octave up.", group: "inst", color: "#2ad4c4", icon: "🪈" },
+  "tinst:synth": { name: "Synth lead", blurb: "A bright, punchy electronic lead.", group: "inst", color: "#c3f73a", icon: "🎹" },
+  "tinst:tabla": { name: "Tabla", blurb: "Ge, na, tin and ti by height, tuned to your key.", group: "inst", color: "#d08a55", icon: "🥁" },
+  "tbeat:trap": { name: "Trap beat", blurb: "Half-time snare, rolling hi-hats, deep kick.", group: "beat", color: "#9b7bff", icon: "🔊" },
+  "tbeat:house": { name: "House beat", blurb: "Four on the floor with open hats.", group: "beat", color: "#ff7a1a", icon: "🪩" },
+  "tbeat:dembow": { name: "Dembow beat", blurb: "The bouncing reggaeton groove.", group: "beat", color: "#ff4f6d", icon: "💃" },
+  "tscale:world": { name: "World scales", blurb: "Japanese, Hijaz, Dorian and Raag Todi.", group: "studio", color: "#3fb6ff", icon: "🌏" },
+  "tfx:echo": { name: "Echo", blurb: "A warm echo that repeats your notes in time.", group: "studio", color: "#7b5cff", icon: "〰️" },
+};
+
+export const poolCueOf =(id: string | null | undefined) => POOL_CUES[id ?? ""] ?? POOL_CUES["pcue:house"];
 /** What a cue's stats do in play. */
 export const cueStats = (c: PoolCue) => ({
   /** object-ball guide length (table units) */

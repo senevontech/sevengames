@@ -56,15 +56,15 @@ const groupName = (g: Group | null) => (g === "solid" ? "Solids" : g === "stripe
    shot builds a combo (more points, more time). A scratch costs time. Clear the table and a
    new rack is set up, with a bonus. The run ends when the clock reaches zero. */
 const ENDLESS = {
-  startMs: 90_000,
+  startMs: 60_000,
   /** points per ball, times the combo (up to maxCombo) */
   ballPts: 10,
   maxCombo: 5,
   /** time per ball potted */
-  ballMs: 3_000,
-  /** a combo of 3 (three potting shots in a row, and every 3 after that) adds this */
-  comboEvery: 3,
-  comboMs: 7_000,
+  ballMs: 5_000,
+  /** a combo of 5 (five potting shots in a row, and every 5 after that) adds this */
+  comboEvery: 5,
+  comboMs: 10_000,
   scratchMs: 10_000,
   rackPts: 50,
   rackMs: 15_000,

@@ -7,6 +7,8 @@ import { PlayGlyph } from "../components/StoreGlyphs";
 import { games, getGame, scoreLabel, type Game, type GameCategory } from "../catalog";
 import { categoryIcon } from "../lib/categoryIcons";
 import { useRecent } from "../lib/recent";
+import { useFavorites } from "../lib/favorites";
+import FavoriteButton from "../components/FavoriteButton";
 import { parseAvatar, type AvatarChoice } from "../lib/avatar";
 import { supabase } from "../supabase";
 import { useGameTheme } from "../hooks/useGameTheme";
@@ -218,6 +220,7 @@ function Hero({ game }: { game: Game }) {
           <Play size={16} fill="currentColor" strokeWidth={0} aria-hidden="true" />
           Play
         </Link>
+        <FavoriteButton id={game.id} title={game.title} />
       </div>
     </div>
   );
@@ -252,6 +255,9 @@ export default function Game2() {
     () => recentEntries.map((e) => getGame(e.id)).filter((g): g is Game => Boolean(g)),
     [recentEntries],
   );
+  // Favourites row (only when the player has saved some)
+  const { list: favIds } = useFavorites();
+  const favorites = useMemo(() => favIds.map((id) => getGame(id)).filter((g): g is Game => Boolean(g)), [favIds]);
   const suggestions = useMemo(() => {
     const played = new Set(recent.map((g) => g.id));
     const cats = new Set(recent.map((g) => g.category));
@@ -335,6 +341,20 @@ export default function Game2() {
       </GamesNav>
 
       <main className="g2-main">
+        {/* 0. Favourites */}
+        {favorites.length ? (
+          <section className="g2-section" aria-labelledby="g2-favs">
+            <h2 className="g2-heading" id="g2-favs">
+              Favourites
+            </h2>
+            <ul className="g2-row">
+              {favorites.map((g) => (
+                <GameItem key={g.id} game={g} />
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
         {/* 1. Recently played (+ suggestions) */}
         <section className="g2-section" aria-labelledby="g2-recent">
           <h2 className="g2-heading" id="g2-recent">

@@ -45,17 +45,80 @@ async function handleDeepLink(url: string) {
   go(u.pathname + u.search);
 }
 
+/* ---------- status bar: looks see-through ----------
+   The status bar takes the colour of whatever the page shows at the very top (the light or dark
+   theme, a game's own background…), and its clock / battery icons turn dark on light pages and
+   light on dark ones. Re-checked on navigation, on theme changes and every couple of seconds. */
+function parseRgb(c: string): [number, number, number, number] | null {
+  const m = c.match(/rgba?\(([^)]+)\)/);
+  if (!m) return null;
+  const p = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+  return [p[0], p[1], p[2], p.length > 3 ? p[3] : 1];
+}
+
+/** The solid colour behind the top edge of the screen. */
+function topColor(): [number, number, number] {
+  let el: Element | null = document.elementFromPoint(window.innerWidth / 2, 1);
+  while (el) {
+    const rgb = parseRgb(getComputedStyle(el).backgroundColor);
+    if (rgb && rgb[3] > 0.6) return [rgb[0], rgb[1], rgb[2]];
+    el = el.parentElement;
+  }
+  const body = parseRgb(getComputedStyle(document.body).backgroundColor);
+  return body && body[3] > 0.6 ? [body[0], body[1], body[2]] : [18, 18, 18];
+}
+
+const hex = (rgb: number[]) => "#" + rgb.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+let lastBar = "";
+
+async function syncStatusBar() {
+  if (document.visibilityState !== "visible") return;
+  const rgb = topColor();
+  const color = hex(rgb);
+  if (color === lastBar) return;
+  lastBar = color;
+  const light = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255 > 0.55;
+  try {
+    // Style.Light = dark icons (for light backgrounds), Style.Dark = light icons
+    await StatusBar.setStyle({ style: light ? Style.Light : Style.Dark });
+    await StatusBar.setBackgroundColor({ color });
+  } catch {
+    /* not available on this device */
+  }
+}
+
+function startStatusBarSync() {
+  let t = 0;
+  const soon = (ms = 60) => {
+    window.clearTimeout(t);
+    t = window.setTimeout(() => void syncStatusBar(), ms);
+  };
+  // page changes (React Router uses pushState / replaceState)
+  for (const k of ["pushState", "replaceState"] as const) {
+    const orig = history[k].bind(history);
+    history[k] = ((...args: Parameters<History["pushState"]>) => {
+      orig(...args);
+      soon(120);
+    }) as History["pushState"];
+  }
+  window.addEventListener("popstate", () => soon(120));
+  // light / dark switch
+  new MutationObserver(() => soon()).observe(document.body, { attributes: true, subtree: true, attributeFilter: ["data-theme", "data-gtheme"] });
+  document.addEventListener("visibilitychange", () => {
+    lastBar = "";
+    soon();
+  });
+  // anything else (pages that paint their own background a moment later)
+  window.setInterval(() => void syncStatusBar(), 2000);
+  soon(300);
+}
+
 let started = false;
 export async function initNative() {
   if (!isNative || started) return;
   started = true;
   document.documentElement.classList.add("is-app");
-  try {
-    await StatusBar.setStyle({ style: Style.Dark });
-    await StatusBar.setBackgroundColor({ color: "#121212" });
-  } catch {
-    /* not available on this device */
-  }
+  startStatusBarSync();
   void App.addListener("appUrlOpen", ({ url }) => void handleDeepLink(url));
   // Android back: go back in the app, or leave it from the first page
   void App.addListener("backButton", ({ canGoBack }) => {

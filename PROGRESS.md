@@ -22,7 +22,7 @@ chips: everyone pays the same **match entry**, and the winner gets the **prize**
 
 Games with chip matches: Chess, Ludo, Carrom, Eight Ball (CPU and online), Arrows (online).
 
-**To switch it on (Supabase SQL Editor, in this order):** `tokens.sql`, `adfree.sql`, `shop.sql`, `carrom.sql`, `engagement.sql`, `matches.sql`, `entries.sql`, then `clans.sql` (clubs).
+**To switch it on (Supabase SQL Editor, in this order):** `tokens.sql`, `adfree.sql`, `shop.sql`, `carrom.sql`, `engagement.sql`, `matches.sql`, `entries.sql`, then `clans.sql` (clubs). Also `favorites.sql` (favourite games, any time).
 
 Not done yet / to check:
 - [ ] Run the SQL above on the live database.
@@ -87,6 +87,16 @@ Still to do (later):
 - **Joining a club room from the link:** it copies the code and opens the game; the player then picks Online → Join.
 - **Carrom / Arrows lobbies:** add the "Post to my club" button there too.
 - **Club chat?**
+
+## Favourites and app status bar (2026-11-24)
+
+- **Favourite games:**
+  - A heart button next to Play on the home page and in each game page's header.
+  - A "Favourites" row at the top of the home page.
+  - Saved on the device; signed-in players also get them saved to their account (`supabase/favorites.sql`).
+  - The first sign-in on a device merges the two lists. After that the account's list wins.
+  - Code: `src/lib/favorites.ts`, `FavoriteButton.tsx`.
+- **App status bar:** it takes the colour of the top of the page, and its clock/battery icons turn dark or light to suit (`syncStatusBar` in `src/lib/native.ts`), so it looks see-through in both themes. Needs a new app build to check on a phone.
 
 ## Earlier
 

@@ -21,6 +21,7 @@ import {
   LUDO_TOKENS,
   POOL_CUES,
   POOL_TABLES,
+  TUNE_ITEMS,
   chessPiecesOf,
   frameClass,
   type ShopSlot,
@@ -30,10 +31,10 @@ import "../pages/account.css";
 import "./shop.css";
 import "../games/arrows.css";
 
-type Tab = "skins" | "fx" | "boards" | "heads" | "frames" | "boosters" | "chessBoards" | "chessPieces" | "ludoBoards" | "ludoDice" | "ludoTokens" | "poolTables" | "poolCues";
+type Tab = "skins" | "fx" | "boards" | "heads" | "frames" | "boosters" | "chessBoards" | "chessPieces" | "ludoBoards" | "ludoDice" | "ludoTokens" | "poolTables" | "poolCues" | "tuneInst" | "tuneBeats" | "tuneStudio";
 
 /** Which shop: one per game (shown inside that game), plus avatar frames on the Tokens page. */
-export type ShopScope = "arrows" | "chess" | "ludo" | "pool" | "frames";
+export type ShopScope = "arrows" | "chess" | "ludo" | "pool" | "tune" | "frames";
 
 const SCOPES: Record<ShopScope, { title: string; sub: string; tabs: { id: Tab; label: string }[] }> = {
   arrows: {
@@ -72,6 +73,15 @@ const SCOPES: Record<ShopScope, { title: string; sub: string; tabs: { id: Tab; l
       { id: "poolTables", label: "Tables" },
     ],
   },
+  tune: {
+    title: "Music shop",
+    sub: "Studio instruments, beats, world scales and studio tools for Draw a Tune. Yours to keep.",
+    tabs: [
+      { id: "tuneInst", label: "Instruments" },
+      { id: "tuneBeats", label: "Beats" },
+      { id: "tuneStudio", label: "Studio" },
+    ],
+  },
   frames: {
     title: "Avatar frames",
     sub: "A frame around your picture, shown in every game and on leaderboards.",
@@ -79,7 +89,7 @@ const SCOPES: Record<ShopScope, { title: string; sub: string; tabs: { id: Tab; l
   },
 };
 
-const GAME_NAMES: Record<string, string> = { chess: "Chess", ludo: "Ludo", arrows: "Arrows", carrom: "Carrom", pool: "Pool" };
+const GAME_NAMES: Record<string, string> = { chess: "Chess", ludo: "Ludo", arrows: "Arrows", carrom: "Carrom", pool: "Pool", tune: "Draw a Tune" };
 
 /* defaults when nothing is equipped in a slot */
 const SLOT_DEFAULT: Partial<Record<ShopSlot, string>> = {
@@ -477,6 +487,53 @@ export default function ShopSection({ scope, embedded = false }: { scope: ShopSc
     );
   }
 
+  /** Buy controls for an unlock (nothing to equip: owning it is enough). */
+  function unlockFoot(id: string, name: string) {
+    const price = shop.priceOf(id);
+    if (!shop.signedIn) {
+      return (
+        <div className="shop-foot">
+          <span className="shop-price">{price ? <><TokenIcon size={14} /> {formatTokens(price)}</> : "—"}</span>
+          <Link className="ac-btn ac-btn-sm ac-btn-ghost" to={signInTo}>
+            Sign in
+          </Link>
+        </div>
+      );
+    }
+    if (shop.owns(id)) {
+      return (
+        <div className="shop-foot">
+          <span className="shop-status">
+            <Check size={14} aria-hidden="true" /> Unlocked
+          </span>
+        </div>
+      );
+    }
+    return (
+      <div className="shop-foot">
+        <span className="shop-price">
+          <TokenIcon size={14} /> {price === null ? "—" : formatTokens(price)}
+        </span>
+        {buyButton(id, price, `${name} unlocked.`)}
+      </div>
+    );
+  }
+  const tuneGroup = (group: "inst" | "beat" | "studio") =>
+    Object.entries(TUNE_ITEMS)
+      .filter(([, t]) => t.group === group)
+      .map(([id, t]) => (
+        <li key={id} className="ac-card shop-card">
+          <div className="shop-preview">
+            <span className="shop-tune" style={{ "--c": t.color } as React.CSSProperties} aria-hidden="true">
+              {t.icon}
+            </span>
+          </div>
+          <h3>{t.name}</h3>
+          <p>{t.blurb}</p>
+          {unlockFoot(id, t.name)}
+        </li>
+      ));
+
   /** Two-step buy (arm, then confirm), optionally equipping a cosmetic straight after. */
   function buyButton(id: string, price: number | null, done: string, equipSlot?: ShopSlot) {
     const short = price !== null && balance < price;
@@ -687,6 +744,9 @@ export default function ShopSection({ scope, embedded = false }: { scope: ShopSc
                     </li>
                   ))
               : null}
+            {tab === "tuneInst" ? tuneGroup("inst") : null}
+            {tab === "tuneBeats" ? tuneGroup("beat") : null}
+            {tab === "tuneStudio" ? tuneGroup("studio") : null}
             {tab === "frames"
               ? Object.entries(FRAMES).map(([id, f]) => (
                   <li key={id} className="ac-card shop-card">

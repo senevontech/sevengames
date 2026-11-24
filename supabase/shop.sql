@@ -64,7 +64,7 @@ alter table public.shop_items drop constraint if exists shop_items_kind_check;
 alter table public.shop_items add constraint shop_items_kind_check
   -- dd_*: DroidDoom (embedded game) unlocks, see droiddoom.sql
   check (kind in ('arrow_skin', 'arrow_fx', 'arrow_board', 'arrow_head', 'frame', 'booster', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice',
-                  'dd_levels', 'dd_skin', 'dd_weapon', 'chat_pack', 'ludo_token', 'pool_table', 'pool_cue'));
+                  'dd_levels', 'dd_skin', 'dd_weapon', 'chat_pack', 'ludo_token', 'pool_table', 'pool_cue', 'tune_pack'));
 
 -- Ludo token colours: 9 free, 4 in the shop (keep ids in sync with LUDO_TOKENS in src/lib/shopCatalog.ts)
 insert into public.shop_items (item_id, kind, price, sort) values
@@ -118,6 +118,24 @@ insert into public.shop_items (item_id, kind, price, sort, game, min_level) valu
   ('pcue:royal', 'pool_cue', 2600, 4, 'pool', 8),
   ('pcue:legend', 'pool_cue', 4000, 5, 'pool', 12)
 on conflict (item_id) do nothing;
+
+-- Draw a Tune unlocks (nothing to equip: owning one unlocks it for making songs; anyone can always
+-- listen to songs that use them). Keep ids in sync with TUNE_ITEMS in src/lib/shopCatalog.ts.
+insert into public.shop_items (item_id, kind, price, sort, game, min_level) values
+  ('tinst:guitar', 'tune_pack', 900, 0, 'tune', 1),
+  ('tinst:flute', 'tune_pack', 900, 1, 'tune', 1),
+  ('tinst:synth', 'tune_pack', 1000, 2, 'tune', 1),
+  ('tinst:sitar', 'tune_pack', 1200, 3, 'tune', 1),
+  ('tinst:tabla', 'tune_pack', 1200, 4, 'tune', 1),
+  ('tbeat:trap', 'tune_pack', 600, 5, 'tune', 1),
+  ('tbeat:house', 'tune_pack', 600, 6, 'tune', 1),
+  ('tbeat:dembow', 'tune_pack', 600, 7, 'tune', 1),
+  ('tscale:world', 'tune_pack', 800, 8, 'tune', 1),
+  ('tfx:echo', 'tune_pack', 700, 9, 'tune', 1)
+on conflict (item_id) do nothing;
+-- saving / sharing a song is free: the old "Save as audio" item is retired
+delete from public.shop_items where item_id = 'tfx:export' and not exists (select 1 from public.shop_owned where item_id = 'tfx:export');
+update public.shop_items set active = false where item_id = 'tfx:export';
 
 -- Arrows: more styles + effects, board themes and arrowhead shapes (Arrows level = puzzle level reached)
 insert into public.shop_items (item_id, kind, price, sort, game, min_level) values

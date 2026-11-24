@@ -222,7 +222,7 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
       { icon: "🌀", title: "Spin", text: "Tap the cue-ball icon to hit it high (follow), low (draw) or to the side." },
       { icon: "🟡", title: "Pot your group", text: "The first ball potted after the break decides solids or stripes. Pot all of yours." },
       { icon: "⚫", title: "Then the 8", text: "Pot the 8 last to win. Potting it early, or scratching on it, loses the frame." },
-      { icon: "⏱️", title: "Endless", text: "Solo against the clock: every ball you pot scores and adds time, a scratch costs time. Clear the table for a fresh rack." },
+      { icon: "⏱️", title: "Endless", text: "Solo against the clock, starting at 60 seconds: +5s for every ball you pot, +10s for 5 potting shots in a row, +15s when you clear the table (then a fresh rack). A scratch costs time." },
     ],
     controls: ["Drag to aim · pull the bar to shoot", "Hit your own group first, or it's a foul"],
   },
@@ -242,9 +242,12 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
       { icon: "🎵", title: "Higher is higher", text: "Lines near the top play high notes, near the bottom low ones. Notes always snap to the scale, so it stays in tune. A line straight up and down plays a chord." },
       { icon: "🎨", title: "Colours are instruments", text: "Piano, bells, strings, bass and drums. For drums, the height picks the drum: kick at the bottom, then tom, snare, and hi-hat at the top. A thicker pen plays louder." },
       { icon: "🎚️", title: "Make it yours", text: "Change the tempo, the scale (happy, sad, blues, raags), the key, and add a backing beat. Loop it, undo, erase." },
+      { icon: "🪞", title: "Mirror and mix", text: "The mirror pen draws a flipped copy of every line, so a phrase gets its answer. In Sound, tap an instrument in the mixer to mute it." },
       { icon: "📅", title: "Daily prompt", text: "Each day has a prompt. Post your song for XP and a streak, listen to everyone else's, like them, or remix one into your own." },
+      { icon: "🎸", title: "Music shop", text: "Unlock studio instruments (guitar, sitar, flute, synth, tabla), more beats, world scales and echo with chips. Tap any locked item to hear it first." },
+      { icon: "📲", title: "Share", text: "Share makes a short video of your drawing playing, ready for WhatsApp, Instagram and Facebook. Saving and sharing are always free." },
     ],
-    controls: ["Draw with mouse or finger · press Play", "Changing the scale re-tunes the whole drawing"],
+    controls: ["Draw with mouse or finger · press Play", "Space play · Ctrl+Z undo · 1–5 instruments · E eraser · M mirror · L loop"],
   },
 };
 

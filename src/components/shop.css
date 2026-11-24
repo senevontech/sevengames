@@ -741,3 +741,15 @@
 .shop-pcue-stats b.on {
   background: linear-gradient(90deg, #ffb347, #ff7a1a);
 }
+
+/* Draw a Tune unlocks: the item's emoji on a soft disc of its colour */
+.shop-tune {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  font-size: 30px;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 45%, #fff), color-mix(in srgb, var(--c) 20%, transparent) 72%);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 35%, transparent), 0 8px 18px -8px var(--c);
+}
