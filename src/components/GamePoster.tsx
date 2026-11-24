@@ -3,6 +3,7 @@ import {
   ArrowUpDown,
   Spade,
   Disc,
+  Atom,
   Bomb,
   Brain,
   Building2,
@@ -56,6 +57,7 @@ const byEngine: Record<string, LucideIcon> = {
   arrows: MoveUpRight,
   blackjack: Spade,
   pool: Disc,
+  chain: Atom,
 };
 
 const byId: Record<string, LucideIcon> = {

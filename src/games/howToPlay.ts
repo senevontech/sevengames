@@ -226,6 +226,16 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
     ],
     controls: ["Drag to aim · pull the bar to shoot", "Hit your own group first, or it's a foul"],
   },
+  chain: {
+    steps: [
+      { icon: "🔮", title: "Glass Orbs", text: "Tap to set off a spark. Orbs it touches shatter and their shards break more. Amber orbs blast everything nearby, blue ones fire a bolt across the tray, big ones split in two." },
+      { icon: "⚙️", title: "Bead Grid", text: "Each cup holds one bead fewer than it has neighbours. Drop a bead into a full cup and it bursts, sending a bead into every neighbour. Glowing cups are one bead from bursting." },
+      { icon: "🁢", title: "Dominoes", text: "Swipe a domino to push it that way (a tap pushes it along its line). Giant dominoes reach further; steel balls roll on into whatever is in their way." },
+      { icon: "📅", title: "Daily board", text: "Everyone gets the same board each day. Your first finished run is your official one; play more as practice. Keep your streak going." },
+      { icon: "♾️", title: "Endless", text: "Each round has a target. Reach it to go on; the targets grow. One miss ends the run." },
+    ],
+    controls: ["Tap to set it off · swipe a domino to push it", "Bigger chains score more per piece"],
+  },
 };
 
 export const howToFor = (engine: string | undefined) => (engine ? HOW_TO_PLAY[engine] ?? null : null);

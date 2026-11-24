@@ -1,6 +1,10 @@
 /* "How to play" sheet (HowToPlay.tsx). Reads the game page's light / dark neu tokens. */
 
+/* text colour follows the surface the sheet sits on: the page (light or dark), or in real
+   full screen the game window, which is always dark */
 .htp {
+  --htp-ink: #f2f3f5;
+  --htp-muted: rgba(242, 243, 245, 0.78);
   position: fixed;
   inset: 0;
   z-index: 1250;
@@ -22,7 +26,7 @@
   overflow: auto;
   padding: 18px 18px 16px;
   border-radius: 26px;
-  color: var(--text, #f4f4f6);
+  color: var(--htp-ink);
   background: var(--neu-bg, #1d1e24);
   box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.75);
   outline: none;
@@ -97,7 +101,7 @@
   max-width: 32ch;
   font-size: 15px;
   line-height: 1.45;
-  opacity: 0.82;
+  color: var(--htp-muted);
 }
 .htp-list {
   display: grid;
@@ -113,7 +117,8 @@
   border-radius: 14px;
   font-size: 14px;
   line-height: 1.4;
-  background: color-mix(in srgb, var(--text, #fff) 6%, transparent);
+  background: var(--neu-bg, transparent);
+  box-shadow: var(--neu-well, inset 0 1px 4px rgba(0, 0, 0, 0.3));
 }
 
 .htp-dots {
@@ -128,7 +133,7 @@
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--text, #fff) 22%, transparent);
+  background: color-mix(in srgb, var(--htp-ink) 22%, transparent);
   cursor: pointer;
   transition: width 0.25s ease, background 0.25s ease;
 }
@@ -163,8 +168,9 @@
   cursor: default;
 }
 .htp-nav.is-primary {
-  color: #1f0c00;
-  background: var(--neu-accent, #ff8a3d);
+  color: #fff;
+  background: var(--neu-orange, var(--neu-accent, #ff8a3d));
+  box-shadow: var(--neu-orange-raise, var(--neu-raise-sm, none));
 }
 
 @keyframes htp-fade {
@@ -190,4 +196,10 @@
   .htp-body {
     animation: none;
   }
+}
+
+/* light game pages: dark text on the light sheet */
+.site[data-gtheme="light"] > .htp {
+  --htp-ink: #1d1f24;
+  --htp-muted: rgba(29, 31, 36, 0.72);
 }

@@ -37,7 +37,8 @@ export type GameEngine =
   | "chess"
   | "ludo"
   | "blackjack"
-  | "pool";
+  | "pool"
+  | "chain";
 
 export type Game = {
   id: string;
@@ -489,6 +490,17 @@ export const games: Game[] = [
     minutes: 10,
     accent: "#1f7a4a",
     description: "Real-physics eight-ball pool: follow, draw and side spin, rattling pockets. Pot your group, then the 8. vs Senevi, on one device, or online.",
+  },
+  {
+    id: "chain-reaction",
+    title: "Chain Reaction",
+    category: "Puzzle",
+    kind: "builtin",
+    engine: "chain",
+    difficulty: "Easy",
+    minutes: 3,
+    accent: "#e0701a",
+    description: "One tap, then watch it spread: shatter glass orbs, overflow bead cups, topple lines of dominoes. A new daily board for everyone, and an endless run.",
   },
 ];
 

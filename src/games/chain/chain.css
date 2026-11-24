@@ -1,0 +1,471 @@
+/* Chain Reaction: the boards are realistic canvases; around them, the game window's soft surfaces. */
+.cr-surface {
+  --cr-bg: var(--neu-bg, #2c2e33);
+  --cr-raise: var(--neu-raise-sm, 3px 3px 8px rgba(0, 0, 0, 0.35), -3px -3px 8px rgba(255, 255, 255, 0.05));
+  --cr-press: var(--neu-press, inset 3px 3px 7px rgba(0, 0, 0, 0.35), inset -3px -3px 7px rgba(255, 255, 255, 0.05));
+  --cr-well: var(--neu-well, inset 3px 3px 7px rgba(0, 0, 0, 0.35), inset -3px -3px 7px rgba(255, 255, 255, 0.05));
+  --cr-accent: var(--neu-accent, #ff8a3d);
+  --cr-ink: var(--text, #f4f4f6);
+  display: grid;
+  gap: 12px;
+  width: min(760px, 100%);
+  margin: 0 auto;
+  padding: 6px 0 10px;
+  color: var(--cr-ink);
+}
+
+.cr-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cr-top-note {
+  margin-right: auto;
+  font-size: 13px;
+  font-weight: 700;
+  opacity: 0.65;
+}
+
+.cr-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  background: var(--cr-bg);
+  box-shadow: var(--cr-well);
+}
+
+.cr-pill svg {
+  color: #ff7a1a;
+}
+
+/* ---------- variant picker ---------- */
+.cr-variants {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cr-variant {
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  gap: 3px;
+  min-width: 0;
+  padding: 12px;
+  border: 0;
+  border-radius: 16px;
+  font: inherit;
+  text-align: left;
+  color: var(--cr-ink);
+  background: var(--cr-bg);
+  box-shadow: var(--cr-raise);
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+}
+
+.cr-variant.active {
+  box-shadow: var(--cr-press), inset 0 0 0 1.5px var(--cr-accent);
+}
+
+.cr-variant-icon svg {
+  display: block;
+  width: 28px;
+  height: 28px;
+}
+
+.cr-variant b {
+  font-size: 14px;
+}
+
+.cr-variant small {
+  font-size: 11.5px;
+  line-height: 1.3;
+  opacity: 0.65;
+}
+
+.cr-preview {
+  pointer-events: none;
+}
+
+/* ---------- boards ---------- */
+.cr-board {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.cr-board canvas {
+  display: block;
+  max-width: 100%;
+  border-radius: 18px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.4));
+}
+
+.cr-board canvas.is-live {
+  cursor: pointer;
+}
+
+/* ---------- modes ---------- */
+.cr-modes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cr-mode {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--cr-bg);
+  box-shadow: var(--cr-raise);
+}
+
+.cr-mode-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cr-mode-head b {
+  margin-right: auto;
+}
+
+.cr-mode p {
+  margin: 0;
+  min-height: 34px;
+  font-size: 13px;
+  opacity: 0.75;
+}
+
+.cr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--cr-ink);
+  background: var(--cr-bg);
+  box-shadow: var(--cr-raise);
+  cursor: pointer;
+}
+
+.cr-btn:active {
+  box-shadow: var(--cr-press);
+}
+
+.cr-btn-main {
+  color: #fff;
+  background: var(--neu-orange, linear-gradient(145deg, #ff9d52, #f26a0c));
+  box-shadow: var(--neu-orange-raise, var(--cr-raise));
+}
+
+.cr-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--cr-ink);
+  background: var(--cr-bg);
+  box-shadow: var(--cr-raise);
+  cursor: pointer;
+}
+
+.cr-icon:active {
+  box-shadow: var(--cr-press);
+}
+
+/* ---------- playing ---------- */
+.cr-playing {
+  padding-top: 40px; /* the game window's corner buttons */
+}
+
+.cr-hud {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cr-hud-mid {
+  flex: 1;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.cr-hud-title {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cr-progress {
+  position: relative;
+  display: block;
+  height: 18px;
+  overflow: hidden;
+  border-radius: 9px;
+  background: var(--cr-bg);
+  box-shadow: var(--cr-well);
+}
+
+.cr-progress i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 9px;
+  background: linear-gradient(90deg, #ffb347, #ff7a1a);
+  transition: width 0.25s ease;
+}
+
+.cr-progress i.is-done {
+  background: linear-gradient(90deg, #5fe39a, #26b768);
+}
+
+.cr-progress em {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  color: var(--cr-ink);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.cr-score {
+  display: grid;
+  justify-items: end;
+  min-width: 56px;
+  line-height: 1.1;
+}
+
+.cr-score b {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.cr-score small {
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0.6;
+}
+
+.cr-stage {
+  position: relative;
+}
+
+.cr-tip,
+.cr-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  z-index: 2;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #fff;
+  background: rgba(10, 10, 14, 0.6);
+  backdrop-filter: blur(4px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.cr-toast {
+  top: 18px;
+  bottom: auto;
+  background: rgba(30, 140, 80, 0.9);
+  animation: cr-pop 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+.cr-taps {
+  display: flex;
+  gap: 5px;
+}
+
+.cr-taps i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: var(--cr-well);
+}
+
+.cr-taps i.on {
+  background: radial-gradient(circle at 35% 30%, #fff6dc, #ffb347 55%, #e0700f);
+  box-shadow: 0 0 8px rgba(255, 170, 70, 0.8);
+}
+
+@keyframes cr-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px) scale(0.95);
+  }
+}
+
+/* ---------- result + leaderboard ---------- */
+.cr-result,
+.cr-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.cr-result-card,
+.cr-sheet-card {
+  display: grid;
+  gap: 8px;
+  width: min(360px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 20px 18px;
+  border-radius: 22px;
+  text-align: center;
+  color: var(--cr-ink);
+  background: var(--cr-bg);
+  box-shadow: var(--neu-panel, 0 24px 48px -16px rgba(0, 0, 0, 0.6));
+  animation: cr-card 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+@keyframes cr-card {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+.cr-result-card h3,
+.cr-sheet-card h3 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.cr-sheet-card h3 {
+  font-size: 18px;
+}
+
+.cr-result-sub {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.cr-result-note {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.cr-result-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.cr-result-actions .cr-btn-main {
+  grid-column: 1 / -1;
+}
+
+.cr-lb {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0;
+  padding: 8px;
+  border-radius: 14px;
+  list-style: none;
+  text-align: left;
+  box-shadow: var(--cr-well);
+}
+
+.cr-lb li {
+  display: grid;
+  grid-template-columns: 24px 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.cr-lb li.is-me {
+  background: rgba(255, 138, 61, 0.16);
+}
+
+.cr-lb li b {
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.cr-lb li span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cr-lb li i {
+  font-style: normal;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.cr-lb-note {
+  margin: 6px 0;
+  font-size: 13px;
+  opacity: 0.65;
+}
+
+@media (max-width: 560px) {
+  .cr-variants {
+    gap: 6px;
+  }
+  .cr-variant {
+    padding: 10px 8px;
+  }
+  .cr-variant small {
+    display: none;
+  }
+  .cr-modes {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cr-toast,
+  .cr-result-card,
+  .cr-sheet-card {
+    animation: none;
+  }
+}
