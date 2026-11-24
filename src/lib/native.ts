@@ -1,6 +1,6 @@
 /* App (Capacitor) runtime: splash screen, status bar, Android back button and the sign-in
    deep link. On the web every function here does nothing. */
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { SplashScreen } from "@capacitor/splash-screen";
@@ -57,8 +57,14 @@ function parseRgb(c: string): [number, number, number, number] | null {
 }
 
 /** The solid colour behind the top edge of the screen. */
-function topColor(): [number, number, number] {
-  let el: Element | null = document.elementFromPoint(window.innerWidth / 2, 1);
+/* android/app/src/main/java/com/senevon/games/BarsPlugin.java: paints the strips behind the
+   status bar and navigation bar (Android 15+ ignores StatusBar.setBackgroundColor). */
+const Bars = registerPlugin<{
+  setColors(o: { top: string; bottom: string; darkTopIcons: boolean; darkBottomIcons: boolean }): Promise<void>;
+}>("Bars");
+
+function colorAt(y: number): [number, number, number] {
+  let el: Element | null = document.elementFromPoint(window.innerWidth / 2, y);
   while (el) {
     const rgb = parseRgb(getComputedStyle(el).backgroundColor);
     if (rgb && rgb[3] > 0.6) return [rgb[0], rgb[1], rgb[2]];
@@ -71,13 +77,23 @@ function topColor(): [number, number, number] {
 const hex = (rgb: number[]) => "#" + rgb.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
 let lastBar = "";
 
+const isLight = (rgb: number[]) => (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255 > 0.55;
+
 async function syncStatusBar() {
   if (document.visibilityState !== "visible") return;
-  const rgb = topColor();
+  const rgb = colorAt(1);
+  const low = colorAt(window.innerHeight - 1);
   const color = hex(rgb);
-  if (color === lastBar) return;
-  lastBar = color;
-  const light = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255 > 0.55;
+  const bottom = hex(low);
+  if (color + bottom === lastBar) return;
+  lastBar = color + bottom;
+  const light = isLight(rgb);
+  try {
+    await Bars.setColors({ top: color, bottom, darkTopIcons: light, darkBottomIcons: isLight(low) });
+    return;
+  } catch {
+    /* older app build without the plugin: fall back to the status bar plugin */
+  }
   try {
     // Style.Light = dark icons (for light backgrounds), Style.Dark = light icons
     await StatusBar.setStyle({ style: light ? Style.Light : Style.Dark });
