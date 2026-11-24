@@ -72,7 +72,9 @@ import { EntryPicker } from "../../components/RoomEntry";
 import { CpuEntryLine, CpuEntryToggle } from "../../components/CpuEntry";
 import { BoardPreview } from "./Preview";
 import PlayFlow, { HelpLine } from "../PlayFlow";
+import ChipLine from "../../components/ChipLine";
 import { Bot, Globe, Users } from "lucide-react";
+import { senevi, SeneviFace, SeneviIcon, SeneviLine, SENEVI_NAME } from "../../senevi/Senevi";
 import "./carrom.css";
 
 type Mode = "cpu" | "local2" | "local4" | "host2" | "host4" | "join";
@@ -316,6 +318,8 @@ export default function CarromGame({ onFinish }: GameProps) {
     if (modeRef.current === "join") return;
     const shooter = world.turn;
     const res = resolveShot(world);
+    // Senevi (vs CPU): reacts to pots, his and yours
+    if (modeRef.current === "cpu" && !res.over && res.ownPots > 0) senevi({ type: world.players[shooter]?.kind === "cpu" ? "cpuGood" : "playerGood" });
     setPotted({ white: world.potted.white.length, black: world.potted.black.length });
     setQueenText(queenTextOf(world));
 
@@ -332,6 +336,7 @@ export default function CarromGame({ onFinish }: GameProps) {
     if (res.over) {
       const winColor = world.result?.winner;
       const winSeat = world.players.find((p) => p.color === winColor);
+      if (modeRef.current === "cpu") senevi({ type: "over", result: !winSeat ? "draw" : winSeat.kind === "cpu" ? "cpu" : "player" });
       const winName = winSeat ? `${winSeat.name} win${winSeat.name === "You" ? "" : "s"}` : "Board over";
       const myColor = world.players[mySeatRef.current]?.color;
       tallyBoard(world);
@@ -539,6 +544,7 @@ export default function CarromGame({ onFinish }: GameProps) {
 
   useEffect(() => {
     if (screen === "cpu") {
+      if (modeRef.current === "cpu") senevi({ type: "think", ms: 1300 });
       const t1 = window.setTimeout(() => {
         const world = worldRef.current;
         if (!world || phaseRef.current !== "cpu") return;
@@ -573,7 +579,10 @@ export default function CarromGame({ onFinish }: GameProps) {
   /** Start a new match (or, with `nextBoard`, the next board of the current match). */
   function startLocal(mode: "cpu" | "local2" | "local4", nextBoard = false) {
     // a new match against the CPU pays a 1-chip entry (if switched on); the next board of a match doesn't
-    if (mode === "cpu" && !nextBoard) void cpuEntry.open();
+    if (mode === "cpu" && !nextBoard) {
+      void cpuEntry.open();
+      window.setTimeout(() => senevi({ type: "start" }), 700);
+    }
     carromAudio.unlock();
     modeRef.current = mode;
     mySeatRef.current = 0;
@@ -597,7 +606,7 @@ export default function CarromGame({ onFinish }: GameProps) {
       mode === "cpu"
         ? [
             { name: "You", kind: "human", stats: mine },
-            { name: "CPU", kind: "cpu", stats: CPU_STATS },
+            { name: SENEVI_NAME, kind: "cpu", stats: CPU_STATS },
           ]
         : mode === "local2"
           ? [
@@ -636,7 +645,7 @@ export default function CarromGame({ onFinish }: GameProps) {
             ? "Pass & play. Break!"
             : world.turn === 0
               ? "Break! Place, pull back, release."
-              : "CPU breaks."),
+              : `${SENEVI_NAME} breaks.`),
     );
     setPhase(world.players[world.turn].kind === "cpu" ? "cpu" : "place");
   }
@@ -790,7 +799,7 @@ export default function CarromGame({ onFinish }: GameProps) {
       name: entry.name,
       kind: "human",
     }));
-    while (players.length < seats) players.push({ name: "CPU", kind: "cpu" });
+    while (players.length < seats) players.push({ name: SENEVI_NAME, kind: "cpu" });
     const uids = net.rosterList.map((entry) => entry.userId ?? null);
     while (uids.length < seats) uids.push(null);
     // chips: 3 each in random matches (if both can), the host's pick in friend rooms
@@ -1210,9 +1219,9 @@ export default function CarromGame({ onFinish }: GameProps) {
               }
               modes={[
                 {
-                  key: "cpu",
-                  label: "vs CPU",
-                  icon: <Bot size={15} />,
+                  key: "cpu", chips: <ChipLine kind="cpu" on={cpuEntry.enabled} />,
+                  label: `vs ${SENEVI_NAME}`,
+                  icon: <SeneviIcon size={17} />,
                   start: () => startLocal("cpu"),
                   settings: (
                     <>
@@ -1222,7 +1231,7 @@ export default function CarromGame({ onFinish }: GameProps) {
                   ),
                 },
                 {
-                  key: "local",
+                  key: "local", chips: <ChipLine kind="free" note="Free · players on one device" />,
                   label: "Same device",
                   icon: <Users size={15} />,
                   start: () => startLocal(localSeats === 4 ? "local4" : "local2"),
@@ -1241,7 +1250,7 @@ export default function CarromGame({ onFinish }: GameProps) {
                   ),
                 },
                 {
-                  key: "online",
+                  key: "online", chips: <ChipLine kind="online" />,
                   label: "Online",
                   icon: <Globe size={15} />,
                   disabled: !CarromNet.configured || !netOnline,
@@ -1460,7 +1469,7 @@ export default function CarromGame({ onFinish }: GameProps) {
               <button type="button" className="primary-btn" onClick={() => startNetGame()}>
                 Start game
                 {roomSeats - roster.length > 0
-                  ? ` (${roomSeats - roster.length} CPU fill${roomSeats - roster.length > 1 ? "s" : ""})`
+                  ? ` (${roomSeats - roster.length} Senevi fill${roomSeats - roster.length > 1 ? "s" : ""})`
                   : ""}
               </button>
             ) : (
@@ -1499,8 +1508,12 @@ export default function CarromGame({ onFinish }: GameProps) {
           {queenText}
         </div>
         <div className={`carrom-chip${world.turn % 2 === 1 ? " active" : ""}`}>
-          <span className="dot" style={{ background: seatRingColor(1) }} />
-          Black <b>{potted.black}</b>
+          {modeRef.current === "cpu" ? (
+            <SeneviFace size={24} className="carrom-senevi" />
+          ) : (
+            <span className="dot" style={{ background: seatRingColor(1) }} />
+          )}
+          {modeRef.current === "cpu" ? SENEVI_NAME : "Black"} <b>{potted.black}</b>
           <small>/9</small>
         </div>
       </div>
@@ -1513,6 +1526,13 @@ export default function CarromGame({ onFinish }: GameProps) {
           </b>
           <span>to {MATCH_TARGET}</span>
         </p>
+      ) : null}
+
+      {/* vs CPU: what Senevi says (a reserved row, so the board never jumps) */}
+      {modeRef.current === "cpu" ? (
+        <div className="carrom-senevi-says" aria-live="polite">
+          <SeneviLine />
+        </div>
       ) : null}
 
       <div className="carrom-statusrow">

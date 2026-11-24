@@ -22,7 +22,7 @@ export function BoardPreview() {
       seats: 2,
       players: [
         { name: "You", kind: "human" },
-        { name: "CPU", kind: "cpu" },
+        { name: "Senevi", kind: "cpu" },
       ],
     });
     let raf = 0;

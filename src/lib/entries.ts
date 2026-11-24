@@ -52,7 +52,7 @@ export function entryErrorText(err: unknown) {
 /** What a finished match did to your chips: "+3 chips", "−1 chip", "Entry returned"… */
 export function entryOutcomeText(e: EntryState) {
   const net = e.prize - e.fee;
-  if (e.status === "won") return e.note === "capped" ? "Won · today's CPU chip limit reached, entry returned" : `+${net} chip${net === 1 ? "" : "s"}`;
+  if (e.status === "won") return e.note === "capped" ? "Won · today's Senevi chip limit reached, entry returned" : `+${net} chip${net === 1 ? "" : "s"}`;
   if (e.status === "lost") return `−${e.fee} chip${e.fee === 1 ? "" : "s"}`;
   if (e.status === "draw") return "Draw · entry returned";
   if (e.status === "refunded")

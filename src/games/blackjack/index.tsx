@@ -6,6 +6,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Bot, Gift, Globe, RotateCcw, Spade } from "lucide-react";
 import type { GameProps } from "../index";
 import PlayFlow from "../PlayFlow";
+import ChipLine from "../../components/ChipLine";
 import { CardDefs, PlayingCard } from "../cards/Card";
 import { CHIP_VALUES, Chip, ChipStack, shortChips } from "../cards/Chip";
 import { cardSound, chipSound, winSound } from "../cards/sounds";
@@ -134,22 +135,22 @@ export default function BlackjackGame(_props: GameProps) {
           preview={<BlackjackPreview />}
           corner={chips ? <ChipBalance amount={chips.balance} /> : null}
           modes={[
-            { key: "dealer", label: "Blackjack", icon: <Bot size={15} />, start: () => setScreen("table") },
+            { key: "dealer", chips: <ChipLine kind="table" />, label: "Blackjack", icon: <Bot size={15} />, start: () => setScreen("table") },
             {
-              key: "callbreak",
+              key: "callbreak", chips: <ChipLine kind="free" note="Free · played for points" />,
               label: "Call Break",
               icon: <Spade size={15} />,
               start: () => setScreen("callbreak"),
               settings: (
                 <div className="ol-card">
                   <p className="ol-sub">
-                    You and three CPU players, 5 rounds, spades are trumps. Call your tricks each round: make your call to score it, miss it and you lose it.
+                    You and three Senevis, 5 rounds, spades are trumps. Call your tricks each round: make your call to score it, miss it and you lose it.
                   </p>
                 </div>
               ),
             },
             {
-              key: "online",
+              key: "online", chips: <ChipLine kind="table" />,
               label: "Online table",
               icon: <Globe size={15} />,
               panel: (

@@ -27,7 +27,13 @@ import { useTokens } from "../../lib/tokens";
 import RoomEntry from "../../components/RoomEntry";
 import { CpuEntryLine, CpuEntryToggle } from "../../components/CpuEntry";
 import PlayFlow from "../PlayFlow";
+import ChipLine from "../../components/ChipLine";
 import { Bot, Globe, Users } from "lucide-react";
+import { senevi, SeneviFace, SeneviIcon, SeneviLine, SENEVI_NAME } from "../../senevi/Senevi";
+
+/** vs CPU: every CPU seat is a Senevi (seat 1 "Senevi", then "Senevi II", "Senevi III"). */
+const seneviName = (i: number) => (i <= 1 ? SENEVI_NAME : `${SENEVI_NAME} ${i === 2 ? "II" : "III"}`);
+const seneviSeat = (i: number) => `ludo-${i}`;
 
 type Mode = "cpu" | "pass" | "online";
 /** `tint`: the player's token colour (shop slot ludo_token), shown to everyone. */
@@ -160,11 +166,29 @@ export default function LudoGame(_props: GameProps) {
     (next: LudoState, seatList = seatsRef.current) => {
       const prev = stRef.current;
       if (next.last && next.last !== prev.last) {
+        // Senevi (vs CPU): reacts to captures, his own and yours
+        if (mode === "cpu" && next.last.captured.length) {
+          const list = seatsRef.current;
+          const by = prev.colors.indexOf(next.last.color);
+          if (list[by]?.kind === "cpu") senevi({ type: "cpuGood" }, seneviSeat(by));
+          for (const v of next.last.captured) {
+            const vs = prev.colors.indexOf(v.color);
+            if (list[vs]?.kind === "cpu" && list[by]?.kind === "human") senevi({ type: "playerGood" }, seneviSeat(vs));
+          }
+        }
         if (next.last.captured.length) sfx.capture();
         else if (next.last.to === 56) sfx.home();
         else sfx.move();
       }
-      if (next.phase === "over" && prev.phase !== "over") sfx.win();
+      if (next.phase === "over" && prev.phase !== "over") {
+        sfx.win();
+        if (mode === "cpu") {
+          const w = next.winner === null ? -1 : next.colors.indexOf(next.winner);
+          seatsRef.current.forEach((x, i) => {
+            if (x.kind === "cpu") senevi({ type: "over", result: i === w ? "cpu" : w === 0 ? "player" : "draw" }, seneviSeat(i));
+          });
+        }
+      }
       stRef.current = next;
       setSt(next);
       const turnChanged = next.turn !== prev.turn || next.phase !== prev.phase || next.rolls !== prev.rolls;
@@ -202,6 +226,7 @@ export default function LudoGame(_props: GameProps) {
       return () => window.clearTimeout(id);
     }
     if (seat.kind === "cpu") {
+      if (mode === "cpu" && st.phase === "roll") senevi({ type: "think", ms: 900 }, seneviSeat(st.turn));
       const id = window.setTimeout(() => (st.phase === "roll" ? doRoll() : doMove(cpuPick(stRef.current))), CPU_DELAY);
       return () => window.clearTimeout(id);
     }
@@ -223,7 +248,7 @@ export default function LudoGame(_props: GameProps) {
           if (cur.turn !== st.turn || cur.phase === "over") return;
           const list = seatsRef.current.map((x, i) => (i === cur.turn ? { ...x, timeouts: (x.timeouts ?? 0) + 1 } : x));
           const tooSlow = (list[cur.turn].timeouts ?? 0) >= MAX_TIMEOUTS;
-          if (tooSlow) list[cur.turn] = { ...list[cur.turn], kind: "cpu", name: `${list[cur.turn].name} (CPU)` };
+          if (tooSlow) list[cur.turn] = { ...list[cur.turn], kind: "cpu", name: `${list[cur.turn].name} (Senevi)` };
           setSeats(list);
           seatsRef.current = list;
           if (cur.phase === "roll") commit(roll(cur, d6()), list);
@@ -292,7 +317,7 @@ export default function LudoGame(_props: GameProps) {
     setMode(m);
     const list: Seat[] =
       m === "cpu"
-        ? Array.from({ length: n }, (_, i) => (i === 0 ? { kind: "human", name: myName, userId: user?.id, avatar: myAvatar, tint: myTint } : { kind: "cpu", name: `CPU ${i}` }))
+        ? Array.from({ length: n }, (_, i) => (i === 0 ? { kind: "human", name: myName, userId: user?.id, avatar: myAvatar, tint: myTint } : { kind: "cpu", name: seneviName(i) }))
         : Array.from({ length: n }, (_, i) => ({ kind: "human", name: `Player ${i + 1}` }));
     setSeats(list);
     seatsRef.current = list;
@@ -302,7 +327,10 @@ export default function LudoGame(_props: GameProps) {
     setSt(s);
     awarded.current = false;
     setXpGain(null);
-    if (m === "cpu") void cpuEntry.open();
+    if (m === "cpu") {
+      void cpuEntry.open();
+      window.setTimeout(() => senevi({ type: "start" }), 600);
+    }
     setScreen("game");
   }
 
@@ -364,7 +392,7 @@ export default function LudoGame(_props: GameProps) {
     const n = Number(room.settings.seats) || 2;
     const list: Seat[] = Array.from({ length: n }, (_, i) => {
       const p = room.players[i];
-      return p ? { kind: "human", name: p.name, clientId: p.clientId, userId: p.userId, avatar: p.avatar, tint: p.look ?? null, timeouts: 0 } : { kind: "cpu", name: `CPU ${i}` };
+      return p ? { kind: "human", name: p.name, clientId: p.clientId, userId: p.userId, avatar: p.avatar, tint: p.look ?? null, timeouts: 0 } : { kind: "cpu", name: seneviName(i) };
     });
     setMode("online");
     setSeats(list);
@@ -554,7 +582,7 @@ export default function LudoGame(_props: GameProps) {
           matched={matched}
           seats={roomSeats}
           title={`Ludo · ${roomSeats} players`}
-          blurb="Empty seats are played by the CPU when the game starts."
+          blurb="Empty seats are played by Senevi when the game starts."
           hostSettings={seatPicker(
             roomSeats,
             (n) => {
@@ -565,7 +593,7 @@ export default function LudoGame(_props: GameProps) {
             "Seats",
           )}
           canStart={peers.length >= 2 || roomSeats > 1}
-          startLabel={peers.length < roomSeats ? `Start · ${roomSeats - peers.length} CPU` : "Start game"}
+          startLabel={peers.length < roomSeats ? `Start · ${roomSeats - peers.length} Senevi` : "Start game"}
           onStart={hostStartOnline}
           onLeave={leaveOnline}
           entry={<RoomEntry room={room} peers={peers} isHost={room.isHost} matched={matched} />}
@@ -597,9 +625,9 @@ export default function LudoGame(_props: GameProps) {
           }
           modes={[
             {
-              key: "cpu",
-              label: "vs CPU",
-              icon: <Bot size={15} />,
+              key: "cpu", chips: <ChipLine kind="cpu" on={cpuEntry.enabled} />,
+              label: `vs ${SENEVI_NAME}`,
+              icon: <SeneviIcon size={17} />,
               start: () => startLocal("cpu", cpuPlayers),
               settings: (
                 <div className="ol-card">
@@ -610,7 +638,7 @@ export default function LudoGame(_props: GameProps) {
               ),
             },
             {
-              key: "pass",
+              key: "pass", chips: <ChipLine kind="free" note="Free · friends on one device" />,
               label: "Same device",
               icon: <Users size={15} />,
               start: () => startLocal("pass", passPlayers),
@@ -622,7 +650,7 @@ export default function LudoGame(_props: GameProps) {
               ),
             },
             {
-              key: "online",
+              key: "online", chips: <ChipLine kind="online" />,
               label: "Online",
               icon: <Globe size={15} />,
               panel: (
@@ -692,7 +720,9 @@ export default function LudoGame(_props: GameProps) {
           const home = st.tokens[c].filter((p) => p === 56).length;
           return (
             <li key={c} className={`${i === st.turn && st.phase !== "over" ? "is-turn" : ""}${i === mySeat ? " is-me" : ""}`} style={{ "--lu-c": paints[c].solid } as React.CSSProperties}>
-              {seat?.userId ? (
+              {mode === "cpu" && seat?.kind === "cpu" ? (
+                <SeneviFace size={24} seat={seneviSeat(i)} className="lu-senevi" />
+              ) : seat?.userId ? (
                 <PlayerAvatar id={seat.userId} name={seat.name} avatar={seat.avatar ?? null} size={22} className="lb-initial lu-av" />
               ) : (
                 <span className="lu-dot" aria-hidden="true" />
@@ -704,6 +734,12 @@ export default function LudoGame(_props: GameProps) {
           );
         })}
       </ul>
+      {/* what the Senevis say: one quiet row under the players (always reserved, so nothing jumps) */}
+      {mode === "cpu" ? (
+        <div className="lu-senevi-says" aria-live="polite">
+          {seats.map((x, i) => (x.kind === "cpu" ? <SeneviLine key={i} seat={seneviSeat(i)} /> : null))}
+        </div>
+      ) : null}
 
       <div className="lu-board-wrap" style={{ "--lu-line": theme.line } as React.CSSProperties}>
         <LudoBoard s={st} shown={shown} theme={theme} dice={diceStyle} choices={choices} onPick={myMove} labels={labels} rot={boardRot} paints={paints} avatars={avatars} />

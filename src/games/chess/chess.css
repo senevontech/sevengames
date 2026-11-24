@@ -476,3 +476,16 @@
     transition: none;
   }
 }
+
+/* vs CPU: Senevi's line briefly covers his name (the bar keeps its height) */
+.ch-pname {
+  position: relative;
+}
+.ch-pname .snv-line {
+  position: absolute;
+  inset: 0 0 auto;
+  background: var(--neu-bg, var(--ch-bar-bg, #1d1e24));
+}
+.ch-av-senevi {
+  margin: -2px 0;
+}

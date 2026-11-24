@@ -14,7 +14,7 @@ export function OfflineNotice({ what = "Online play" }: { what?: string }) {
   return (
     <div className="ol-card ol-offline">
       <h3>You're offline</h3>
-      <p className="ol-sub">{what} needs an internet connection. You can still play against the CPU or with friends on this device.</p>
+      <p className="ol-sub">{what} needs an internet connection. You can still play against Senevi or with friends on this device.</p>
     </div>
   );
 }

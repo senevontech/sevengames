@@ -357,7 +357,7 @@ export default function CarromLocker({
               );
             })}
           </ul>
-          <p className="carrom-hint">Upgrades count against the CPU and in local games. Online matches use equal strikers for everyone.</p>
+          <p className="carrom-hint">Upgrades count against Senevi and in local games. Online matches use equal strikers for everyone.</p>
         </div>
       ) : null}
 

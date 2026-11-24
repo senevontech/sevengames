@@ -12,7 +12,7 @@ export function CpuEntryToggle({ entry }: { entry: CpuEntry }) {
   if (!user) {
     return (
       <p className="centry-note">
-        <Link to="/login">Sign in</Link> to play the CPU for chips.
+        <Link to="/login">Sign in</Link> to play Senevi for chips.
       </p>
     );
   }

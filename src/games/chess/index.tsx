@@ -35,9 +35,11 @@ import { GameRoom, randomId, type RoomMsg, type RoomPeer, type RoomStatus } from
 import { useCarromLobby, type LobbyApi, type Matched } from "../carrom/matchmaking";
 import { OnlineMenu, RoomWaiting, SignInToPlay } from "../../components/OnlineLobby";
 import PlayFlow from "../PlayFlow";
+import ChipLine from "../../components/ChipLine";
 import { Bot, Globe, Users } from "lucide-react";
 import PlayerAvatar from "../../components/PlayerAvatar";
 import { parseAvatar, type AvatarChoice } from "../../lib/avatar";
+import { senevi, SeneviFace, SeneviIcon, SeneviLine, SENEVI_NAME } from "../../senevi/Senevi";
 import "./chess.css";
 import { GameShopButton } from "../gameShop";
 import { useMatchChat } from "../../components/chat/MatchChat";
@@ -212,7 +214,9 @@ function PlayerBar({
   s,
   clock,
   turn,
+  cpu,
 }: {
+  cpu?: boolean;
   name: string;
   sub?: string;
   avatar?: { id: string; avatar: AvatarChoice | null } | null;
@@ -228,7 +232,9 @@ function PlayerBar({
   const material = captured(s, color).diff;
   return (
     <div className={`ch-player${turn ? " is-turn" : ""}`}>
-      {avatar ? (
+      {cpu ? (
+        <SeneviFace size={34} className="ch-av-senevi" />
+      ) : avatar ? (
         <PlayerAvatar id={avatar.id} name={name} avatar={avatar.avatar} size={30} className="lb-initial ch-av" />
       ) : (
         <span className="ch-av ch-av-cpu" aria-hidden="true">
@@ -237,6 +243,7 @@ function PlayerBar({
       )}
       <span className="ch-pname">
         <b>{name}</b>
+        {cpu ? <SeneviLine /> : null}
         {sub ? <small>{sub}</small> : null}
       </span>
       <span className="ch-taken" aria-label={`${lost.pieces.length} pieces captured`}>
@@ -354,6 +361,10 @@ export default function ChessGame(_props: GameProps) {
   const lobbyRef = useRef<LobbyApi | null>(null);
   const gRef = useRef(g);
   gRef.current = g;
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+  const cpuColorRef = useRef(cpuColor);
+  cpuColorRef.current = cpuColor;
 
   useEffect(() => setSaved(readSaved(user?.id)), [user?.id]);
 
@@ -362,6 +373,10 @@ export default function ChessGame(_props: GameProps) {
     setG((cur) => {
       if (cur.result) return cur;
       const next = play(cur, m);
+      // Senevi (vs CPU): a capture or check by either side gets a reaction
+      if (modeRef.current === "cpu" && !next.result && (m.captured || next.played[next.played.length - 1].san.includes("+"))) {
+        senevi({ type: cur.s.turn === cpuColorRef.current ? "cpuGood" : "playerGood" });
+      }
       if (next.result) sfx.end();
       else if (next.played[next.played.length - 1].san.includes("+")) sfx.check();
       else if (m.captured) sfx.capture();
@@ -378,6 +393,7 @@ export default function ChessGame(_props: GameProps) {
     if (screen !== "game" || mode !== "cpu" || g.result || g.s.turn !== cpuColor) return;
     let cancelled = false;
     setThinking(true);
+    senevi({ type: "think", ms: 1600 });
     const t0 = performance.now();
     void askCpu(toFen(g.s), level).then((u) => {
       const wait = Math.max(0, 380 - (performance.now() - t0));
@@ -414,6 +430,7 @@ export default function ChessGame(_props: GameProps) {
     if (!g.result || awarded.current || mode === "pass") return;
     awarded.current = true;
     const outcomeFor = g.result.winner === null ? "draw" : g.result.winner === myColor ? "win" : "loss";
+    if (mode === "cpu") senevi({ type: "over", result: outcomeFor === "win" ? "player" : outcomeFor === "loss" ? "cpu" : "draw" });
     const o = onlineRef.current;
     if (mode === "online") {
       // online: the server applies XP (+100 / −40 / +30 draw) and the confirmed-win token
@@ -446,6 +463,7 @@ export default function ChessGame(_props: GameProps) {
     awarded.current = false;
     setXpGain(null);
     setScreen("game");
+    window.setTimeout(() => senevi({ type: "start" }), 600);
   }
   function startPass() {
     setMode("pass");
@@ -780,9 +798,9 @@ export default function ChessGame(_props: GameProps) {
           }
           modes={[
             {
-              key: "cpu",
-              label: "vs CPU",
-              icon: <Bot size={15} />,
+              key: "cpu", chips: <ChipLine kind="cpu" on={cpuEntry.enabled} />,
+              label: `vs ${SENEVI_NAME}`,
+              icon: <SeneviIcon size={17} />,
               start: () => startCpu(),
               settings: (
                 <div className="ol-card">
@@ -813,7 +831,7 @@ export default function ChessGame(_props: GameProps) {
               ),
             },
             {
-              key: "pass",
+              key: "pass", chips: <ChipLine kind="free" note="Free · two players on one device" />,
               label: "2 players",
               icon: <Users size={15} />,
               start: startPass,
@@ -827,7 +845,7 @@ export default function ChessGame(_props: GameProps) {
               ),
             },
             {
-              key: "online",
+              key: "online", chips: <ChipLine kind="online" />,
               label: "Online",
               icon: <Globe size={15} />,
               panel: (
@@ -875,7 +893,7 @@ export default function ChessGame(_props: GameProps) {
   const bottomColor = -topColor as Color;
   const nameOf = (c: Color) => {
     if (mode === "pass") return c === 1 ? "White" : "Black";
-    if (mode === "cpu") return c === cpuColor ? "CPU" : myName;
+    if (mode === "cpu") return c === cpuColor ? SENEVI_NAME : myName;
     return c === myColor ? myName : online?.opp?.name ?? "Opponent";
   };
   const avatarOf = (c: Color) => {
@@ -906,7 +924,7 @@ export default function ChessGame(_props: GameProps) {
   const status = result
     ? result.reason
     : thinking
-      ? "CPU is thinking…"
+      ? `${SENEVI_NAME} is thinking…`
       : mode === "pass"
         ? `${g.s.turn === 1 ? "White" : "Black"} to move`
         : g.s.turn === myColor
@@ -917,7 +935,7 @@ export default function ChessGame(_props: GameProps) {
 
   return (
     <div className="game-surface ch-surface">
-      <PlayerBar name={nameOf(topColor)} sub={subOf(topColor)} avatar={avatarOf(topColor)} color={topColor} s={g.s} clock={clockFor(topColor)} turn={!result && g.s.turn === topColor} />
+      <PlayerBar cpu={mode === "cpu" && topColor === cpuColor} name={nameOf(topColor)} sub={subOf(topColor)} avatar={avatarOf(topColor)} color={topColor} s={g.s} clock={clockFor(topColor)} turn={!result && g.s.turn === topColor} />
       <div className="ch-board-wrap">
         <Board s={g.s} moves={moves} canMove={canMove} flipped={flipped} lastMove={last} onMove={onBoardMove} theme={theme} pieces={pieceSet} />
         {drawOffer === "received" && !result ? (
@@ -987,6 +1005,7 @@ export default function ChessGame(_props: GameProps) {
         ) : null}
       </div>
       <PlayerBar
+        cpu={mode === "cpu" && bottomColor === cpuColor}
         name={nameOf(bottomColor)}
         sub={subOf(bottomColor)}
         avatar={avatarOf(bottomColor)}

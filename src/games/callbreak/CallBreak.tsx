@@ -8,7 +8,7 @@ import { MAX_CALL, ROUNDS, collect, cpuCall, cpuPlay, dealRound, legal, placeCal
 import "../cards/cards.css";
 import "./callbreak.css";
 
-const NAMES = ["You", "CPU West", "CPU North", "CPU East"];
+const NAMES = ["You", "Senevi West", "Senevi North", "Senevi East"];
 const SPOT = ["is-s", "is-w", "is-n", "is-e"];
 const CPU_CALL_MS = 600;
 const CPU_PLAY_MS = 650;
@@ -231,7 +231,7 @@ function ScoreTable({ s }: { s: CBState }) {
         <tr>
           <th>Round</th>
           {NAMES.map((n) => (
-            <th key={n}>{n.replace("CPU ", "")}</th>
+            <th key={n}>{n.replace("Senevi ", "")}</th>
           ))}
         </tr>
       </thead>

@@ -6,6 +6,7 @@ import type { GameProps } from "./index";
 import { ArrowsPlay } from "./arrows";
 import ArrowsOnline from "./arrowsOnline";
 import PlayFlow from "./PlayFlow";
+import ChipLine from "../components/ChipLine";
 
 export default function ArrowsGame({ onFinish }: GameProps) {
   const [mode, setMode] = useState<"solo" | "online" | null>(null);
@@ -22,8 +23,8 @@ export default function ArrowsGame({ onFinish }: GameProps) {
             </div>
           }
           modes={[
-            { key: "solo", label: "Solo", icon: <User size={15} />, start: () => setMode("solo") },
-            { key: "online", label: "Online", icon: <Globe size={15} />, start: () => setMode("online") },
+            { key: "solo", chips: <ChipLine kind="free" note="Free · solo levels" />, label: "Solo", icon: <User size={15} />, start: () => setMode("solo") },
+            { key: "online", chips: <ChipLine kind="online" />, label: "Online", icon: <Globe size={15} />, start: () => setMode("online") },
           ]}
         />
       </div>

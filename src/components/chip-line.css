@@ -1,0 +1,69 @@
+/* the chip line on a game's start screen (ChipLine.tsx) */
+.chipline {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.chipline-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  color: inherit;
+  background: rgba(127, 127, 127, 0.1);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chipline-row:hover {
+  background: rgba(127, 127, 127, 0.16);
+}
+
+.chipline-text b {
+  font-weight: 800;
+}
+
+.chipline-text .is-up {
+  color: #16a34a;
+}
+
+.chipline-text .is-down {
+  color: #ea580c;
+}
+
+.chipline-chev {
+  flex: none;
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+}
+
+.chipline.is-open .chipline-chev {
+  transform: rotate(180deg);
+}
+
+.chipline-more {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(127, 127, 127, 0.08);
+  text-align: left;
+  line-height: 1.45;
+}
+
+.chipline-more ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.chipline-more a {
+  font-weight: 700;
+  color: var(--neu-accent, #e25a00);
+}

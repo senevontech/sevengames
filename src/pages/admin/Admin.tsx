@@ -10,6 +10,34 @@ import DashboardTab from "./DashboardTab";
 import EngagementTab from "./EngagementTab";
 import LeadsTab from "./LeadsTab";
 import { excludeThisDevice, isDeviceExcluded, thisVisitorId } from "../../lib/track";
+import { Moon, Sun } from "lucide-react";
+import "./admin-neu.css";
+
+/* ---------- light (default) / dark, remembered on this browser ---------- */
+type AdmTheme = "light" | "dark";
+const THEME_KEY = "senevon:admin-theme";
+function readTheme(): AdmTheme {
+  try {
+    return localStorage.getItem(THEME_KEY) === "dark" ? "dark" : "light";
+  } catch {
+    return "light";
+  }
+}
+function useAdminTheme() {
+  const [theme, setTheme] = useState<AdmTheme>(readTheme);
+  const toggle = useCallback(() => {
+    setTheme((t) => {
+      const next = t === "light" ? "dark" : "light";
+      try {
+        localStorage.setItem(THEME_KEY, next);
+      } catch {
+        /* not remembered */
+      }
+      return next;
+    });
+  }, []);
+  return { theme, toggle };
+}
 
 type Stats = {
   days: number;
@@ -98,7 +126,7 @@ function LoginGate({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <div className="adm-login">
+    <div className="adm-login" data-theme={readTheme()}>
       <form className="card adm-login-card" onSubmit={(e) => void submit(e)}>
         <img className="brand-mark-img" src="/logo/mark-256.webp" width={256} height={256} alt="Senevon" />
         <h1>Admin</h1>
@@ -400,6 +428,7 @@ const TABS: [Tab, string][] = [
 ];
 
 function Dashboard({ onLogout }: { onLogout: () => void }) {
+  const { theme, toggle } = useAdminTheme();
   const [tab, setTab] = useState<Tab>("overview");
   const [days, setDays] = useState(30);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -431,7 +460,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   }, []);
 
   return (
-    <div className="adm">
+    <div className="adm" data-theme={theme}>
       <header className="adm-bar">
         <div className="adm-bar-in">
           <Link to="/" className="brand">
@@ -455,6 +484,15 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
             ) : null}
             <button type="button" className="adm-ghost" onClick={() => void load()} disabled={loading}>
               {loading ? "…" : "Refresh"}
+            </button>
+            <button
+              type="button"
+              className="adm-theme"
+              onClick={toggle}
+              aria-label={theme === "light" ? "Dark theme" : "Light theme"}
+              title={theme === "light" ? "Dark theme" : "Light theme"}
+            >
+              {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
             </button>
             <button type="button" className="adm-ghost" onClick={onLogout}>
               Sign out
@@ -489,7 +527,7 @@ export default function Admin() {
 
   if (!isSupabaseConfigured) {
     return (
-      <div className="adm-login">
+      <div className="adm-login" data-theme={readTheme()}>
         <div className="card adm-login-card">
           <h1>Admin</h1>
           <p className="hero-sub">Supabase is not configured, so the admin panel is unavailable.</p>

@@ -9,11 +9,11 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
   tictactoe: {
     steps: [
       { icon: "❌", title: "You are X", text: "You move first. Tap any empty square to place your X." },
-      { icon: "⭕", title: "The CPU answers", text: "The computer places its O straight after your move. It plays well, so watch its threats." },
+      { icon: "⭕", title: "Senevi answers", text: "Senevi places his O straight after your move. He plays well, so watch his threats." },
       { icon: "🏁", title: "Three in a row", text: "Line up three Xs across, down or diagonally to win. A full board with no line is a draw." },
       { icon: "⭐", title: "Points", text: "Win 120 · draw 75 · loss 35." },
     ],
-    controls: ["Tap a square to play", "Block the CPU's two-in-a-row before building your own"],
+    controls: ["Tap a square to play", "Block Senevi's two-in-a-row before building your own"],
   },
   memory: {
     steps: [
@@ -150,7 +150,7 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
   "connect-four": {
     steps: [
       { icon: "🔴", title: "Drop a disc", text: "Tap a column to drop your disc. It falls to the lowest free spot." },
-      { icon: "🟡", title: "The CPU replies", text: "The computer drops its own disc after each of yours." },
+      { icon: "🟡", title: "Senevi replies", text: "Senevi drops his own disc after each of yours." },
       { icon: "🏁", title: "Four in a row", text: "Connect four across, down or diagonally to win. Winning in fewer moves scores higher." },
     ],
     controls: ["Tap a column", "Take the middle column early"],
@@ -175,7 +175,7 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
   },
   chess: {
     steps: [
-      { icon: "♟️", title: "Pick a mode", text: "Play the CPU on three levels, a friend on the same device, or rated games online with a clock." },
+      { icon: "♟️", title: "Pick a mode", text: "Play Senevi on three levels, a friend on the same device, or rated games online with a clock." },
       { icon: "👆", title: "Move a piece", text: "Tap a piece to see where it can go, then tap a highlighted square." },
       { icon: "👑", title: "Checkmate wins", text: "Trap the enemy king so it can't escape check. Stalemate and repetition are draws." },
       { icon: "♜", title: "Special moves", text: "Castling, en passant and pawn promotion all work as in real chess." },
@@ -191,7 +191,7 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
       { icon: "🔁", title: "Extra rolls", text: "A 6, a capture or reaching home gives another roll. Three 6s in a row lose the turn." },
       { icon: "🏠", title: "Get home first", text: "You need an exact roll to reach home. Bring all four tokens home to win." },
     ],
-    controls: ["Tap the dice, then a token", "Play vs CPU, with friends on one device, or online"],
+    controls: ["Tap the dice, then a token", "Play vs Senevi, with friends on one device, or online"],
   },
   carrom: {
     steps: [

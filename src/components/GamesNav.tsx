@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { SeneviIcon } from "../senevi/Senevi";
 import { Link, useNavigate } from "react-router-dom";
 import { Gift, LayoutGrid, Menu, Smartphone, X } from "lucide-react";
 import { isNative } from "../lib/native";
@@ -191,6 +192,14 @@ function MobileMenu({ onPick }: { onPick: (g: Game) => void }) {
                   </Link>
                 </li>
                 <li>
+                  <Link to="/senevi" onClick={close}>
+                    <span className="gs-cats-icon" aria-hidden="true">
+                      <SeneviIcon size={18} />
+                    </span>
+                    <span className="gs-cats-name">Meet Senevi</span>
+                  </Link>
+                </li>
+                <li>
                   <Link to="/rewards" onClick={close}>
                     <span className="gs-cats-icon" aria-hidden="true">
                       <Gift size={16} />
@@ -351,6 +360,9 @@ export default function GamesNav({
             <RiSearchReicon size={21} aria-hidden="true" />
           </button>
         </div>
+        <Link className="gs-home" to="/senevi" aria-label="Meet Senevi" title="Meet Senevi">
+          <SeneviIcon size={22} />
+        </Link>
         <Link className="gs-home" to="/rewards" aria-label="Rewards" title="Rewards">
           <Gift size={21} strokeWidth={1.6} aria-hidden="true" />
         </Link>

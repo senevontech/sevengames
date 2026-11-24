@@ -1,0 +1,155 @@
+/* /senevi (SeneviPage.tsx) */
+
+.snp-hero {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(16px, 4vw, 40px);
+}
+
+.snp-stage {
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+  border-radius: 24px;
+  box-shadow: var(--ac-well);
+  /* his canvas spills past the head: let it */
+  overflow: visible;
+}
+
+.snp-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ac-accent);
+}
+
+.snp-intro h1 {
+  margin: 6px 0 2px;
+  font-size: clamp(28px, 5vw, 42px);
+  color: var(--ac-text);
+}
+
+/* his speech: a reserved line so the text below never jumps */
+.snp-says {
+  min-height: 20px;
+  margin: 0 0 8px;
+}
+.snp-says .snv-line {
+  font-size: 14px;
+  white-space: normal;
+}
+
+.snp-moods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 12px;
+}
+.snp-moods .ac-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.snp-mute {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ac-muted);
+  cursor: pointer;
+}
+.snp-mute input {
+  accent-color: var(--ac-accent);
+}
+
+.snp-record {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.snp-record li {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 12px 6px;
+  border-radius: 14px;
+  box-shadow: var(--ac-well);
+}
+.snp-record b {
+  font-size: 22px;
+  color: var(--ac-text);
+}
+.snp-record small,
+.snp-fine {
+  font-size: 12px;
+  color: var(--ac-muted);
+}
+.snp-fine {
+  margin: 8px 0 0;
+}
+
+.snp-h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.snp-games {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 14px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.snp-game {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.snp-game .poster-hero {
+  flex: none;
+  width: 64px;
+  height: 64px;
+}
+.snp-game-text {
+  flex: 1;
+  min-width: 0;
+}
+.snp-game-text b {
+  color: var(--ac-text);
+}
+.snp-game-text .ac-sub {
+  margin: 2px 0 0;
+  font-size: 13px;
+}
+.snp-game-rec {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ac-accent);
+}
+
+@media (max-width: 720px) {
+  .snp-hero {
+    grid-template-columns: minmax(0, 1fr);
+    text-align: center;
+  }
+  .snp-stage {
+    min-height: 260px;
+  }
+  .snp-moods {
+    justify-content: center;
+  }
+  .snp-record {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

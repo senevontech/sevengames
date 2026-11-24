@@ -879,3 +879,17 @@
     animation: none;
   }
 }
+
+/* vs CPU: Senevi's line briefly covers his name (inside his card, so the table never moves) */
+.pl-pinfo {
+  position: relative;
+}
+.pl-senevi-line {
+  position: absolute;
+  inset: -2px 0 auto;
+  padding: 1px 0;
+  background: var(--pl-bg, var(--neu-bg, #1d1e24));
+}
+.pl-player.is-right .pl-senevi-line {
+  text-align: right;
+}

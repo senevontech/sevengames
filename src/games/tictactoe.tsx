@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { GameProps } from "./index";
 import ResultBanner, { type Outcome } from "./ResultBanner";
+import { senevi, SeneviCard } from "../senevi/Senevi";
 
 type Cell = "X" | "O" | null;
 
@@ -62,6 +63,7 @@ export default function TicTacToe({ onFinish }: GameProps) {
       setCells(afterUser);
       setStatus("You win");
       setOutcome("win");
+      senevi({ type: "over", result: "player" });
       onFinish(120);
       return;
     }
@@ -69,11 +71,18 @@ export default function TicTacToe({ onFinish }: GameProps) {
       setCells(afterUser);
       setStatus("Draw");
       setOutcome("draw");
+      senevi({ type: "over", result: "draw" });
       onFinish(75);
       return;
     }
 
     const opponentIndex = bestMove(afterUser);
+    // he blocked a line you were about to finish
+    const blocked = opponentIndex >= 0 && (() => {
+      const t = [...afterUser];
+      t[opponentIndex] = "X";
+      return getWinner(t) === "X";
+    })();
     const afterOpponent = [...afterUser];
     if (opponentIndex >= 0) afterOpponent[opponentIndex] = "O";
     setCells(afterOpponent);
@@ -81,12 +90,16 @@ export default function TicTacToe({ onFinish }: GameProps) {
     if (getWinner(afterOpponent) === "O") {
       setStatus("Opponent wins");
       setOutcome("lose");
+      senevi({ type: "over", result: "cpu" });
       onFinish(35);
     } else if (afterOpponent.every(Boolean)) {
       setStatus("Draw");
       setOutcome("draw");
+      senevi({ type: "over", result: "draw" });
       onFinish(75);
     } else {
+      if (blocked) senevi({ type: "cpuGood" });
+      else senevi({ type: "think", ms: 900 });
       setStatus("Your move — you are X");
     }
   }
@@ -95,11 +108,12 @@ export default function TicTacToe({ onFinish }: GameProps) {
     setCells(Array(9).fill(null));
     setStatus("Your move — you are X");
     setOutcome(null);
+    senevi({ type: "start" });
   }
 
   return (
     <div className="game-surface">
-      <p className="game-status">{status}</p>
+      <SeneviCard status={status} />
       <div className="board-three">
         {cells.map((cell, index) => (
           <button

@@ -1,0 +1,139 @@
+/* Senevi: the face (live canvas or fallback), his speech line, and the compact card. */
+
+.snv-face {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+.snv-host,
+.snv-face .led-bot-root {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+/* the bot's own floating bubble is not used here (lines go to .snv-line) */
+.snv-face .led-bot-bubble {
+  display: none;
+}
+
+/* no WebGL: a flat dome with two LED eyes and a smile */
+.snv-fallback {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #4a4d55, #121317 70%);
+  box-shadow: inset 0 -3px 8px rgba(0, 0, 0, 0.6);
+}
+.snv-fallback i {
+  position: absolute;
+  top: 34%;
+  width: 14%;
+  height: 22%;
+  border-radius: 40%;
+  background: #ffaa45;
+  box-shadow: 0 0 6px #ffaa45;
+  animation: snv-blink 5s infinite;
+}
+.snv-fallback i:first-child {
+  left: 30%;
+}
+.snv-fallback i:nth-child(2) {
+  right: 30%;
+}
+.snv-fallback b {
+  position: absolute;
+  left: 38%;
+  right: 38%;
+  top: 66%;
+  height: 7%;
+  border-radius: 99px;
+  background: #ffaa45;
+  box-shadow: 0 0 6px #ffaa45;
+}
+@keyframes snv-blink {
+  0%,
+  94%,
+  100% {
+    transform: scaleY(1);
+  }
+  97% {
+    transform: scaleY(0.1);
+  }
+}
+
+/* what he's saying: a short line inside the player strip */
+.snv-line {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--neu-accent, #f26a0c);
+  animation: snv-say 0.3s ease both;
+}
+@keyframes snv-say {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+
+/* Noughts / Connect Four: a card above the board */
+.snv-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 360px);
+  min-height: 52px;
+  margin: 0 auto 10px;
+  padding: 6px 14px 6px 8px;
+  border-radius: 18px;
+  background: var(--neu-bg, rgba(255, 255, 255, 0.05));
+  box-shadow: var(--neu-raise-sm, 0 4px 14px rgba(0, 0, 0, 0.15));
+}
+.snv-card-text {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+  text-align: left;
+}
+.snv-card-text b {
+  font-size: 15px;
+}
+.snv-card-text b small {
+  margin-left: 4px;
+  padding: 1px 6px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  vertical-align: 2px;
+  color: var(--neu-accent, #f26a0c);
+  background: color-mix(in srgb, var(--neu-accent, #f26a0c) 14%, transparent);
+}
+.snv-card-status {
+  font-size: 12.5px;
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .snv-line,
+  .snv-fallback i {
+    animation: none;
+  }
+}
+.snv-face .led-bot-root {
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* the flat icon: sits on the text baseline like a lucide icon, with a soft LED glow */
+.snv-icon {
+  flex: none;
+  vertical-align: -0.15em;
+  filter: drop-shadow(0 0 2px rgba(255, 170, 69, 0.35));
+}

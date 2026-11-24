@@ -422,7 +422,7 @@ export const games: Game[] = [
     difficulty: "Medium",
     minutes: 5,
     accent: "#32ade6",
-    description: "Line up four discs before the CPU does. Faster wins score higher.",
+    description: "Line up four discs before Senevi does. Faster wins score higher.",
   },
   {
     id: "lights-out",
@@ -455,7 +455,7 @@ export const games: Game[] = [
     difficulty: "Hard",
     minutes: 15,
     accent: "#769656",
-    description: "The classic. Play the CPU on three levels, a friend on one device, or rated games online with a clock.",
+    description: "The classic. Play Senevi on three levels, a friend on one device, or rated games online with a clock.",
   },
   {
     id: "ludo",
@@ -466,7 +466,7 @@ export const games: Game[] = [
     difficulty: "Easy",
     minutes: 15,
     accent: "#e53935",
-    description: "Roll, race your four tokens home and knock rivals back to base. 2–4 players: CPU, friends or online.",
+    description: "Roll, race your four tokens home and knock rivals back to base. 2–4 players: Senevi, friends or online.",
   },
   {
     id: "blackjack",
@@ -477,7 +477,7 @@ export const games: Game[] = [
     difficulty: "Easy",
     minutes: 5,
     accent: "#17703f",
-    description: "Two card games on a real felt table: beat the dealer to 21 at Blackjack with free table chips, or call your tricks at Call Break against three CPU players.",
+    description: "Two card games on a real felt table: beat the dealer to 21 at Blackjack with free table chips, or call your tricks at Call Break against three Senevi players.",
   },
   {
     id: "pool",
@@ -488,7 +488,7 @@ export const games: Game[] = [
     difficulty: "Medium",
     minutes: 10,
     accent: "#1f7a4a",
-    description: "Real-physics eight-ball pool: follow, draw and side spin, rattling pockets. Pot your group, then the 8. vs CPU, on one device, or online.",
+    description: "Real-physics eight-ball pool: follow, draw and side spin, rattling pockets. Pot your group, then the 8. vs Senevi, on one device, or online.",
   },
 ];
 

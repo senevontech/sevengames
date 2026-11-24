@@ -280,3 +280,14 @@
     transition: none !important;
   }
 }
+
+/* vs CPU: Senevi's lines, one reserved row under the players */
+.lu-senevi-says {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 17px;
+  overflow: hidden;
+  text-align: center;
+}

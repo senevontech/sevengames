@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import TokenIcon from "../components/TokenIcon";
 import ChipShowcase from "../components/chip/ChipShowcase";
+import ChipMath from "../components/ChipMath";
 import { AD_FREE_PRICE } from "../lib/tokens";
 import { useAuthContext } from "../context/AuthContext";
 import { tokenErrorText, usePlanPrices, useTokenPacks, useTokens, type LedgerRow, type TokenPack } from "../lib/tokens";
@@ -56,10 +57,10 @@ const REASON: Record<string, { label: string; Icon: LucideIcon }> = {
 };
 
 const ENTRY_GAMES: Record<string, string> = { chess: "Chess", ludo: "Ludo", carrom: "Carrom", arrows: "Arrows", pool: "Eight Ball" };
-/** "cpu:pool" → "Eight Ball vs CPU", "pool:match-id" → "Eight Ball" */
+/** "cpu:pool" → "Eight Ball vs Senevi", "pool:match-id" → "Eight Ball" */
 function entryRefLabel(ref: string, delta: number) {
   const [a, b] = ref.split(":");
-  const game = a === "cpu" ? `${ENTRY_GAMES[b] ?? b} vs CPU` : ENTRY_GAMES[a] ?? a;
+  const game = a === "cpu" ? `${ENTRY_GAMES[b] ?? b} vs Senevi` : ENTRY_GAMES[a] ?? a;
   return `${game} · ${delta < 0 ? "entry" : "prize"}`;
 }
 
@@ -127,7 +128,7 @@ export default function TokensPage() {
   // "/chips#buy" (from the profile wallet card) scrolls to the packs, "/chips#plus" to Senevon Plus
   useEffect(() => {
     const target = location.hash.slice(1);
-    if ((target !== "buy" && target !== "plus") || !packs) return;
+    if ((target !== "buy" && target !== "plus" && target !== "chip-math") || !packs) return;
     const id = requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" }));
     return () => cancelAnimationFrame(id);
   }, [location.hash, packs]);
@@ -227,6 +228,7 @@ export default function TokensPage() {
             </Link>
           </div>
         </section>
+        <ChipMath earned={null} bought={null} />
         <ShopHub />
       </div>
     );
@@ -289,6 +291,11 @@ export default function TokensPage() {
           {note.ok ? <Check size={16} aria-hidden="true" /> : null}
           {note.text}
         </p>
+      ) : null}
+
+      {/* ---------- how chips are won and lost ---------- */}
+      {!wallet?.unlimited ? (
+        <ChipMath earned={wallet ? wallet.earned ?? 0 : null} bought={wallet ? Math.max(0, wallet.balance - (wallet.earned ?? 0)) : null} />
       ) : null}
 
       {/* ---------- buy packs ---------- */}

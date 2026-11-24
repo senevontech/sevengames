@@ -12,6 +12,7 @@ import type { GameProps } from "../index";
 import { FOOT_SPOT, HEAD_X, L, MAX_POWER, R, W, ballsLeft, endlessTargets, legalTargets, newRack, placeOk, playEndless, playShot, timeoutFoul, validState, type Group, type PoolState, type EndlessOutcome, type Shot, type SimEvent, type Vec } from "./engine";
 import { PoolView, ballCss } from "./render";
 import { CPU_MAX_LEVEL, cpuPlan, cpuSkill } from "./cpu";
+import { senevi, SeneviFace, SeneviIcon, SeneviLine, SENEVI_NAME } from "../../senevi/Senevi";
 import { clickSound, cueSound, pocketSound, railSound, setRolling, tickSound, winChime } from "./audio";
 import { useAuthContext } from "../../context/AuthContext";
 import { useAvatar, type AvatarChoice } from "../../lib/avatar";
@@ -31,6 +32,7 @@ import { useTokens } from "../../lib/tokens";
 import RoomEntry from "../../components/RoomEntry";
 import { CpuEntryToggle, CpuEntryLine } from "../../components/CpuEntry";
 import PlayFlow from "../PlayFlow";
+import ChipLine from "../../components/ChipLine";
 import "./pool.css";
 
 type Mode = "cpu" | "pass" | "online" | "endless";
@@ -490,6 +492,14 @@ export default function PoolGame(_props: GameProps) {
       let s = remoteState.current && remoteState.current.shots >= next.shots ? remoteState.current : next;
       remoteState.current = null;
       if (modeRef.current === "endless") s = scoreEndless(s);
+      // Senevi (vs CPU): a pot that keeps the turn is a good shot; then the result
+      if (modeRef.current === "cpu") {
+        const prev = stRef.current;
+        const potted = s.balls.filter((b) => b.id !== 0 && b.potted).length - prev.balls.filter((b) => b.id !== 0 && b.potted).length;
+        const cpuShot = seatsRef.current[prev.turn]?.kind === "cpu";
+        if (s.over) senevi({ type: "over", result: s.winner === null ? "draw" : seatsRef.current[s.winner]?.kind === "cpu" ? "cpu" : "player" });
+        else if (potted > 0 && s.turn === prev.turn && !s.foul) senevi({ type: cpuShot ? "cpuGood" : "playerGood" });
+      }
       stRef.current = s;
       setSt(s);
       viewRef.current?.setBalls(s.balls);
@@ -568,6 +578,7 @@ export default function PoolGame(_props: GameProps) {
     if (seats[st.turn]?.kind !== "cpu") return;
     let alive = true;
     setCpuThinking(true);
+    senevi({ type: "think", ms: 1500 });
     const s = st;
     const go = async () => {
       await new Promise((r) => setTimeout(r, 650));
@@ -643,7 +654,7 @@ export default function PoolGame(_props: GameProps) {
         : m === "cpu"
         ? [
             { kind: "human", name: myName, userId: user?.id, avatar: myAvatar, cue: myCueId },
-            { kind: "cpu", name: `CPU · Lv ${myPoolLevel}`, cue: cpuCue(skill) },
+            { kind: "cpu", name: `${SENEVI_NAME} · Lv ${myPoolLevel}`, cue: cpuCue(skill) },
           ]
         : [
             { kind: "human", name: "Player 1" },
@@ -653,7 +664,10 @@ export default function PoolGame(_props: GameProps) {
     seatsRef.current = list;
     modeRef.current = m;
     endlessShot.current = null;
-    if (m === "cpu") void cpuEntry.open();
+    if (m === "cpu") {
+      void cpuEntry.open();
+      window.setTimeout(() => senevi({ type: "start" }), 700);
+    }
     if (m === "endless") setRun(freshRun());
     begin(newRack(Math.random, m === "cpu" ? (Math.random() < 0.5 ? 0 : 1) : 0));
   }
@@ -1150,7 +1164,7 @@ export default function PoolGame(_props: GameProps) {
     <div className="ol-card pl-settings">
       {withLevel ? (
         <p className="ol-sub pl-cpu-note">
-          The CPU plays at your level: <b>Lv {myPoolLevel}</b>
+          Senevi plays at your level: <b>Lv {myPoolLevel}</b>
           {myPoolLevel >= CPU_MAX_LEVEL ? " (full strength)" : ". Win games to level up and it gets sharper."}
         </p>
       ) : null}
@@ -1231,11 +1245,11 @@ export default function PoolGame(_props: GameProps) {
             ) : null
           }
           modes={[
-            { key: "cpu", label: "vs CPU", icon: <Bot size={15} />, start: () => startLocal("cpu"), settings: settingsCard(true) },
-            { key: "pass", label: "Same device", icon: <Users size={15} />, start: () => startLocal("pass"), settings: settingsCard(false) },
-            { key: "endless", label: "Endless", icon: <Timer size={15} />, start: () => startLocal("endless"), settings: endlessCard },
+            { key: "cpu", chips: <ChipLine kind="cpu" on={cpuEntry.enabled} />, label: `vs ${SENEVI_NAME}`, icon: <SeneviIcon size={17} />, start: () => startLocal("cpu"), settings: settingsCard(true) },
+            { key: "pass", chips: <ChipLine kind="free" note="Free · two players on one device" />, label: "Same device", icon: <Users size={15} />, start: () => startLocal("pass"), settings: settingsCard(false) },
+            { key: "endless", chips: <ChipLine kind="free" note="Free · score points against the clock" />, label: "Endless", icon: <Timer size={15} />, start: () => startLocal("endless"), settings: endlessCard },
             {
-              key: "online",
+              key: "online", chips: <ChipLine kind="online" />,
               label: "Online",
               icon: <Globe size={15} />,
               panel: !GameRoom.configured ? (
@@ -1330,11 +1344,18 @@ export default function PoolGame(_props: GameProps) {
             return (
               <div key={i} className={`pl-player${st.turn === i && !st.over ? " is-turn" : ""}${i === 1 ? " is-right" : ""}`}>
                 <span className="pl-av-wrap">
-                  {seat?.userId ? <PlayerAvatar id={seat.userId} name={seat.name} avatar={seat.avatar ?? null} size={26} className="lb-initial pl-av" /> : <span className="pl-av pl-av-blank">{seat?.kind === "cpu" ? <Bot size={14} /> : i + 1}</span>}
+                  {mode === "cpu" && seat?.kind === "cpu" ? (
+                    <SeneviFace size={30} className="pl-senevi" />
+                  ) : seat?.userId ? (
+                    <PlayerAvatar id={seat.userId} name={seat.name} avatar={seat.avatar ?? null} size={26} className="lb-initial pl-av" />
+                  ) : (
+                    <span className="pl-av pl-av-blank">{seat?.kind === "cpu" ? <SeneviIcon size={18} /> : i + 1}</span>
+                  )}
                   {clockFor(i)}
                 </span>
                 <span className="pl-pinfo">
                   <b>{i === mySeat && mode !== "pass" ? "You" : seat?.name ?? `Player ${i + 1}`}</b>
+                  {mode === "cpu" && seat?.kind === "cpu" ? <SeneviLine className="pl-senevi-line" /> : null}
                   <span className="pl-balls">
                     {ids.length ? ids.map((id) => <MiniBall key={id} id={id} gone={!left.includes(id)} />) : <small>{groupName(null)}</small>}
                     {g && left.length === 0 ? <MiniBall id={8} /> : null}

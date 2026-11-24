@@ -47,6 +47,8 @@ export type PlayMode = {
   panel?: ReactNode;
   /** label on the Play button for this mode (default "Play") */
   playLabel?: string;
+  /** what this mode can win or lose in chips (<ChipLine />), shown under the Play row */
+  chips?: ReactNode;
 };
 
 const MODE_KEY = (id: string) => `senevon:mode:${id}`;
@@ -187,6 +189,7 @@ export default function PlayFlow({
         </div>
         </div>
 
+        {mode.chips ?? null}
         {gearOpen && mode.settings ? <div className="pf-settings">{mode.settings}</div> : null}
         {gate?.error ? <p className="pf-error">{gate.error}</p> : null}
         {homeExtra?.(go)}

@@ -29,6 +29,16 @@ Not done yet / to check:
 - [ ] Two-player test of a friend-room chip match and a random chip match on real devices.
 - [ ] Google Play listing text and product names still say "tokens".
 
+## Chips shown before play (2026-11-24)
+
+- Every game's start screen shows a chip line for the chosen mode (tap for the full breakdown):
+  vs CPU "Entry 1 · win +1 · lose −1" (or "Free match" when Play for chips is off), online
+  "Random match: entry 3 · win +3 · lose −3" plus friend-room rules, same device / solo / Endless /
+  Call Break "Free", Blackjack "Free Table chips only · no Chips used". (`components/ChipLine.tsx`)
+- Chips page: "How chips are won and lost" (`/chips#chip-math`): earned vs bought bar, drawn flows
+  for vs CPU and random matches, a friend-room calculator, when entries come back, and the Table
+  chips note. (`components/ChipMath.tsx`)
+
 ## Card table: Blackjack & Call Break (2026-11-24)
 
 - The card game (id `blackjack`) is now **Blackjack & Call Break**: two modes on one felt table.

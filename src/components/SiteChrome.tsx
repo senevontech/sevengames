@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { SeneviIcon } from "../senevi/Senevi";
 import { Link, useLocation } from "react-router-dom";
 import { Building2, Coins, Gift, House, Menu, Moon, Smartphone, Sun, Trophy, UserRound, X } from "lucide-react";
 import { categories, games } from "../catalog";
@@ -87,6 +88,12 @@ function SiteMenu({ pathname }: { pathname: string }) {
               })}
           </div>
           <div className="site-menu-sep" />
+          <Link to="/senevi" className="site-menu-item">
+            <span className="site-menu-icon" aria-hidden="true">
+              <SeneviIcon size={18} />
+            </span>
+            Meet Senevi
+          </Link>
           <Link to="/rewards" className="site-menu-item">
             <span className="site-menu-icon" aria-hidden="true">
               <Gift size={16} />

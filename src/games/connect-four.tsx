@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { GameProps } from "./index";
 import ResultBanner from "./ResultBanner";
+import { senevi, SeneviCard } from "../senevi/Senevi";
 
 const COLS = 7;
 const ROWS = 6;
@@ -66,44 +67,50 @@ export default function ConnectFour({ onFinish }: GameProps) {
     if (wins(b, 1)) {
       setBoard(b);
       setResult("win");
+      senevi({ type: "over", result: "player" });
       onFinish(Math.max(10, 100 - mine * 2));
       return;
     }
     if (full(b)) {
       setBoard(b);
       setResult("draw");
+      senevi({ type: "over", result: "draw" });
       onFinish(10);
       return;
     }
-    drop(b, cpuMove(b), 2);
+    const cpuCol = cpuMove(b);
+    const blocked = (() => {
+      const t = clone(b);
+      drop(t, cpuCol, 1);
+      return wins(t, 1);
+    })();
+    drop(b, cpuCol, 2);
     setBoard(b);
     setMoves(mine);
     if (wins(b, 2)) {
       setResult("lose");
+      senevi({ type: "over", result: "cpu" });
       onFinish(0);
     } else if (full(b)) {
       setResult("draw");
+      senevi({ type: "over", result: "draw" });
       onFinish(10);
-    }
+    } else if (blocked) senevi({ type: "cpuGood" });
+    else senevi({ type: "think", ms: 900 });
   }
 
   function reset() {
     setBoard(empty());
     setMoves(0);
     setResult(null);
+    senevi({ type: "start" });
   }
 
   return (
     <div className="game-surface">
-      <p className="game-status">
-        {result === "win"
-          ? "You win!"
-          : result === "lose"
-            ? "CPU wins."
-            : result === "draw"
-              ? "Draw."
-              : "Connect four in a row. You are blue."}
-      </p>
+      <SeneviCard
+        status={result === "win" ? "You win!" : result === "lose" ? "Senevi wins." : result === "draw" ? "Draw." : "Connect four in a row. You are blue."}
+      />
       <div className="c4-board">
         {Array.from({ length: COLS }).map((_, c) => (
           <button
@@ -121,7 +128,7 @@ export default function ConnectFour({ onFinish }: GameProps) {
         ))}
       </div>
       {result ? (
-        <ResultBanner outcome={result} detail={result === "lose" ? "The CPU connected four." : undefined} onAgain={reset} />
+        <ResultBanner outcome={result} detail={result === "lose" ? "Senevi connected four." : undefined} onAgain={reset} />
       ) : null}
       {result ? (
         <button type="button" className="primary-btn" onClick={reset}>

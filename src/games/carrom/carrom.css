@@ -1310,3 +1310,12 @@
     animation-duration: 2.4s;
   }
 }
+
+/* vs CPU: Senevi's lines under the score chips */
+.carrom-senevi-says {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: 17px;
+  overflow: hidden;
+}

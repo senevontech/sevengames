@@ -1,0 +1,247 @@
+/* Senevi, the Senevon game CPU: the live 3D face (three.js, loaded on demand), a fallback face
+   for devices without WebGL, the event bus the games use to make him react, and his speech.
+
+   Games don't hold a reference to him. They call `senevi({ type: "think" })` etc., and every
+   Senevi on screen for that seat reacts. Lines he says go to `useSeneviLine(seat)`, so each game
+   shows them inside its own player strip (never over the board). */
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import type { SeneviInstance } from "./seneviBot";
+import "./senevi.css";
+
+export const SENEVI_NAME = "Senevi";
+
+/* ---------- events from the games ---------- */
+export type SeneviEvent =
+  | { type: "start" }
+  | { type: "think"; ms?: number }
+  | { type: "cpuGood" }
+  | { type: "playerGood" }
+  | { type: "over"; result: "cpu" | "player" | "draw" };
+
+type Detail = SeneviEvent & { seat?: string };
+const bus = new EventTarget();
+
+/** Make Senevi react. `seat`: only the Senevi in that seat (multi-CPU games); omit for all. */
+export function senevi(ev: SeneviEvent, seat?: string) {
+  if (ev.type === "over") recordResult(ev.result);
+  bus.dispatchEvent(new CustomEvent<Detail>("e", { detail: { ...ev, seat } }));
+}
+
+/* ---------- your record against him (this device), per game ---------- */
+export type SeneviRecord = Record<string, { w: number; l: number; d: number }>;
+const RECORD_KEY = "senevon:senevi-record";
+let lastRecord = 0;
+export function readSeneviRecord(): SeneviRecord {
+  try {
+    return JSON.parse(localStorage.getItem(RECORD_KEY) || "{}") as SeneviRecord;
+  } catch {
+    return {};
+  }
+}
+function recordResult(result: "cpu" | "player" | "draw") {
+  // multi-CPU games (Ludo) end with one event per Senevi: count the match once
+  if (Date.now() - lastRecord < 3000) return;
+  lastRecord = Date.now();
+  const game = window.location.pathname.match(/^\/game\/([^/]+)/)?.[1];
+  if (!game) return;
+  const rec = readSeneviRecord();
+  const r = (rec[decodeURIComponent(game)] ??= { w: 0, l: 0, d: 0 });
+  if (result === "player") r.w += 1;
+  else if (result === "cpu") r.l += 1;
+  else r.d += 1;
+  try {
+    localStorage.setItem(RECORD_KEY, JSON.stringify(rec));
+  } catch {
+    /* not saved */
+  }
+}
+
+/* ---------- speech: muted switch + the latest line per seat ---------- */
+const MUTE_KEY = "senevon:senevi-mute";
+let muted = (() => {
+  try {
+    return localStorage.getItem(MUTE_KEY) === "1";
+  } catch {
+    return false;
+  }
+})();
+const muteListeners = new Set<() => void>();
+export function setSeneviMuted(on: boolean) {
+  muted = on;
+  try {
+    localStorage.setItem(MUTE_KEY, on ? "1" : "0");
+  } catch {
+    /* not remembered */
+  }
+  muteListeners.forEach((l) => l());
+}
+export function useSeneviMuted() {
+  return useSyncExternalStore(
+    (l) => {
+      muteListeners.add(l);
+      return () => void muteListeners.delete(l);
+    },
+    () => muted,
+  );
+}
+
+type Line = { text: string; key: number } | null;
+const lines = new Map<string, Line>();
+const lineListeners = new Set<() => void>();
+let lineSeq = 0;
+function publishLine(seat: string, text: string | null) {
+  lines.set(seat, text ? { text, key: ++lineSeq } : null);
+  lineListeners.forEach((l) => l());
+}
+/** What Senevi (in `seat`) is saying right now, or null. */
+export function useSeneviLine(seat = "cpu") {
+  return useSyncExternalStore(
+    (l) => {
+      lineListeners.add(l);
+      return () => void lineListeners.delete(l);
+    },
+    () => lines.get(seat) ?? null,
+  );
+}
+
+/* ---------- the face ---------- */
+let modPromise: Promise<typeof import("./seneviBot").default> | null = null;
+const loadBot = () => (modPromise ??= import("./seneviBot.js").then((m) => m.default));
+
+type FaceProps = {
+  /** Size of the head in px (the canvas spills a little past it, transparently). */
+  size: number;
+  /** "head" in games; "full" (head + body) on his page. */
+  body?: "head" | "full";
+  /** Which CPU seat this is (multi-CPU games). */
+  seat?: string;
+  /** Chatty: greets and tells the odd joke (lines go to useSeneviLine). */
+  speech?: boolean;
+  className?: string;
+  /** Called once the bot exists (his page uses it for the expression buttons). */
+  onReady?: (bot: SeneviInstance) => void;
+};
+
+export function SeneviFace({ size, body = "head", seat = "cpu", speech = true, className = "", onReady }: FaceProps) {
+  const host = useRef<HTMLDivElement>(null);
+  const [fallback, setFallback] = useState(false);
+  const isMuted = useSeneviMuted();
+  const speak = speech && !isMuted;
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
+
+  useEffect(() => {
+    let bot: SeneviInstance | null = null;
+    let gone = false;
+    let clearT = 0;
+    const onSay = (text: string) => {
+      publishLine(seat, text);
+      window.clearTimeout(clearT);
+      clearT = window.setTimeout(() => publishLine(seat, null), Math.min(6000, 2600 + text.length * 50));
+    };
+    loadBot()
+      .then((Senevi) => {
+        if (gone || !host.current) return;
+        if (!Senevi.isSupported()) return setFallback(true);
+        const small = size < 90;
+        bot = Senevi.create(host.current, {
+          speech: speak,
+          onSay,
+          config: {
+            body,
+            // tiny heads: fewer, bigger LEDs read better and cost less
+            ...(small ? { cols: 40, maxDpr: 2, bob: 0.25 } : {}),
+            ...(body === "full" ? { zoom: 0.9 } : {}),
+          },
+        });
+        onReadyRef.current?.(bot);
+      })
+      .catch(() => !gone && setFallback(true));
+
+    const onEvent = (e: Event) => {
+      const d = (e as CustomEvent<Detail>).detail;
+      if (!bot || bot.destroyed || (d.seat && d.seat !== seat)) return;
+      if (d.type === "start") bot.gameStart();
+      else if (d.type === "think") bot.thinkTurn(d.ms);
+      else if (d.type === "cpuGood") bot.cpuGood();
+      else if (d.type === "playerGood") bot.playerGood();
+      else if (d.type === "over") bot.gameOver(d.result);
+    };
+    bus.addEventListener("e", onEvent);
+    return () => {
+      gone = true;
+      window.clearTimeout(clearT);
+      bus.removeEventListener("e", onEvent);
+      bot?.destroy();
+      publishLine(seat, null);
+      if (host.current) host.current.innerHTML = "";
+    };
+  }, [size, body, seat, speak]);
+
+  return (
+    <span className={`snv-face${body === "full" ? " is-full" : ""} ${className}`} style={{ width: size, height: size }} aria-label={SENEVI_NAME} role="img">
+      {fallback ? (
+        <span className="snv-fallback" aria-hidden="true">
+          <i />
+          <i />
+          <b />
+        </span>
+      ) : (
+        <span ref={host} className="snv-host" />
+      )}
+    </span>
+  );
+}
+
+/** His latest line, for a game's player strip (fades in and out; takes no space when quiet). */
+export function SeneviLine({ seat = "cpu", className = "" }: { seat?: string; className?: string }) {
+  const line = useSeneviLine(seat);
+  if (!line) return null;
+  return (
+    <span key={line.key} className={`snv-line ${className}`} role="status" aria-live="polite">
+      {line.text}
+    </span>
+  );
+}
+
+/**
+ * A compact "Senevi" card (face + name + what he's saying) for games that had no opponent strip
+ * (Noughts, Connect Four). Sits above the board, in the page flow.
+ */
+export function SeneviCard({ status, seat = "cpu" }: { status?: string; seat?: string }) {
+  const line = useSeneviLine(seat);
+  return (
+    <div className="snv-card">
+      <SeneviFace size={40} seat={seat} />
+      <div className="snv-card-text">
+        <b>
+          {SENEVI_NAME} <small>AI</small>
+        </b>
+        {line ? <SeneviLine seat={seat} /> : status ? <span className="snv-card-status">{status}</span> : null}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Senevi as a small flat icon (his dark dome, LED eyes and smile) for buttons, menus and labels,
+ * where a live 3D Senevi would be too much. Same size API as a lucide icon.
+ */
+export function SeneviIcon({ size = 16, className = "" }: { size?: number; className?: string }) {
+  return (
+    <svg className={`snv-icon ${className}`} width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <defs>
+        <radialGradient id="snv-dome" cx="38%" cy="30%" r="75%">
+          <stop offset="0" stopColor="#5a5e68" />
+          <stop offset="0.6" stopColor="#1b1c21" />
+          <stop offset="1" stopColor="#0c0d10" />
+        </radialGradient>
+      </defs>
+      <circle cx="12" cy="12" r="11" fill="url(#snv-dome)" />
+      <ellipse cx="8.4" cy="6.4" rx="3.6" ry="1.6" fill="#fff" opacity="0.18" transform="rotate(-24 8.4 6.4)" />
+      <rect x="7" y="8.6" width="3" height="5" rx="1.4" fill="#ffaa45" />
+      <rect x="14" y="8.6" width="3" height="5" rx="1.4" fill="#ffaa45" />
+      <path d="M9.2 16.2 Q12 18 14.8 16.2" stroke="#ffaa45" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}

@@ -23,6 +23,7 @@ const Leaderboards = lazy(() => import("./pages/Leaderboards"));
 const PlayerPage = lazy(() => import("./pages/PlayerPage"));
 const GetApp = lazy(() => import("./pages/GetApp"));
 const RewardsPage = lazy(() => import("./pages/RewardsPage"));
+const SeneviPage = lazy(() => import("./pages/SeneviPage"));
 const BusinessPage = lazy(() => import("./pages/BusinessPage"));
 const AdFreePromo = lazy(() => import("./components/AdFreePromo"));
 
@@ -159,6 +160,18 @@ export default function App() {
               <Tracked>
                 <SoftPage>
                   <TokensPage />
+                </SoftPage>
+              </Tracked>
+            </Suspense>
+          }
+        />
+        <Route
+          path="/senevi"
+          element={
+            <Suspense fallback={<div style={{ minHeight: "100vh" }} />}>
+              <Tracked>
+                <SoftPage>
+                  <SeneviPage />
                 </SoftPage>
               </Tracked>
             </Suspense>

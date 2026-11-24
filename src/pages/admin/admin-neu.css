@@ -1,0 +1,385 @@
+/* ============================================================
+   Admin: neumorphic skin, light by default (dark via the toggle), phone-friendly.
+   Everything is scoped to .adm / .adm-login, and the shared colour tokens (--bg, --text,
+   --border…) are redefined here, so the older admin rules in styles.css follow along.
+   ============================================================ */
+
+.adm,
+.adm-login {
+  --bg: #e7eaf0;
+  --bg-elevated: #e7eaf0;
+  --surface-2: #dde1e8;
+  --text: #23262d;
+  --text-secondary: #5d6370;
+  --text-tertiary: #8a909c;
+  --border: rgba(35, 38, 45, 0.08);
+  --border-soft: rgba(35, 38, 45, 0.06);
+  --accent: #f26a0c;
+  --accent-hover: #ff8a3d;
+  --danger: #d92d4a;
+  --ring: 0 0 0 3px rgba(242, 106, 12, 0.25);
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-card: none;
+
+  --an-bg: #e7eaf0;
+  --an-hi: rgba(255, 255, 255, 0.9);
+  --an-lo: rgba(163, 172, 190, 0.6);
+  --an-raise: 7px 7px 16px var(--an-lo), -7px -7px 16px var(--an-hi);
+  --an-raise-sm: 4px 4px 9px var(--an-lo), -4px -4px 9px var(--an-hi);
+  --an-press: inset 3px 3px 7px var(--an-lo), inset -3px -3px 7px var(--an-hi);
+  --an-accent-grad: linear-gradient(145deg, #ff9d52, #f26a0c);
+
+  color-scheme: light;
+  color: var(--text);
+  background: var(--an-bg);
+}
+
+.adm[data-theme="dark"],
+.adm-login[data-theme="dark"] {
+  --bg: #23262c;
+  --bg-elevated: #23262c;
+  --surface-2: #2a2e35;
+  --text: #eef0f4;
+  --text-secondary: #a6acb8;
+  --text-tertiary: #7b818d;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-soft: rgba(255, 255, 255, 0.05);
+  --danger: #ff5d78;
+
+  --an-bg: #23262c;
+  --an-hi: rgba(255, 255, 255, 0.045);
+  --an-lo: rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+
+.adm {
+  min-height: 100dvh;
+}
+
+/* ---------- top bar ---------- */
+.adm .adm-bar {
+  background: color-mix(in srgb, var(--an-bg) 88%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 0;
+  box-shadow: 0 8px 20px -14px var(--an-lo);
+}
+.adm .adm-bar-in {
+  gap: 12px;
+}
+.adm .brand {
+  color: var(--text);
+}
+
+.adm .adm-tabs {
+  gap: 6px;
+  padding: 5px;
+  border-radius: 999px;
+  box-shadow: var(--an-press);
+}
+.adm .adm-tabs button {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  white-space: nowrap;
+  transition: box-shadow 0.2s ease, color 0.2s ease;
+}
+.adm .adm-tabs button:not(.on):hover {
+  color: var(--text);
+  background: transparent;
+}
+.adm .adm-tabs button.on {
+  color: var(--accent);
+  background: var(--an-bg);
+  box-shadow: var(--an-raise-sm);
+}
+
+/* ---------- buttons ---------- */
+.adm .adm-ghost,
+.adm .ghost-btn,
+.adm .adm-bar select,
+.adm .adm-row-actions button,
+.adm .adm-theme {
+  border: 0;
+  border-radius: 999px;
+  color: var(--text);
+  background: var(--an-bg);
+  box-shadow: var(--an-raise-sm);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+.adm .adm-ghost,
+.adm .ghost-btn,
+.adm .adm-bar select {
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+.adm .adm-ghost:active,
+.adm .ghost-btn:active,
+.adm .adm-row-actions button:active,
+.adm .adm-theme:active {
+  box-shadow: var(--an-press);
+  transform: scale(0.98);
+}
+.adm .adm-row-actions button {
+  margin: 3px;
+  color: var(--accent);
+}
+.adm .adm-row-actions button.danger {
+  color: var(--danger);
+}
+.adm .adm-theme {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.adm .primary-btn,
+.adm-login .primary-btn {
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--an-accent-grad);
+  box-shadow: 5px 5px 12px var(--an-lo), -5px -5px 12px var(--an-hi);
+}
+.adm .primary-btn:active,
+.adm-login .primary-btn:active {
+  box-shadow: inset 3px 3px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* ---------- cards, tiles, tables ---------- */
+.adm .card,
+.adm .adm-tile,
+.adm .adm-table-wrap,
+.adm .dash-card,
+.adm-login .card {
+  border: 0;
+  border-radius: 22px;
+  background: var(--an-bg);
+  box-shadow: var(--an-raise);
+}
+.adm .adm-tile:hover,
+.adm .dash-card:hover {
+  box-shadow: 9px 9px 20px var(--an-lo), -9px -9px 20px var(--an-hi);
+}
+
+/* a table inside a card sits in a pressed well instead of a second raised box */
+.adm .card .adm-table-wrap {
+  box-shadow: var(--an-press);
+}
+.adm .adm-table th,
+.adm .adm-table td {
+  border-bottom-color: var(--border);
+}
+
+.adm .adm-bulk,
+.adm .adm-stack .adm-msg,
+.adm .adm-msg {
+  border: 0;
+  border-radius: 14px;
+  background: var(--an-bg);
+  box-shadow: var(--an-press);
+}
+
+.adm .adm-barlist li {
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+.adm .adm-bl-fill {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* ---------- form fields: pressed wells ---------- */
+.adm input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+.adm select,
+.adm textarea,
+.adm-login input[type="password"] {
+  font: inherit;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 14px;
+  color: var(--text);
+  background: var(--an-bg);
+  box-shadow: var(--an-press);
+  outline: none;
+}
+.adm input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+.adm select:focus,
+.adm textarea:focus,
+.adm-login input[type="password"]:focus {
+  box-shadow: var(--an-press), var(--ring);
+}
+.adm .adm-bar select {
+  box-shadow: var(--an-raise-sm);
+}
+.adm input[type="checkbox"],
+.adm input[type="radio"] {
+  accent-color: var(--accent);
+}
+.adm input[type="file"] {
+  max-width: 100%;
+  font-size: 13px;
+}
+
+/* ---------- pills ---------- */
+.adm .adm-pill {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+.adm:not([data-theme="dark"]) .adm-pill.live {
+  color: #178a3a;
+}
+.adm:not([data-theme="dark"]) .adm-pill.scheduled {
+  color: #1f6fd1;
+}
+.adm:not([data-theme="dark"]) .adm-pill.outside-hours {
+  color: #b36b00;
+}
+
+/* ---------- login ---------- */
+.adm-login {
+  min-height: 100dvh;
+  background: var(--an-bg);
+}
+.adm-login .adm-login-card {
+  padding: 30px 26px;
+  border-radius: 28px;
+}
+.adm-login h1 {
+  color: var(--text);
+}
+
+/* ============================================================
+   Phones and small tablets
+   ============================================================ */
+@media (max-width: 760px) {
+  .adm .adm-bar-in {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .adm .adm-bar-right {
+    justify-self: end;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  /* tabs: one swipeable row under the logo and buttons */
+  .adm .adm-tabs {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .adm .adm-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .adm .adm-tabs button {
+    flex: none;
+    padding: 7px 12px;
+    font-size: 13px;
+  }
+  .adm .adm-ghost,
+  .adm .adm-bar select {
+    padding: 7px 11px;
+    font-size: 13px;
+  }
+  .adm .adm-theme {
+    width: 34px;
+    height: 34px;
+  }
+
+  .adm .adm-main {
+    padding: 16px 12px 60px;
+    gap: 16px;
+  }
+  .adm .adm-card,
+  .adm .adm-form {
+    padding: 16px;
+  }
+  .adm .card,
+  .adm .adm-tile,
+  .adm .adm-table-wrap,
+  .adm .dash-card {
+    border-radius: 18px;
+  }
+
+  /* grids collapse instead of overflowing */
+  .adm .adm-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .adm .adm-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .adm .adm-tile {
+    padding: 12px;
+  }
+  .adm .adm-tile strong {
+    font-size: 22px;
+  }
+  .adm .adm-grid,
+  .adm .adm-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .adm .adm-settings {
+    max-width: none;
+  }
+  .adm .adm-head {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* wide tables scroll sideways inside their box, never the page */
+  .adm .adm-table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .adm .adm-table {
+    font-size: 13px;
+  }
+  .adm .adm-table th,
+  .adm .adm-table td {
+    padding: 10px;
+  }
+  .adm .adm-feed time {
+    min-width: 0;
+  }
+  .adm .adm-image-ctl {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 380px) {
+  .adm .adm-tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* no horizontal page scroll anywhere in the admin */
+.adm,
+.adm .adm-main {
+  overflow-x: clip;
+}
+.adm .adm-main > * {
+  min-width: 0;
+}
+
+/* change badges: darker greens / reds that read on the light background */
+.adm:not([data-theme="dark"]) .dash-chg.up {
+  color: #178a3a;
+}
+.adm:not([data-theme="dark"]) .dash-chg.down {
+  color: #c8243f;
+}
