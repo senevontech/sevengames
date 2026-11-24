@@ -79,7 +79,11 @@ export default function DiskCarousel({
   startIndex = 0,
   label,
   onActiveChange,
+  autoplayMs = 0,
 }: {
+  /** Slide to the next game every `autoplayMs` (0 = off). Pauses while hovered, for a while
+   *  after the player touches it, when it's off screen or the tab is hidden, and for reduced motion. */
+  autoplayMs?: number;
   items: Game[];
   startIndex?: number;
   label: string;
@@ -232,6 +236,50 @@ export default function DiskCarousel({
     },
     [total],
   );
+  /* ----- autoplay ----- */
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const root = sectionRef.current;
+    if (!autoplayMs || !root || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const IDLE_AFTER_TOUCH = 5_000;
+    let pausedUntil = 0;
+    let hover = false;
+    let onScreen = true;
+    const touch = () => {
+      pausedUntil = Date.now() + IDLE_AFTER_TOUCH;
+    };
+    const enter = (e: PointerEvent) => {
+      if (e.pointerType === "mouse") hover = true;
+    };
+    const leave = () => {
+      hover = false;
+    };
+    const io = new IntersectionObserver((entries) => {
+      onScreen = entries.some((e) => e.isIntersecting);
+    });
+    io.observe(root);
+    root.addEventListener("pointerdown", touch, { passive: true });
+    root.addEventListener("wheel", touch, { passive: true });
+    root.addEventListener("keydown", touch);
+    root.addEventListener("focusin", touch);
+    root.addEventListener("pointerenter", enter);
+    root.addEventListener("pointerleave", leave);
+    const id = window.setInterval(() => {
+      if (document.hidden || !onScreen || hover || Date.now() < pausedUntil) return;
+      goTo(activeRef.current + 1);
+    }, autoplayMs);
+    return () => {
+      window.clearInterval(id);
+      io.disconnect();
+      root.removeEventListener("pointerdown", touch);
+      root.removeEventListener("wheel", touch);
+      root.removeEventListener("keydown", touch);
+      root.removeEventListener("focusin", touch);
+      root.removeEventListener("pointerenter", enter);
+      root.removeEventListener("pointerleave", leave);
+    };
+  }, [autoplayMs, goTo]);
+
   /** A disk was clicked: true (= stay on this page) unless it's the centre one. */
   const onPick = useCallback(
     (i: number) => {
@@ -246,7 +294,7 @@ export default function DiskCarousel({
   }, []);
 
   return (
-    <section className="dc" aria-label={label}>
+    <section className="dc" aria-label={label} ref={sectionRef}>
       <div className="dc-stage">
         <div className="dc-scroller" ref={scrollerRef}>
           <div className="dc-spacer" aria-hidden="true" />

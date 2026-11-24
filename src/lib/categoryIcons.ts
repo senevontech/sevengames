@@ -6,6 +6,7 @@ import {
   Hash,
   Joystick,
   LayoutGrid,
+  Music,
   Mountain,
   Puzzle,
   Spade,
@@ -31,6 +32,7 @@ export const categoryIcon: Record<GameCategory | "All", LucideIcon> = {
   Puzzle: Puzzle,
   Classic: Joystick,
   Cards: Spade,
+  Music: Music,
   Words: Type,
   Numbers: Hash,
 };

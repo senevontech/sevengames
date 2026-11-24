@@ -4,6 +4,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import PlayerAvatar from "./PlayerAvatar";
+import ClubRoomShare from "./ClubRoomShare";
 import type { LobbyApi } from "../games/carrom/matchmaking";
 import type { RoomPeer, RoomStatus } from "../lib/gameRoom";
 import { useOnline } from "../lib/online";
@@ -246,6 +247,7 @@ export function RoomWaiting({
       ) : blurb ? (
         <p className="ol-sub">{blurb}</p>
       ) : null}
+      {isHost && !matched ? <ClubRoomShare code={code} /> : null}
       {isHost && !matched ? hostSettings : null}
       {entry ?? null}
       <ul className="ol-peers">

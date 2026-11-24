@@ -9,6 +9,7 @@ import PlayerAvatar from "./PlayerAvatar";
 import { usePublicProfile, type PublicProfile } from "../lib/social";
 import { getGame, scoreLabel } from "../catalog";
 import { levelForXp } from "../lib/shopCatalog";
+import { clubOf } from "../lib/clubs";
 import "./player-card.css";
 
 const MEDAL = ["", "🥇", "🥈", "🥉"];
@@ -63,6 +64,26 @@ function FriendButton({ p, busy, add, remove, respond }: { p: PublicProfile; bus
   );
 }
 
+/** "Member of The Aces #K7Q2MX", linking to the club. */
+function ClubBadge({ userId }: { userId: string }) {
+  const [club, setClub] = useState<{ tag: string; name: string; role: string } | null>(null);
+  useEffect(() => {
+    let live = true;
+    clubOf(userId)
+      .then((c) => live && setClub(c))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [userId]);
+  if (!club) return null;
+  return (
+    <Link className="pc-club" to={`/clubs/${club.tag}`}>
+      {club.role === "owner" ? "Owner of" : "Member of"} <b>{club.name}</b> #{club.tag}
+    </Link>
+  );
+}
+
 export function ProfileDetails({ userId, full = false }: { userId: string; full?: boolean }) {
   const { profile: p, loading, error, busy, follow, addFriend, removeFriend, respond, signedIn, isMe } = usePublicProfile(userId);
 
@@ -89,6 +110,7 @@ export function ProfileDetails({ userId, full = false }: { userId: string; full?
             {p.rank ? <span className="pc-rank">#{p.rank} overall</span> : <span className="pc-rank is-new">Unranked</span>}
             <span>Since {since(p.since)}</span>
           </p>
+          <ClubBadge userId={p.id} />
         </div>
       </div>
 

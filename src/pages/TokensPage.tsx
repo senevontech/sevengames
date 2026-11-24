@@ -17,12 +17,12 @@ import {
   X,
   Zap,
   ShieldCheck,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import TokenIcon from "../components/TokenIcon";
 import ChipShowcase from "../components/chip/ChipShowcase";
 import ChipMath from "../components/ChipMath";
-import { AD_FREE_PRICE } from "../lib/tokens";
 import { useAuthContext } from "../context/AuthContext";
 import { tokenErrorText, usePlanPrices, useTokenPacks, useTokens, type LedgerRow, type TokenPack } from "../lib/tokens";
 import { formatMoney, formatTokens, pickCurrency } from "../lib/currency";
@@ -54,7 +54,14 @@ const REASON: Record<string, { label: string; Icon: LucideIcon }> = {
   tournament: { label: "Tournament", Icon: Crown },
   entry: { label: "Chip match", Icon: Coins },
   gift: { label: "Gift", Icon: HandCoins },
+  club: { label: "Club wallet", Icon: Users },
 };
+
+/** "give:K7Q2MX" → "Put in club #K7Q2MX" */
+function clubRefLabel(ref: string) {
+  const [kind, tag] = ref.split(":");
+  return kind === "give" ? `Put in club #${tag}` : kind === "pay" ? `Paid by club #${tag}` : kind === "closed" ? `Club #${tag} closed` : `#${tag}`;
+}
 
 const ENTRY_GAMES: Record<string, string> = { chess: "Chess", ludo: "Ludo", carrom: "Carrom", arrows: "Arrows", pool: "Eight Ball" };
 /** "cpu:pool" → "Eight Ball vs Senevi", "pool:match-id" → "Eight Ball" */
@@ -97,14 +104,8 @@ function CoinStack({ n }: { n: number }) {
 
 export default function TokensPage() {
   const { user } = useAuthContext();
-  const { wallet, guestBalance, loading, subscribe, buyPack, cancel, history, refresh, redeem, adFree, buyAdFree, cancelAdFree } = useTokens();
+  const { wallet, guestBalance, loading, subscribe, buyPack, cancel, history, refresh, redeem, adFree } = useTokens();
   const noAds = Boolean(adFree?.active);
-  const [adFreeArmed, setAdFreeArmed] = useState(false);
-  useEffect(() => {
-    if (!adFreeArmed) return;
-    const id = window.setTimeout(() => setAdFreeArmed(false), 3500);
-    return () => window.clearTimeout(id);
-  }, [adFreeArmed]);
   const location = useLocation();
   const [code, setCode] = useState("");
   const [codeOpen, setCodeOpen] = useState(false);
@@ -473,7 +474,7 @@ export default function TokensPage() {
           <div>
             <h2 className="ac-h2">Go ad-free</h2>
             <p className="ac-sub">
-              No ads anywhere on Senevon for <TokenIcon size={14} /> {AD_FREE_PRICE} chips a month. Renews automatically; cancel any time.
+              No ads anywhere on Senevon. Ad-free comes with Senevon Plus{isNative ? " or the Google Play ad-free plan" : ""}; it can't be bought with chips.
             </p>
           </div>
         </div>
@@ -498,35 +499,14 @@ export default function TokensPage() {
                       : adFree.reason === "unlimited"
                         ? "Included with your unlimited account."
                         : adFree.active && adFree.expires_at
-                          ? adFree.auto_renew
-                            ? `Ad-free until ${fmtDate(adFree.expires_at)} · renews for ${AD_FREE_PRICE} chips`
-                            : `Ad-free until ${fmtDate(adFree.expires_at)} · won't renew`
-                          : "Hide every ad on the site, including ad breaks, for 30 days at a time."}
+                          ? `Ad-free until ${fmtDate(adFree.expires_at)}`
+                          : "Hide every ad on the site, including ad breaks."}
             </p>
           </div>
-          {adFree && adFree.reason === "pass" ? (
-            adFree.auto_renew ? (
-              <button type="button" className="ac-btn ac-btn-sm" disabled={busy} onClick={() => void run(cancelAdFree, "Renewal off. You stay ad-free until the paid days run out.")}>
-                Cancel renewal
-              </button>
-            ) : (
-              <button type="button" className="ac-btn ac-btn-sm ac-btn-primary" disabled={busy} onClick={() => void run(buyAdFree, "Renewal is back on.")}>
-                Turn renewal on
-              </button>
-            )
-          ) : adFree && !adFree.active ? (
-            <button
-              type="button"
-              className={`ac-btn ac-btn-sm ac-btn-primary${adFreeArmed ? " is-armed" : ""}`}
-              disabled={busy || !wallet || wallet.balance < AD_FREE_PRICE}
-              onClick={() => {
-                if (!adFreeArmed) return setAdFreeArmed(true);
-                setAdFreeArmed(false);
-                void run(buyAdFree, "You're ad-free for 30 days!");
-              }}
-            >
-              {adFreeArmed ? "Confirm" : "Go ad-free"} · <TokenIcon size={14} /> {AD_FREE_PRICE}
-            </button>
+          {adFree && !adFree.active ? (
+            <a className="ac-btn ac-btn-sm ac-btn-primary" href="#plus">
+              Get Plus
+            </a>
           ) : null}
           {isNative && adFree && !adFree.active && play?.adfree ? (
             <button
@@ -619,7 +599,8 @@ export default function TokensPage() {
                 (r.reason === "carrom" && r.ref ? carromRefLabel(r.ref) : null) ??
                 (r.reason === "admin" && r.ref ? r.ref : null) ??
                 (r.reason === "entry" && r.ref ? entryRefLabel(r.ref, r.delta) : null) ??
-                (r.reason === "gift" ? (r.delta < 0 ? "Sent" : "Received") : null);
+                (r.reason === "gift" ? (r.delta < 0 ? "Sent" : "Received") : null) ??
+                (r.reason === "club" && r.ref ? clubRefLabel(r.ref) : null);
               return (
                 <li key={r.id}>
                   <span className={`tw-h-icon${r.delta >= 0 ? " plus" : ""}`} aria-hidden="true">

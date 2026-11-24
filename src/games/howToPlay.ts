@@ -236,6 +236,16 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
     ],
     controls: ["Tap to set it off · swipe a domino to push it", "Bigger chains score more per piece"],
   },
+  tune: {
+    steps: [
+      { icon: "✏️", title: "Draw", text: "Draw anything on the canvas. When you press Play, a bar sweeps from left to right and plays every line it touches." },
+      { icon: "🎵", title: "Higher is higher", text: "Lines near the top play high notes, near the bottom low ones. Notes always snap to the scale, so it stays in tune. A line straight up and down plays a chord." },
+      { icon: "🎨", title: "Colours are instruments", text: "Piano, bells, strings, bass and drums. For drums, the height picks the drum: kick at the bottom, then tom, snare, and hi-hat at the top. A thicker pen plays louder." },
+      { icon: "🎚️", title: "Make it yours", text: "Change the tempo, the scale (happy, sad, blues, raags), the key, and add a backing beat. Loop it, undo, erase." },
+      { icon: "📅", title: "Daily prompt", text: "Each day has a prompt. Post your song for XP and a streak, listen to everyone else's, like them, or remix one into your own." },
+    ],
+    controls: ["Draw with mouse or finger · press Play", "Changing the scale re-tunes the whole drawing"],
+  },
 };
 
 export const howToFor = (engine: string | undefined) => (engine ? HOW_TO_PLAY[engine] ?? null : null);

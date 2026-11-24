@@ -23,6 +23,7 @@ const Leaderboards = lazy(() => import("./pages/Leaderboards"));
 const PlayerPage = lazy(() => import("./pages/PlayerPage"));
 const GetApp = lazy(() => import("./pages/GetApp"));
 const RewardsPage = lazy(() => import("./pages/RewardsPage"));
+const ClubsPage = lazy(() => import("./pages/ClubsPage"));
 const SeneviPage = lazy(() => import("./pages/SeneviPage"));
 const BusinessPage = lazy(() => import("./pages/BusinessPage"));
 const AdFreePromo = lazy(() => import("./components/AdFreePromo"));
@@ -177,6 +178,21 @@ export default function App() {
             </Suspense>
           }
         />
+        {["/clubs", "/clubs/:tag"].map((path) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <Suspense fallback={<div style={{ minHeight: "100vh" }} />}>
+                <Tracked>
+                  <SoftPage>
+                    <ClubsPage />
+                  </SoftPage>
+                </Tracked>
+              </Suspense>
+            }
+          />
+        ))}
         <Route
           path="/rewards"
           element={

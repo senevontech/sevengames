@@ -22,6 +22,10 @@ import { useSiteSettings } from "../lib/siteSettings";
 import { useShowAds } from "../lib/tokens";
 import { trackAd } from "../lib/track";
 import { prefetchFromEvent, prefetchWhenIdle } from "../lib/prefetch";
+import { byPopularity, usePopularIds } from "../lib/popular";
+
+/** The main carousel moves on to the next game this often (until the player touches it). */
+const AUTOPLAY_MS = 2500;
 import "./home3.css";
 import "./games-globe.css";
 import "./game2.css";
@@ -70,6 +74,7 @@ const CATEGORY_COLOR: Partial<Record<GameCategory, string>> = {
   Puzzle: "#0a84ff",
   Classic: "#b3814c",
   Cards: "#17703f",
+  Music: "#7b5cff",
   Words: "#e0a800",
   Numbers: "#30b0c7",
 };
@@ -222,12 +227,15 @@ function Hero({ game }: { game: Game }) {
 /** Every game: scaling carousel + the centre game's details. Holds the centre game itself, so
  *  scrolling the carousel only re-renders this part, not the whole page. */
 function CarouselWithHero() {
-  const startIndex = Math.floor(games.length / 2);
-  const [centre, setCentre] = useState<Game>(games[startIndex]);
+  // most played first, in the centre; the carousel then walks through them in order
+  const popular = usePopularIds();
+  const ordered = useMemo(() => (popular ? byPopularity(games, popular) : games), [popular]);
+  const [centre, setCentre] = useState<Game>(ordered[0]);
   const onActiveChange = useCallback((g: Game) => setCentre(g), []);
   return (
     <>
-      <DiskCarousel items={games} startIndex={startIndex} label="All games" onActiveChange={onActiveChange} />
+      {/* key: a fresh carousel (back on the most played) if the order arrives after the first paint */}
+      <DiskCarousel key={ordered.map((g) => g.id).join()} items={ordered} startIndex={0} label="All games" onActiveChange={onActiveChange} autoplayMs={AUTOPLAY_MS} />
       <Hero game={centre} />
     </>
   );

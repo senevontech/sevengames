@@ -20,6 +20,7 @@ import {
   Lightbulb,
   MoveUpRight,
   Music,
+  Music4,
   Orbit,
   Palette,
   Puzzle,
@@ -58,6 +59,7 @@ const byEngine: Record<string, LucideIcon> = {
   blackjack: Spade,
   pool: Disc,
   chain: Atom,
+  tune: Music4,
 };
 
 const byId: Record<string, LucideIcon> = {

@@ -1,5 +1,9 @@
 -- ============================================================
--- Ad-free pass: 85 tokens per 30 days, auto-renewing (can be cancelled)
+-- Ad-free: NOT for chips any more. Ad-free comes only with real-money plans: Senevon Plus
+-- (subscription), the Google Play ad-free subscription (play.sql writes the pass), Pro and
+-- unlimited accounts. Passes bought with chips earlier run until they expire and never renew.
+--
+-- (History: this used to be an 85-token pass per 30 days, auto-renewing.)
 -- Run in: Supabase Dashboard → SQL Editor, AFTER tokens.sql. Safe to re-run.
 --
 --   * ad_free_state()  → is this player ad-free, why, until when, does it renew.
@@ -14,7 +18,7 @@
 -- token ledger: allow 'adfree' (keep this list in sync with tokens.sql, carrom.sql and shop.sql)
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
-  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'entry', 'gift'));
+  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'entry', 'gift', 'club'));
 
 create table if not exists public.ad_free_passes (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -66,20 +70,9 @@ declare
   v_balance integer;
 begin
   select * into v_pass from ad_free_passes where user_id = p_user for update;
-  if found and v_pass.auto_renew and v_pass.expires_at <= now() and v_perk is null then
-    select balance into v_balance from token_wallets where user_id = p_user;
-    if coalesce(v_balance, 0) >= _adfree_price() then
-      perform _tok_credit(p_user, -_adfree_price(), 'adfree', 'renew');
-      update ad_free_passes
-        set expires_at = case when v_pass.expires_at + interval '30 days' > now()
-                              then v_pass.expires_at + interval '30 days'
-                              else now() + interval '30 days' end,
-            updated_at = now()
-        where user_id = p_user
-        returning * into v_pass;
-    else
-      update ad_free_passes set auto_renew = false, updated_at = now() where user_id = p_user returning * into v_pass;
-    end if;
+  -- chips never renew a pass: switch any old chip renewal off
+  if found and v_pass.auto_renew then
+    update ad_free_passes set auto_renew = false, updated_at = now() where user_id = p_user returning * into v_pass;
   end if;
 
   return jsonb_build_object(
@@ -114,17 +107,8 @@ begin
   if v_user is null then raise exception 'not_signed_in'; end if;
   -- already ad-free through a subscription / Pro / unlimited: nothing to pay
   if _adfree_perk(v_user) is not null then return _adfree_state(v_user); end if;
-  -- a pass still running: just switch renewal back on
-  if exists (select 1 from ad_free_passes where user_id = v_user and expires_at > now()) then
-    update ad_free_passes set auto_renew = true, updated_at = now() where user_id = v_user;
-    return _adfree_state(v_user);
-  end if;
-  perform token_wallet(); -- wallet exists, signup bonus in
-  perform _tok_credit(v_user, -_adfree_price(), 'adfree', 'start'); -- raises insufficient_tokens
-  insert into ad_free_passes (user_id, expires_at, auto_renew)
-  values (v_user, now() + interval '30 days', true)
-  on conflict (user_id) do update set expires_at = now() + interval '30 days', auto_renew = true, updated_at = now();
-  return _adfree_state(v_user);
+  -- ad-free can't be bought with chips: only with Senevon Plus or the Play subscription
+  raise exception 'adfree_not_for_chips';
 end;
 $$;
 

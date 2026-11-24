@@ -10,7 +10,8 @@ export type GameCategory =
   | "Racing"
   | "Sports"
   | "Indie"
-  | "Cards";
+  | "Cards"
+  | "Music";
 
 export type GameEngine =
   | "tictactoe"
@@ -38,7 +39,8 @@ export type GameEngine =
   | "ludo"
   | "blackjack"
   | "pool"
-  | "chain";
+  | "chain"
+  | "tune";
 
 export type Game = {
   id: string;
@@ -86,6 +88,7 @@ export const categories: Array<GameCategory | "All"> = [
   "Puzzle",
   "Classic",
   "Cards",
+  "Music",
   "Words",
   "Numbers",
 ];
@@ -501,6 +504,17 @@ export const games: Game[] = [
     minutes: 3,
     accent: "#e0701a",
     description: "One tap, then watch it spread: shatter glass orbs, overflow bead cups, topple lines of dominoes. A new daily board for everyone, and an endless run.",
+  },
+  {
+    id: "draw-a-tune",
+    title: "Draw a Tune",
+    category: "Music",
+    kind: "builtin",
+    engine: "tune",
+    difficulty: "Easy",
+    minutes: 3,
+    accent: "#7b5cff",
+    description: "Draw anything and press Play: every line becomes music. Each colour is an instrument, higher is higher. Pick a tempo, a scale, a beat. A new prompt every day: post your song, like and remix others.",
   },
 ];
 

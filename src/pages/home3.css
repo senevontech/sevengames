@@ -270,6 +270,23 @@
   }
 }
 
+/* Phones: the square mark only (no wordmark), so the header stays clean */
+.h3-logo img.h3-logo-mark {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .h3-logo img:not(.h3-logo-mark) {
+    display: none !important;
+  }
+  .h3-logo img.h3-logo-mark {
+    display: block !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 9px;
+  }
+}
+
 /* Keyboard users see the game count too */
 
 /* ============================================================

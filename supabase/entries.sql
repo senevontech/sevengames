@@ -28,7 +28,7 @@
 -- Gifts
 --   gift_chips(to, amount, note)  earned chips to any player: 500 a day at most (India time),
 --                                 and your account must be 3 days old.
---   gift_limits()                 what you can still send today.
+--   gift_limits()                 what you can still send today (club wallet deposits count too).
 -- ============================================================
 
 create table if not exists public.chip_entries (
@@ -322,9 +322,20 @@ end;
 $$;
 
 -- ---------- gifts ----------
+-- gifts sent today, plus chips put in a club wallet (clans.sql): they share one daily limit
 create or replace function public._gift_sent_today(p_user uuid)
-returns integer language sql stable security definer set search_path = public as $$
-  select coalesce(sum(amount), 0)::integer from chip_gifts where from_user = p_user and created_at >= _entry_today_start()
+returns integer language plpgsql stable security definer set search_path = public as $$
+declare
+  v integer;
+  v_club integer := 0;
+begin
+  select coalesce(sum(amount), 0)::integer into v from chip_gifts where from_user = p_user and created_at >= _entry_today_start();
+  if to_regclass('public.club_wallet_log') is not null then
+    execute 'select coalesce(sum(amount), 0)::integer from club_wallet_log where user_id = $1 and kind = ''deposit'' and created_at >= $2'
+      into v_club using p_user, _entry_today_start();
+  end if;
+  return v + v_club;
+end;
 $$;
 
 create or replace function public.gift_limits()

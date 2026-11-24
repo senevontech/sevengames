@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { SeneviIcon } from "../senevi/Senevi";
 import { Link, useNavigate } from "react-router-dom";
-import { Gift, LayoutGrid, Menu, Smartphone, X } from "lucide-react";
+import { Gift, LayoutGrid, Menu, Smartphone, Users, X } from "lucide-react";
 import { isNative } from "../lib/native";
 import { GET_APP_PATH } from "../lib/appLinks";
 import { categories, games, type Game } from "../catalog";
@@ -207,6 +207,14 @@ function MobileMenu({ onPick }: { onPick: (g: Game) => void }) {
                     <span className="gs-cats-name">Rewards</span>
                   </Link>
                 </li>
+                <li>
+                  <Link to="/clubs" onClick={close}>
+                    <span className="gs-cats-icon" aria-hidden="true">
+                      <Users size={16} />
+                    </span>
+                    <span className="gs-cats-name">Clubs</span>
+                  </Link>
+                </li>
                 {!isNative ? (
                   <li>
                     <Link to={GET_APP_PATH} onClick={close}>
@@ -299,6 +307,7 @@ export default function GamesNav({
       <Link className="h3-logo" to="/" aria-label="Senevon Game Studio — home">
         <img className="gs-logo-dark" src="/logo/logo-h-dark-nav.webp" width={432} height={120} alt="Senevon Game Studio" />
         <img className="gs-logo-light" src="/logo/logo-h-light-nav.webp" width={432} height={120} alt="" aria-hidden="true" />
+            <img className="h3-logo-mark" src="/logo/mark-256.webp" width={256} height={256} alt="" aria-hidden="true" />
       </Link>
       <div className="h3-nav-end">
         {/* desktop icons (hidden on phones when the hamburger menu is on) */}
@@ -374,6 +383,10 @@ export default function GamesNav({
         </Link>
         <CategoryMenu />
         </div>
+        {/* Clubs: shown on every screen size (not folded into the phone menu) */}
+        <Link className="gs-home gs-clubs" to="/clubs" aria-label="Clubs" title="Clubs">
+          <Users size={21} strokeWidth={1.6} aria-hidden="true" />
+        </Link>
         {children}
         {mobileMenu ? <MobileMenu onPick={pickGame} /> : null}
         <NavAccount />

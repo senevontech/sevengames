@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { SeneviIcon } from "../senevi/Senevi";
 import { Link, useLocation } from "react-router-dom";
-import { Building2, Coins, Gift, House, Menu, Moon, Smartphone, Sun, Trophy, UserRound, X } from "lucide-react";
+import { Building2, Coins, Gift, House, Menu, Moon, Smartphone, Sun, Trophy, UserRound, Users, X } from "lucide-react";
 import { categories, games } from "../catalog";
 import { categoryIcon } from "../lib/categoryIcons";
 import NavAccount from "./NavAccount";
@@ -100,6 +100,12 @@ function SiteMenu({ pathname }: { pathname: string }) {
             </span>
             Rewards
           </Link>
+          <Link to="/clubs" className="site-menu-item">
+            <span className="site-menu-icon" aria-hidden="true">
+              <Users size={16} />
+            </span>
+            Clubs
+          </Link>
           <Link to="/chips" className="site-menu-item">
             <span className="site-menu-icon" aria-hidden="true">
               <Coins size={16} />
@@ -156,6 +162,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
                 (light text on dark bands: dark game mode, and the #303030 phone pages) */}
             <img className="site-logo-dark" src="/logo/logo-h-dark-nav.webp" width={432} height={120} alt="Senevon Game Studio" />
             <img className="site-logo-light" src="/logo/logo-h-light-nav.webp" width={432} height={120} alt="" aria-hidden="true" />
+            <img className="h3-logo-mark" src="/logo/mark-256.webp" width={256} height={256} alt="" aria-hidden="true" />
           </Link>
           <div className="h3-menu">
             <Link to="/">

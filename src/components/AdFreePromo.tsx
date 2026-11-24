@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Check, Crown, ShieldCheck, X } from "lucide-react";
 import TokenIcon from "./TokenIcon";
 import { useAuthContext } from "../context/AuthContext";
-import { AD_FREE_PRICE, tokenErrorText, usePlanPrices, useShowAds, useTokens } from "../lib/tokens";
+import { tokenErrorText, usePlanPrices, useShowAds, useTokens } from "../lib/tokens";
 import { formatMoney, formatTokens, pickCurrency } from "../lib/currency";
 import { isNative } from "../lib/native";
 import { ADFREE_PRODUCT, PLUS_PRODUCT, buySubscription, loadPlayPrices, playErrorText, type PlayPrices } from "../lib/playBilling";
@@ -52,7 +52,7 @@ type Done = { text: string };
 
 function PromoCard({ source, onClose }: { source: PromoSource; onClose: () => void }) {
   const { user } = useAuthContext();
-  const { wallet, adFree, subscribe, buyAdFree, refresh } = useTokens();
+  const { wallet, subscribe, refresh } = useTokens();
   const navigate = useNavigate();
   const location = useLocation();
   const [plan, setPlan] = useState<"monthly" | "yearly">("yearly");
@@ -82,9 +82,6 @@ function PromoCard({ source, onClose }: { source: PromoSource; onClose: () => vo
   const mock = !isNative && (wallet?.payments_mode ?? "mock") === "mock";
   const perMonth = wallet?.sub_tokens ?? 5000;
   // the ad-free pass needs the server side (adfree.sql); guests see it as an option anyway
-  const passReady = !user || adFree !== null;
-  const balance = wallet?.balance ?? 0;
-  const canAffordPass = Boolean(wallet && (wallet.unlimited || balance >= AD_FREE_PRICE));
 
   // Esc closes
   useEffect(() => {
@@ -218,41 +215,24 @@ function PromoCard({ source, onClose }: { source: PromoSource; onClose: () => vo
               </section>
             ) : null}
 
-            {/* ---------- ad-free pass ---------- */}
-            {passReady ? (
-              <section className="afp-opt" aria-label="Ad-free pass">
+            {/* ---------- app only: Google Play's ad-free subscription (real money; never chips) ---------- */}
+            {isNative && user && play?.adfree ? (
+              <section className="afp-opt" aria-label="Ad-free plan">
                 <div className="afp-opt-top">
                   <b>
                     <ShieldCheck size={16} aria-hidden="true" /> Ad-free only
                   </b>
                 </div>
-                <p className="afp-opt-sub">
-                  30 days without ads for <TokenIcon size={13} /> {AD_FREE_PRICE} chips. Renews automatically; cancel any time.
-                </p>
-                {user ? (
-                  <div className="afp-row">
-                    <button type="button" className="tk-btn" disabled={busy || !canAffordPass} onClick={() => void run(buyAdFree, "No ads for the next 30 days.")}>
-                      Use <TokenIcon size={14} /> {AD_FREE_PRICE} chips
-                    </button>
-                    {isNative && play?.adfree ? (
-                      <button type="button" className="tk-btn" disabled={busy} onClick={buyPlayAdFree}>
-                        {play.adfree}/month
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
-                {user && wallet && !canAffordPass ? (
-                  <p className="afp-hint">
-                    You have {formatTokens(balance)} chips.{" "}
-                    <Link to="/chips#buy" onClick={onClose}>
-                      Get more
-                    </Link>
-                  </p>
-                ) : null}
+                <p className="afp-opt-sub">No ads, renews monthly on Google Play. Cancel any time.</p>
+                <div className="afp-row">
+                  <button type="button" className="tk-btn" disabled={busy} onClick={buyPlayAdFree}>
+                    {play.adfree}/month
+                  </button>
+                </div>
               </section>
             ) : null}
 
-            {user && !hasPlus && !passReady ? <p className="afp-hint afp-center">Ad-free plans aren't available yet. Check back soon.</p> : null}
+            {user && !hasPlus ? <p className="afp-hint afp-center">Ad-free plans aren't available yet. Check back soon.</p> : null}
 
             {error ? (
               <p className="afp-error" role="alert">

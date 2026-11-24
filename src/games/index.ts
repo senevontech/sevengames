@@ -40,6 +40,7 @@ const loaders: Record<GameEngine, Loader<GameProps>> = {
   blackjack: () => import("./blackjack/index"),
   pool: () => import("./pool/index"),
   chain: () => import("./chain/index"),
+  tune: () => import("./tune/index"),
 };
 
 const previewLoaders: Partial<Record<GameEngine, Loader<object>>> = {

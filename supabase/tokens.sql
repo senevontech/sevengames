@@ -40,7 +40,7 @@ create table if not exists public.token_ledger (
   user_id uuid not null references auth.users(id) on delete cascade,
   delta integer not null,
   balance_after integer not null,
-  reason text not null check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'entry', 'gift')),
+  reason text not null check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'entry', 'gift', 'club')),
   ref text,
   created_at timestamptz not null default now()
 );
@@ -59,7 +59,7 @@ create unique index if not exists token_ledger_one_signup on public.token_ledger
 -- databases created before guest carry-over existed: widen the reason check
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
-  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'entry', 'gift'));
+  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'entry', 'gift', 'club'));
 -- guest tokens can only be carried over once per account
 create unique index if not exists token_ledger_one_guest on public.token_ledger (user_id) where reason = 'guest';
 -- each subscription credit is unique (stops double credits if two requests race)
@@ -209,8 +209,8 @@ begin
   if p_delta >= 0 then
     -- bought chips stay out of `earned`; everything else (rewards, wins, gifts, refunds) is earned
     if p_reason not in ('purchase', 'subscription') then v_earned := v_earned + p_delta; end if;
-  elsif p_reason in ('entry', 'gift') then
-    -- fees and gifts: earned chips only
+  elsif p_reason in ('entry', 'gift', 'club') then
+    -- fees, gifts and club wallet deposits: earned chips only
     if v_earned + p_delta < 0 then raise exception 'insufficient_earned'; end if;
     v_earned := v_earned + p_delta;
   else

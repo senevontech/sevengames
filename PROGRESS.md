@@ -22,7 +22,7 @@ chips: everyone pays the same **match entry**, and the winner gets the **prize**
 
 Games with chip matches: Chess, Ludo, Carrom, Eight Ball (CPU and online), Arrows (online).
 
-**To switch it on (Supabase SQL Editor, in this order):** `tokens.sql`, `adfree.sql`, `shop.sql`, `carrom.sql`, `engagement.sql`, `matches.sql`, then the new `entries.sql`.
+**To switch it on (Supabase SQL Editor, in this order):** `tokens.sql`, `adfree.sql`, `shop.sql`, `carrom.sql`, `engagement.sql`, `matches.sql`, `entries.sql`, then `clans.sql` (clubs).
 
 Not done yet / to check:
 - [ ] Run the SQL above on the live database.
@@ -50,14 +50,43 @@ Not done yet / to check:
   call about 80% of the time).
 - Not done yet: Call Break online (server-dealt, like the Blackjack tables), XP / leaderboard for it.
 
-## Planned: community clans (later phase)
+## Clubs (community clans): phase 1 built
 
-Players build a **club** (clan); other players can join it. Members can:
-- play against each other (club rooms),
-- share chips with the club (a shared club wallet, earned chips only),
-- create club tournaments.
+Agreed 2026-11-24:
+- **Size:** each club has 3 to 50 members. Under 3 it is "forming" and the club wallet is closed.
+- **The owner runs the club:**
+  - spends the club wallet by paying chips out to members;
+  - edits the name, about text and public/private setting;
+  - removes or bans members, and can unban them;
+  - hands ownership to another member, or closes the club.
+- **Public clubs:** anyone can join with the club ID.
+- **Private clubs:** players can join only with the owner's invite code (or invite link). A new code stops the old one working.
+- **Club ID:** every club gets a unique ID (6 characters, like #K7Q2MX). Names can repeat.
+- **One club per player.**
+- **Club wallet:**
+  - Members put in earned chips only.
+  - Those deposits share the 500-a-day gift limit and need an account that is 3+ days old.
+  - Chips put in can't be taken back.
+  - If the owner closes the club, the wallet goes to the owner.
+  - Ledger reason: `club`.
+- **Club rooms:** a member posts an open room (game + 4-letter code). It shows on the club page for 30 minutes. A room's waiting card has a "Post to my club" button (Chess, Ludo, Eight Ball lobbies).
+- **Profiles:** player profiles show "Member of / Owner of <club> #ID".
 
-Open questions for when we start: club size limit, who can spend the club wallet (owner / officers / votes), joining by invite or open, tournament entry and prizes (earned chips only, same rules as chip matches), moderation (kick / ban, club names).
+Files:
+- `supabase/clans.sql`. Also `_gift_sent_today` in `entries.sql` now counts club deposits, and `'club'` was added to the ledger reason lists.
+- `src/lib/clubs.ts`
+- `src/pages/ClubsPage.tsx` + `clubs.css`, served at `/clubs` and `/clubs/:tag?invite=CODE`
+- `src/components/ClubRoomShare.tsx`
+- `ClubBadge` in `PlayerCard.tsx`
+- nav links in `SiteChrome.tsx` and `GamesNav.tsx`
+
+Status: SQL tested on local Postgres (create, join, private invite, ban, full/limits, give, pay, transfer, leave, close). Builds. Not yet tried with real signed-in accounts.
+
+Still to do (later):
+- **Club tournaments** (format and prizes to decide).
+- **Joining a club room from the link:** it copies the code and opens the game; the player then picks Online → Join.
+- **Carrom / Arrows lobbies:** add the "Post to my club" button there too.
+- **Club chat?**
 
 ## Earlier
 

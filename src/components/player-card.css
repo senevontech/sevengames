@@ -353,3 +353,17 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* club the player is in (ClubBadge) */
+.pc-club {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: inherit;
+  opacity: 0.8;
+  text-decoration: none;
+}
+.pc-club:hover {
+  opacity: 1;
+  text-decoration: underline;
+}

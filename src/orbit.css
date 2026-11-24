@@ -3549,8 +3549,8 @@ a {
   transform: translateY(-1px);
 }
 
-/* Very narrow phones: square mark only, so the nav never crowds */
-@media (max-width: 380px) {
+/* Phones: square mark only, so the nav never crowds */
+@media (max-width: 640px) {
   .brand-logo-full {
     display: none !important;
   }

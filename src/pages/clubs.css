@@ -1,0 +1,401 @@
+/* /clubs (ClubsPage.tsx). Built on account.css (.acct, .ac-card, .ac-btn) and tokens-page.css. */
+.cl {
+  display: grid;
+  gap: 20px;
+}
+
+.cl h2,
+.cl .ac-h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.cl-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.cl-hero > div {
+  flex: 1 1 260px;
+}
+.cl-hero h1 {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 32px);
+}
+.cl-hero-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  color: #1f0c00;
+  background: linear-gradient(145deg, #ff9d52, #f26a0c);
+  box-shadow: 0 12px 26px -12px rgba(244, 96, 0, 0.8);
+}
+
+.cl-signin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* club header: badge, name, #ID, public/private, members */
+.cl-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.cl-head-text {
+  flex: 1;
+  min-width: 0;
+}
+.cl-head h2 {
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+.cl-head p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--ac-muted);
+}
+.cl-badge {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(145deg, #2a2b33, #111216);
+  box-shadow: inset 0 0 0 2px var(--ac-accent);
+}
+.cl-tag {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ac-text);
+}
+.cl-vis {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cl-owner {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ac-accent);
+  box-shadow: var(--ac-well);
+}
+.cl-about {
+  margin-top: 10px !important;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.cl-forming {
+  margin-top: 12px !important;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--ac-accent);
+  box-shadow: var(--ac-well);
+}
+
+.cl-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.cl-share {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ac-line);
+  font-size: 14px;
+}
+.cl-end {
+  justify-content: flex-end;
+}
+.cl-fine {
+  font-size: 12px;
+  color: var(--ac-muted);
+}
+.cl-hint {
+  margin-top: 10px !important;
+  font-size: 13px;
+}
+.cl-empty {
+  margin-bottom: 4px !important;
+}
+
+/* inputs */
+.cl-input {
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ac-text);
+  background: transparent;
+  box-shadow: var(--ac-well);
+}
+.cl-input:focus-visible {
+  outline: 2px solid var(--ac-accent);
+  outline-offset: 1px;
+}
+textarea.cl-input {
+  resize: vertical;
+}
+select.cl-input option {
+  color: #111;
+}
+.cl-code {
+  width: 9.5em;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.cl-num {
+  width: 6.5em;
+}
+
+.cl-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+.ac-card.cl-form {
+  margin-top: 0;
+}
+.cl-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 650;
+}
+.cl-form label small {
+  font-weight: 400;
+  color: var(--ac-muted);
+}
+.cl-form > .ac-btn {
+  justify-self: start;
+}
+
+.cl-seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.cl-seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ac-muted);
+  background: transparent;
+  box-shadow: var(--ac-well);
+  cursor: pointer;
+}
+.cl-seg button.is-on {
+  color: var(--ac-text);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 2px var(--ac-accent);
+}
+
+/* search + list */
+.cl-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--ac-muted);
+}
+.cl-search .cl-input {
+  flex: 1;
+}
+.cl-list,
+.cl-rooms,
+.cl-members {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cl-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+
+.cl-faces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 12px;
+}
+.cl-more {
+  align-self: center;
+  font-size: 13px;
+  color: var(--ac-muted);
+}
+
+/* rooms */
+.cl-rooms li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+.cl-rooms li > span:first-child {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.cl-rooms small,
+.cl-member small,
+.cl-log small {
+  font-size: 12px;
+  color: var(--ac-muted);
+}
+.cl-post .cl-input:first-child {
+  min-width: 8em;
+}
+
+/* wallet */
+.cl-balance {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cl-balance b {
+  font-size: 28px;
+  font-weight: 800;
+}
+.cl-balance small {
+  font-size: 13px;
+  color: var(--ac-muted);
+}
+.cl-pay {
+  padding-top: 12px;
+  border-top: 1px solid var(--ac-line);
+}
+.cl-pay .cl-input:not(.cl-num) {
+  flex: 1 1 8em;
+}
+.cl-log {
+  display: grid;
+  gap: 2px;
+  margin: 14px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--ac-line);
+  list-style: none;
+}
+.cl-log li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 14px;
+}
+.cl-log li > span {
+  display: grid;
+  min-width: 0;
+}
+.cl-log em {
+  font-style: normal;
+  color: var(--ac-muted);
+  overflow-wrap: anywhere;
+}
+.cl-log .plus {
+  color: var(--ac-good);
+}
+.cl-log .minus {
+  color: var(--ac-bad);
+}
+
+/* members */
+.cl-members {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+}
+.cl-members li {
+  padding: 12px 14px;
+}
+.cl-member {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cl-member > span {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.cl-member a {
+  overflow: hidden;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ac-text);
+}
+.cl-manage {
+  margin-top: 10px;
+}
+.cl-bans {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+.cl-ban {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.ac-btn.cl-danger {
+  color: var(--ac-bad) !important;
+}
+.cl-leave {
+  margin-top: 0;
+}
+
+@media (max-width: 520px) {
+  .cl-rooms li {
+    flex-wrap: wrap;
+  }
+  .cl-share .ac-btn {
+    width: 100%;
+  }
+}

@@ -3,8 +3,7 @@ import { requestBanner } from "../lib/admob";
 import { isNative } from "../lib/native";
 import { Link } from "react-router-dom";
 import { ADSENSE_CLIENT, ADSENSE_SLOT, adsenseConfigured, ensureAdsenseScript } from "../lib/adsense";
-import { AD_FREE_PRICE, useShowAds } from "../lib/tokens";
-import TokenIcon from "./TokenIcon";
+import { useShowAds } from "../lib/tokens";
 import "./ad-slot.css";
 
 /**
@@ -42,8 +41,8 @@ export default function AdSlot({ placement, className = "" }: { placement: strin
     <aside className={`ad-slot ${className}`.trim()} aria-label="Advertisement" data-placement={placement}>
       <div className="ad-slot-top">
         <span className="ad-slot-label">Advertisement</span>
-        <Link className="ad-slot-remove" to="/chips#adfree">
-          Remove ads · <TokenIcon size={12} /> {AD_FREE_PRICE}/month
+        <Link className="ad-slot-remove" to="/chips#plus">
+          Remove ads with Plus
         </Link>
       </div>
       <ins

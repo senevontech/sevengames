@@ -122,6 +122,7 @@ export function tokenErrorText(err: unknown) {
   if (msg.includes("mock_payments_disabled")) return "Payments aren't available yet.";
   if (msg.includes("not_signed_in")) return "Sign in first.";
   if (msg.includes("insufficient_tokens")) return "Not enough chips.";
+  if (msg.includes("adfree_not_for_chips")) return "Ad-free comes with Senevon Plus. It can't be bought with chips.";
   if (msg.includes("insufficient_earned")) return "Not enough earned chips. Bought chips can't be used for match entries or gifts.";
   if (msg.includes("none_left")) return "You don't have any left.";
   if (msg.includes("level_required")) return "Reach the level shown to unlock this.";

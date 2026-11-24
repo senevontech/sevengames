@@ -67,6 +67,7 @@ export default function CategoryPage() {
         <Link className="h3-logo" to="/" aria-label="Senevon Game Studio — home">
           <img className="cp-logo-dark" src="/logo/logo-h-dark-nav.webp" width={432} height={120} alt="Senevon Game Studio" />
           <img className="cp-logo-light" src="/logo/logo-h-light-nav.webp" width={432} height={120} alt="" aria-hidden="true" />
+            <img className="h3-logo-mark" src="/logo/mark-256.webp" width={256} height={256} alt="" aria-hidden="true" />
         </Link>
         <div className="h3-nav-end">
           <div className="h3-menu h3-menu-end">
