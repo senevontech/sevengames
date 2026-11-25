@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { adminCall, AdminError, clearToken, getToken, login } from "../../lib/adminApi";
 import { isSupabaseConfigured } from "../../supabase";
@@ -12,6 +12,8 @@ import LeadsTab from "./LeadsTab";
 import { excludeThisDevice, isDeviceExcluded, thisVisitorId } from "../../lib/track";
 import { Moon, Sun } from "lucide-react";
 import "./admin-neu.css";
+
+const SeneviLab = lazy(() => import("./SeneviLab"));
 
 /* ---------- light (default) / dark, remembered on this browser ---------- */
 type AdmTheme = "light" | "dark";
@@ -414,7 +416,7 @@ function ProTab() {
 
 /* ---------- shell ---------- */
 
-type Tab = "overview" | "traffic" | "games" | "engagement" | "leads" | "ads" | "tokens" | "pro" | "settings";
+type Tab = "overview" | "traffic" | "games" | "engagement" | "leads" | "ads" | "tokens" | "pro" | "senevi" | "settings";
 const TABS: [Tab, string][] = [
   ["overview", "Dashboard"],
   ["traffic", "Traffic"],
@@ -424,6 +426,7 @@ const TABS: [Tab, string][] = [
   ["ads", "Ads"],
   ["tokens", "Chips"],
   ["pro", "Pro"],
+  ["senevi", "Senevi Lab"],
   ["settings", "Settings"],
 ];
 
@@ -507,6 +510,11 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         {tab === "games" && stats ? <GamesTab s={stats} /> : null}
         {tab === "ads" ? <AdsManager stats={stats?.ads} /> : null}
         {tab === "settings" ? <SettingsTab /> : null}
+        {tab === "senevi" ? (
+          <Suspense fallback={<p className="adm-empty">Loading the lab…</p>}>
+            <SeneviLab />
+          </Suspense>
+        ) : null}
         {tab === "engagement" ? <EngagementTab /> : null}
         {tab === "leads" ? <LeadsTab /> : null}
         {tab === "pro" ? <ProTab /> : null}

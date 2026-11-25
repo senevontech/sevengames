@@ -283,7 +283,7 @@
     display: block !important;
     width: 36px !important;
     height: 36px !important;
-    border-radius: 9px;
+    border-radius: 0; /* the mark is a full square: rounding clipped its corners */
   }
 }
 

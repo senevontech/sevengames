@@ -713,56 +713,138 @@
 .pool-game.is-phone {
   grid-template-rows: auto minmax(0, 1fr);
   justify-items: stretch;
-  gap: 6px;
+  gap: 5px;
   width: 100%;
   height: 100%;
   max-width: none;
   margin: 0;
-  padding: 6px 8px max(6px, env(safe-area-inset-bottom));
+  padding: 4px 6px max(4px, env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
-/* clear the game window's floating buttons (top right of the screen) */
+/* The game window's buttons are folded into one ⋮ (GamePage, game-fit.css) in the screen's
+   top-right corner: the thin bar leaves a gap for it at its right end, or (turned) its left end. */
 .pool-game.is-phone:not(.is-rot) .pl-hud {
-  padding-right: 210px;
+  padding-right: 40px;
 }
 
-.gp-stage.is-full .pool-game.is-phone:not(.is-rot) .pl-hud {
-  padding-right: 300px;
+.pool-game.is-phone.is-rot .pl-hud {
+  padding-left: 40px;
 }
 
-/* turned: those buttons now run down the layer's left edge */
-.pool-game.is-phone.is-rot {
-  padding-left: 50px;
-}
-
+/* one thin bar: everything on a single line */
 .pool-game.is-phone .pl-hud {
   gap: 6px;
+  height: 32px;
   min-height: 0;
 }
 
-.pool-game.is-phone .pl-player {
-  padding: 3px 8px;
+.pool-game.is-phone .pl-hud .pl-tool-sm {
+  width: 30px;
+  height: 30px;
 }
 
+.pool-game.is-phone .pl-player {
+  height: 32px;
+  padding: 0 8px;
+  gap: 6px;
+  box-sizing: border-box;
+}
+
+/* Senevi's line: covers his name and balls on the one-line card */
+.pool-game.is-phone .pl-senevi-line {
+  inset: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  font-size: 11.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pool-game.is-phone .pl-player.is-right .pl-senevi-line {
+  justify-content: flex-end;
+}
+
+/* picture + its shot-clock ring, shrunk as one piece */
+.pool-game.is-phone .pl-av-wrap {
+  margin: -3px;
+  transform: scale(0.8);
+}
+
+.pool-game.is-phone .pl-pinfo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pool-game.is-phone .pl-player.is-right .pl-pinfo {
+  flex-direction: row-reverse;
+}
+
+.pool-game.is-phone .pl-pinfo b {
+  font-size: 12px;
+}
+
+.pool-game.is-phone .pl-balls {
+  flex-wrap: nowrap;
+  gap: 1px;
+}
+
+.pool-game.is-phone .pl-mini {
+  width: 11px;
+  height: 11px;
+}
+
+.pool-game.is-phone .pl-mini i {
+  width: 6px;
+  height: 6px;
+}
+
+.pool-game.is-phone .pl-hud-endless {
+  align-items: center;
+}
+
+/* Endless: "Score 0 · Best 660", the clock, "Rack 1 ×1 · 0 balls", each one line */
 .pool-game.is-phone .pl-ebox {
-  min-width: 72px;
-  padding: 2px 10px;
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  height: 32px;
+  min-width: 0;
+  padding: 0 10px;
+  box-sizing: border-box;
+  align-content: normal;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.pool-game.is-phone .pl-ebox small {
+  font-size: 9.5px;
 }
 
 .pool-game.is-phone .pl-ebox b {
-  font-size: 16px;
+  font-size: 15px;
+}
+
+.pool-game.is-phone .pl-eclock {
+  height: 32px;
+  border-radius: 12px;
 }
 
 .pool-game.is-phone .pl-eclock b {
-  font-size: 18px;
+  font-size: 15px;
+}
+
+.pool-game.is-phone .pl-eclock i {
+  height: 3px;
 }
 
 .pool-game.is-phone .pl-stage {
   grid-template-columns: auto minmax(0, 1fr) auto;
   /* the table fits the row, never the other way round */
   grid-template-rows: minmax(0, 1fr);
-  gap: 8px;
+  gap: 6px;
   min-height: 0;
 }
 

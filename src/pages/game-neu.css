@@ -430,6 +430,12 @@
   box-shadow: none;
 }
 
+/* no accent-coloured glow at the top of the game screen (ui.css): on the plain soft page it showed
+   as a tinted band, cut off at the stage edge next to the high score card */
+.site[data-gtheme] .gp-stage::before {
+  content: none;
+}
+
 /* ---------- Light game screen: dark ink instead of the dark-screen whites ---------- */
 .site.site[data-gtheme="light"] .gp-stage,
 .site.site[data-gtheme="light"] .gp-stage .game-status,

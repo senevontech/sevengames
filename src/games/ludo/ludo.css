@@ -35,29 +35,53 @@
 .lu-players {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: 6px;
+  gap: 10px;
   width: 100%;
   margin: 0;
-  padding: 0;
+  padding: 4px 4px 8px; /* room for the raised shadows */
   list-style: none;
 }
 
+/* neumorphic player cards: raised; the player whose turn it is is pressed in.
+   The player's colour is a small bar on the left. Theme follows the --neu-* tokens. */
 .lu-players li {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
-  padding: 5px 8px;
-  border-radius: 12px;
+  padding: 7px 10px 7px 14px;
+  border-radius: 14px;
   font-size: 12.5px;
-  background: rgba(127, 127, 127, 0.1);
-  box-shadow: inset 3px 0 0 var(--lu-c);
-  transition: box-shadow 0.25s ease, transform 0.25s ease;
+  background: var(--neu-bg, rgba(127, 127, 127, 0.1));
+  box-shadow: var(--neu-raise-sm, 0 2px 6px rgba(0, 0, 0, 0.25));
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.lu-players li::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--lu-c);
+  opacity: 0.85;
 }
 
 .lu-players li.is-turn {
-  box-shadow: inset 0 0 0 2px var(--lu-c);
-  transform: translateY(-1px);
+  box-shadow: var(--neu-press, inset 2px 2px 6px rgba(0, 0, 0, 0.35));
+  transform: translateY(1px);
+}
+
+.lu-players li.is-turn::before {
+  opacity: 1;
+  box-shadow: 0 0 8px var(--lu-c);
+}
+
+.lu-players li.is-turn small {
+  opacity: 0.9;
 }
 
 .lu-players li.is-me .lu-pname {

@@ -104,6 +104,65 @@ export function useSeneviLine(seat = "cpu") {
   );
 }
 
+/* ---------- the four bots (set in Admin → Senevi Lab, read by everyone) ----------
+   Games with one CPU use bot 1; games with several seat bots 1, 2, 3 (and 4) in order.
+   Saved as the site setting "senevi_bots": [{ name, chat, config }] × 4. */
+export type SeneviProfile = {
+  name: string;
+  /** how chatty: 0 silent … 1 normal */
+  chat: number;
+  /** look and motion: the bot's config (only what differs from the defaults) */
+  config: Record<string, unknown>;
+};
+export const SENEVI_BOTS = 4;
+export const DEFAULT_PROFILES: SeneviProfile[] = [
+  { name: SENEVI_NAME, chat: 1, config: {} },
+  { name: `${SENEVI_NAME} II`, chat: 1, config: { modeColors: ["#52d2ff", "#7cf0c4", "#bf8bff", "#ffd84a"] } },
+  { name: `${SENEVI_NAME} III`, chat: 1, config: { modeColors: ["#ff7aa8", "#52d2ff", "#ffd84a", "#bf8bff"] } },
+  { name: `${SENEVI_NAME} IV`, chat: 1, config: { modeColors: ["#9dff6a", "#52d2ff", "#bf8bff", "#ffd84a"] } },
+];
+export function cleanProfiles(raw: unknown): SeneviProfile[] {
+  const list = Array.isArray(raw) ? raw : [];
+  return DEFAULT_PROFILES.map((d, i) => {
+    const r = (list[i] ?? {}) as Partial<SeneviProfile>;
+    return {
+      name: typeof r.name === "string" && r.name.trim() ? r.name.trim().slice(0, 24) : d.name,
+      chat: typeof r.chat === "number" ? Math.max(0, Math.min(1, r.chat)) : d.chat,
+      config: r.config && typeof r.config === "object" ? (r.config as Record<string, unknown>) : d.config,
+    };
+  });
+}
+let profiles: SeneviProfile[] = DEFAULT_PROFILES;
+let profilesLoaded: Promise<SeneviProfile[]> | null = null;
+const profileListeners = new Set<() => void>();
+export function loadSeneviProfiles() {
+  profilesLoaded ??= import("../lib/siteSettings")
+    .then((m) => m.loadSettings())
+    .then((s) => {
+      profiles = cleanProfiles((s as unknown as Record<string, unknown>).senevi_bots);
+      profileListeners.forEach((l) => l());
+      return profiles;
+    })
+    .catch(() => profiles);
+  return profilesLoaded;
+}
+/** bot n (1–4); bots past 4 reuse them */
+export const seneviProfile = (n: number) => profiles[(Math.max(1, Math.floor(n)) - 1) % SENEVI_BOTS];
+/** the name of CPU bot n (1–4) as set in Admin */
+export function seneviBotName(n: number) {
+  return seneviProfile(n).name;
+}
+export function useSeneviProfiles() {
+  useEffect(() => void loadSeneviProfiles(), []);
+  return useSyncExternalStore(
+    (l) => {
+      profileListeners.add(l);
+      return () => void profileListeners.delete(l);
+    },
+    () => profiles,
+  );
+}
+
 /* ---------- the face ---------- */
 let modPromise: Promise<typeof import("./seneviBot").default> | null = null;
 const loadBot = () => (modPromise ??= import("./seneviBot.js").then((m) => m.default));
@@ -120,9 +179,13 @@ type FaceProps = {
   className?: string;
   /** Called once the bot exists (his page uses it for the expression buttons). */
   onReady?: (bot: SeneviInstance) => void;
+  /** which of the four bots (1–4, set in Admin → Senevi Lab); default 1 */
+  bot?: number;
+  /** a small extra face (e.g. a row of them): fewer LEDs, a lower pixel ratio, gentler motion */
+  lowPower?: boolean;
 };
 
-export function SeneviFace({ size, body = "head", seat = "cpu", speech = true, className = "", onReady }: FaceProps) {
+export function SeneviFace({ size, body = "head", seat = "cpu", speech = true, className = "", onReady, bot: botNo = 1, lowPower = false }: FaceProps) {
   const host = useRef<HTMLDivElement>(null);
   const [fallback, setFallback] = useState(false);
   const isMuted = useSeneviMuted();
@@ -139,18 +202,25 @@ export function SeneviFace({ size, body = "head", seat = "cpu", speech = true, c
       window.clearTimeout(clearT);
       clearT = window.setTimeout(() => publishLine(seat, null), Math.min(6000, 2600 + text.length * 50));
     };
-    loadBot()
-      .then((Senevi) => {
+    Promise.all([loadBot(), loadSeneviProfiles()])
+      .then(([Senevi]) => {
         if (gone || !host.current) return;
         if (!Senevi.isSupported()) return setFallback(true);
         const small = size < 90;
+        const prof = seneviProfile(botNo);
+        const cols = Number(prof.config.cols) || 58;
         bot = Senevi.create(host.current, {
-          speech: speak,
-          onSay,
+          speech: speak && prof.chat > 0,
+          onSay: (text) => {
+            // a quieter bot keeps most of his lines to himself
+            if (prof.chat >= 1 || Math.random() < prof.chat) onSay(text);
+          },
           config: {
+            ...prof.config,
             body,
             // tiny heads: fewer, bigger LEDs read better and cost less
-            ...(small ? { cols: 40, maxDpr: 2, bob: 0.25 } : {}),
+            ...(small ? { cols: Math.min(cols, 40), maxDpr: 2, bob: Math.min(Number(prof.config.bob ?? 0.4), 0.25) } : {}),
+            ...(lowPower ? { cols: Math.min(cols, 34), maxDpr: Math.min(1.5, window.devicePixelRatio || 1), glowRadius: 2, flicker: 0, scanOnChange: false } : {}),
             ...(body === "full" ? { zoom: 0.9 } : {}),
           },
         });
@@ -176,7 +246,7 @@ export function SeneviFace({ size, body = "head", seat = "cpu", speech = true, c
       publishLine(seat, null);
       if (host.current) host.current.innerHTML = "";
     };
-  }, [size, body, seat, speak]);
+  }, [size, body, seat, speak, botNo, lowPower]);
 
   return (
     <span className={`snv-face${body === "full" ? " is-full" : ""} ${className}`} style={{ width: size, height: size }} aria-label={SENEVI_NAME} role="img">

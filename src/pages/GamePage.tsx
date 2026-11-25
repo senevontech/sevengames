@@ -6,7 +6,7 @@ import { isNative, openExternal } from "../lib/native";
 import { asksForApp, openGameApp, openGameWeb } from "../lib/externalGames";
 import { openExternalGame } from "../components/ExternalGamePrompt";
 import { Link, useParams } from "react-router-dom";
-import { ChevronLeft, Crown, ExternalLink, Info, Maximize, Minimize, Minimize2, Smartphone, Store, Trophy, X } from "lucide-react";
+import { ChevronLeft, Crown, EllipsisVertical, ExternalLink, Info, Maximize, Minimize, Minimize2, Smartphone, Store, Trophy, X } from "lucide-react";
 import { useGameAccess } from "../lib/engagement";
 import { MatchChatButton, MatchChatHost } from "../components/chat/MatchChat";
 import { HowToPlayButton } from "../components/HowToPlay";
@@ -121,6 +121,8 @@ export default function GamePage() {
   const [locked, setLocked] = useState(false);
   // phones: the leaderboard panel over the game
   const [sideOpen, setSideOpen] = useState(false);
+  /** compact games (Eight Ball on phones) fold the window buttons into one ⋮ menu */
+  const [floatOpen, setFloatOpen] = useState(false);
   // Play mode: once a game starts, everything but the game (and a few floating buttons) hides,
   // including the site nav and the phone bottom bar (html.gp-playing, see game-fit.css)
   const [playing, setPlaying] = useState(false);
@@ -359,7 +361,24 @@ export default function GamePage() {
             }}
           >
             {playing ? (
-              <div className="gp-float" role="toolbar" aria-label="Game controls">
+              <div
+                className={`gp-float${floatOpen ? " is-open" : ""}`}
+                role="toolbar"
+                aria-label="Game controls"
+                onClick={(e) => {
+                  // picking anything in the folded menu closes it
+                  if (!(e.target as Element).closest(".gp-float-more")) setFloatOpen(false);
+                }}
+              >
+                <button
+                  type="button"
+                  className={`gp-float-more${floatOpen ? " active" : ""}`}
+                  aria-label="Game controls"
+                  aria-expanded={floatOpen}
+                  onClick={() => setFloatOpen((o) => !o)}
+                >
+                  <EllipsisVertical size={16} />
+                </button>
                 <button
                   type="button"
                   className={sideOpen ? "active" : ""}

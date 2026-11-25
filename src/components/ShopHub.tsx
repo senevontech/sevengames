@@ -1,21 +1,15 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import ShopSection, { type ShopScope } from "./ShopSection";
+import ShopSection from "./ShopSection";
 import "./shop.css";
 
-/* Carrom's shop needs the Carrom game code (its items + progress): only fetched when picked */
-const CarromShop = lazy(() => import("./CarromShop"));
 const ChatPackShop = lazy(() => import("./chat/ChatPackShop"));
 
-type HubTab = ShopScope | "carrom" | "chat";
+/* Only site-wide items here. Each game's items (styles, boards, cues, boosters…) are sold in that
+   game's own Shop (games/gameShop.tsx), not on this page. */
+type HubTab = "frames" | "chat";
 
 const TABS: { id: HubTab; label: string }[] = [
-  { id: "arrows", label: "Arrows" },
-  { id: "chess", label: "Chess" },
-  { id: "ludo", label: "Ludo" },
-  { id: "carrom", label: "Carrom" },
-  { id: "pool", label: "Pool" },
-  { id: "tune", label: "Draw a Tune" },
   { id: "frames", label: "Avatar frames" },
   { id: "chat", label: "Chat packs" },
 ];
@@ -33,7 +27,7 @@ function initialTab(hash: string): HubTab {
   } catch {
     /* storage blocked */
   }
-  return "arrows";
+  return "frames";
 }
 
 /**
@@ -63,11 +57,11 @@ export default function ShopHub() {
       <div className="ac-section-head">
         <div>
           <h2 className="ac-h2">Shop</h2>
-          <p className="ac-sub">Styles, boosters and upgrades for each game. The same items are in every game's own Shop.</p>
+          <p className="ac-sub">Avatar frames and chat packs, used across every game. Game styles and boosters are in each game's own Shop.</p>
         </div>
       </div>
 
-      <div className="shop-hub-picker" role="tablist" aria-label="Choose a game">
+      <div className="shop-hub-picker" role="tablist" aria-label="Shop sections">
         {TABS.map((t) => (
           <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={tab === t.id ? "active" : ""} onClick={() => pick(t.id)}>
             {t.label}
@@ -76,16 +70,12 @@ export default function ShopHub() {
       </div>
 
       <div className="shop-hub-body" role="tabpanel">
-        {tab === "carrom" ? (
-          <Suspense fallback={<p className="ac-sub">Opening the Carrom shop…</p>}>
-            <CarromShop />
-          </Suspense>
-        ) : tab === "chat" ? (
+        {tab === "chat" ? (
           <Suspense fallback={<p className="ac-sub">Opening chat packs…</p>}>
             <ChatPackShop />
           </Suspense>
         ) : (
-          <ShopSection key={tab} scope={tab} embedded />
+          <ShopSection key={tab} scope="frames" embedded />
         )}
       </div>
     </section>

@@ -141,11 +141,11 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
   },
   dodge: {
     steps: [
-      { icon: "🚀", title: "Fly your ship", text: "Drag, or use the arrow keys or A / D, to move left and right." },
-      { icon: "☄️", title: "Avoid meteors", text: "Meteors rain down faster and faster. One hit ends the run." },
-      { icon: "⭐", title: "Score", text: "10 points per second survived, plus 5 for every near miss." },
+      { icon: "🚀", title: "Fly and fire", text: "Drag, or use the arrow keys or A / D, to move. Your blaster fires on its own: steer to aim." },
+      { icon: "☄️", title: "Meteors and creatures", text: "Rocks, comets, jellies, stingers and the big Eye. Tougher ones take more hits. One hit on your ship ends the run." },
+      { icon: "⭐", title: "Score", text: "10 per second survived, 5 per near miss, and points for every kill. Quick kills build a combo (up to ×4)." },
     ],
-    controls: ["Drag or arrow keys / A, D", "Skim past meteors for near-miss bonuses"],
+    controls: ["Drag or arrow keys / A, D", "Blaster fires automatically", "Chain kills for a combo"],
   },
   "connect-four": {
     steps: [

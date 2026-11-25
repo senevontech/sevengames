@@ -619,6 +619,34 @@ Deno.serve(async (req) => {
         return json({ ok: true });
       }
 
+      // Senevi Lab: the four CPU bots' names, chattiness and look (site setting "senevi_bots").
+      case "senevi_save": {
+        const list = Array.isArray(body.bots) ? (body.bots as unknown[]).slice(0, 4) : [];
+        if (list.length !== 4) return json({ error: "Send all four bots" }, 400);
+        const bots = list.map((b, i) => {
+          const r = (b ?? {}) as Record<string, unknown>;
+          const cfg = r.config && typeof r.config === "object" && !Array.isArray(r.config) ? (r.config as Record<string, unknown>) : {};
+          // only plain values (numbers, strings, booleans, colour lists), small keys
+          const config: Record<string, unknown> = {};
+          for (const [k, v] of Object.entries(cfg).slice(0, 80)) {
+            if (!/^[a-zA-Z]{1,32}$/.test(k)) continue;
+            if (typeof v === "number" && Number.isFinite(v)) config[k] = v;
+            else if (typeof v === "boolean") config[k] = v;
+            else if (typeof v === "string") config[k] = v.slice(0, 32);
+            else if (Array.isArray(v)) config[k] = v.slice(0, 8).map((x) => String(x).slice(0, 16));
+          }
+          const chat = Number(r.chat);
+          return {
+            name: text(r.name, 24) || `Senevi${i ? ` ${["II", "III", "IV"][i - 1]}` : ""}`,
+            chat: Number.isFinite(chat) ? Math.min(1, Math.max(0, chat)) : 1,
+            config,
+          };
+        });
+        const { error } = await db.from("site_settings").upsert([{ key: "senevi_bots", value: bots, updated_at: new Date().toISOString() }]);
+        if (error) throw error;
+        return json({ ok: true, bots });
+      }
+
       case "upload_sign":
         return json(await cloudinarySignature());
 

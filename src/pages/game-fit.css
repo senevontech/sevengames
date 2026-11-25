@@ -223,9 +223,16 @@
 /* the column scrolls, which clips the cards' soft neumorphic shadows at its edges: give the
    shadows room inside it (padding) without moving the cards (matching negative margin) */
 @media (min-width: 861px) {
+  /* 40px = the card shadow's full reach (--neu-panel: 12px offset + 28px blur). The extra room
+     overlaps the game's edge, so clicks pass through it to the game; the cards still take them. */
   html:not(.gp-playing) .site.site-game .gp-side {
-    padding: 16px;
-    margin: -16px;
+    padding: 40px;
+    margin: -40px;
+    pointer-events: none;
+  }
+
+  html:not(.gp-playing) .site.site-game .gp-side > * {
+    pointer-events: auto;
   }
 }
 
@@ -552,6 +559,27 @@ html.gp-playing .site.site-game .gp-side-scrim {
   }
 }
 
+/* ⋮: only for compact games that fold the buttons into one menu (Eight Ball on phones) */
+.site.site-game .gp-float > .gp-float-more {
+  display: none;
+}
+.site.site-game .gp-stage:has(.pool-game.is-phone) .gp-float > .gp-float-more {
+  display: grid;
+}
+.site.site-game .gp-stage:has(.pool-game.is-phone) .gp-float:not(.is-open) > :not(.gp-float-more) {
+  display: none;
+}
+.site.site-game .gp-stage:has(.pool-game.is-phone) .gp-float {
+  right: 6px;
+  top: 6px;
+  flex-direction: column;
+  opacity: 1;
+}
+/* its own Exit button is in the ⋮ menu instead (the last button leaves full screen) */
+.site.site-game .gp-stage:has(.pool-game.is-phone) > .exit-full {
+  display: none;
+}
+
 /* the CSS full-screen overlay has its own Exit button in the top-right: sit beside it */
 .site.site-game .gp-stage.is-full .gp-float {
   right: 96px;
@@ -586,6 +614,16 @@ html.gp-playing .site.site-game .gp .game-header.gp-top {
 
 html.gp-playing .site.site-game main.route.site-main {
   padding: 8px !important;
+}
+
+/* phones while playing: the game window runs nearly edge to edge (no page or frame padding) */
+@media (max-width: 820px) {
+  html.gp-playing .site.site-game main.route.site-main {
+    padding: 2px !important;
+  }
+  html.gp-playing .site.site-game .gp-frame {
+    padding: 0;
+  }
 }
 
 /* FitBox scroll mode: long non-gameplay screens (menus, locker) at normal size, scrolling

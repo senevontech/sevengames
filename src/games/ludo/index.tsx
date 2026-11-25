@@ -29,10 +29,11 @@ import { CpuEntryLine, CpuEntryToggle } from "../../components/CpuEntry";
 import PlayFlow from "../PlayFlow";
 import ChipLine from "../../components/ChipLine";
 import { Bot, Globe, Users } from "lucide-react";
-import { senevi, SeneviFace, SeneviIcon, SeneviLine, SENEVI_NAME } from "../../senevi/Senevi";
+import { senevi, seneviBotName, SeneviFace, SeneviIcon, SeneviLine, SENEVI_NAME, useSeneviProfiles } from "../../senevi/Senevi";
 
 /** vs CPU: every CPU seat is a Senevi (seat 1 "Senevi", then "Senevi II", "Senevi III"). */
-const seneviName = (i: number) => (i <= 1 ? SENEVI_NAME : `${SENEVI_NAME} ${i === 2 ? "II" : "III"}`);
+/** CPU seat i plays as Senevi bot i (names and looks set in Admin → Senevi Lab) */
+const seneviName = (i: number) => seneviBotName(Math.max(1, i));
 const seneviSeat = (i: number) => `ludo-${i}`;
 
 type Mode = "cpu" | "pass" | "online";
@@ -95,6 +96,7 @@ function TurnTimer({ deadline }: { deadline: number }) {
 }
 
 export default function LudoGame(_props: GameProps) {
+  useSeneviProfiles();
   const { user } = useAuthContext();
   const { choice: myAvatar } = useAvatar(user);
   const shop = useShop();
@@ -721,7 +723,7 @@ export default function LudoGame(_props: GameProps) {
           return (
             <li key={c} className={`${i === st.turn && st.phase !== "over" ? "is-turn" : ""}${i === mySeat ? " is-me" : ""}`} style={{ "--lu-c": paints[c].solid } as React.CSSProperties}>
               {mode === "cpu" && seat?.kind === "cpu" ? (
-                <SeneviFace size={24} seat={seneviSeat(i)} className="lu-senevi" />
+                <SeneviFace size={24} seat={seneviSeat(i)} bot={Math.max(1, i)} className="lu-senevi" />
               ) : seat?.userId ? (
                 <PlayerAvatar id={seat.userId} name={seat.name} avatar={seat.avatar ?? null} size={22} className="lb-initial lu-av" />
               ) : (

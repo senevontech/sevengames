@@ -24,8 +24,21 @@ export interface SeneviInstance {
   gameOver(result: "cpu" | "player" | "draw"): void;
   gameStart(): void;
   setConfig(patch: Record<string, unknown>): void;
+  getConfig(): Record<string, unknown>;
+  defeat(ms?: number): void;
+  forceIdle(ms: number): void;
+  setShape(idx: number): void;
+  sayTip(force?: boolean): boolean;
+  /** frames per second (updated about twice a second) */
+  fps: number;
+  root?: HTMLElement;
   destroy(): void;
 }
+
+/** [key, label, min, max, step] sliders, or [key, label, "color" | "toggle"], or [key, label, "select", [[value, label], …]] */
+export type ConfigRow = [string, string, number | "color" | "toggle" | "select", (number | [string, string][])?, number?];
+export const CONFIG_SCHEMA: [string, ConfigRow[]][];
+export const DEFAULT_CONFIG: Record<string, unknown>;
 
 declare const Senevi: {
   DEFAULT_CONFIG: Record<string, unknown>;

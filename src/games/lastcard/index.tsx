@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Globe, ListChecks, LogOut, RotateCcw, Users } from "lucide-react";
 import type { GameProps } from "../index";
-import { senevi, SeneviFace, SeneviIcon, SeneviLine, SENEVI_NAME } from "../../senevi/Senevi";
+import { senevi, seneviBotName, SeneviFace, SeneviIcon, SeneviLine, SENEVI_NAME, useSeneviProfiles } from "../../senevi/Senevi";
 import { useAuthContext } from "../../context/AuthContext";
 import { useShop } from "../../lib/shop";
 import { levelForXp, xpForLevel } from "../../lib/shopCatalog";
@@ -240,7 +240,9 @@ function LocalGame({ mode, n, rules, onExit, onAgain, awardXp }: { mode: Mode; n
   const [cover, setCover] = useState<number | null>(mode === "pass" ? s.turn : null); // same device: whose turn is hidden
   const [toast, setToast] = useState<string | null>(null);
   const isCpu = (seat: number) => mode === "cpu" && seat !== 0;
-  const names = Array.from({ length: n }, (_, i) => (mode === "cpu" ? (i === 0 ? "You" : n > 2 ? `${SENEVI_NAME} ${i}` : SENEVI_NAME) : `Player ${i + 1}`));
+  useSeneviProfiles();
+  // CPU seat i plays as Senevi bot i (names and looks set in Admin → Senevi Lab)
+  const names = Array.from({ length: n }, (_, i) => (mode === "cpu" ? (i === 0 ? "You" : seneviBotName(i)) : `Player ${i + 1}`));
   const viewer = mode === "cpu" ? 0 : s.turn;
   const sRef = useRef(s);
   sRef.current = s;
@@ -340,7 +342,7 @@ function LocalGame({ mode, n, rules, onExit, onAgain, awardXp }: { mode: Mode; n
     name: mode === "pass" && i === viewer ? `${name} (you)` : name,
     count: s.hands[i].length,
     called: s.called[i],
-    face: isCpu(i) ? <SeneviFace size={30} seat={seneviSeat(i)} className="lc-senevi" /> : undefined,
+    face: isCpu(i) ? <SeneviFace size={30} seat={seneviSeat(i)} bot={i} className="lc-senevi" /> : undefined,
   }));
 
   const turnName = names[s.turn];

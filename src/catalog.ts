@@ -416,7 +416,7 @@ export const games: Game[] = [
     difficulty: "Medium",
     minutes: 3,
     accent: "#ff375f",
-    description: "Weave through a rain of falling blocks. Every second survived counts.",
+    description: "Blast and weave through meteors, comets and space creatures. Your blaster fires on its own; one hit ends the run.",
   },
   {
     id: "connect-four",

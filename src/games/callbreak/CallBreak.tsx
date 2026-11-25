@@ -7,8 +7,11 @@ import { cardSound, winSound } from "../cards/sounds";
 import { MAX_CALL, ROUNDS, collect, cpuCall, cpuPlay, dealRound, legal, placeCall, playCard, totalOf, winning, type CBState, type Seat } from "./engine";
 import "../cards/cards.css";
 import "./callbreak.css";
+import { seneviBotName, useSeneviProfiles } from "../../senevi/Senevi";
 
-const NAMES = ["You", "Senevi West", "Senevi North", "Senevi East"];
+/** the three CPU seats play as Senevi bots 1–3 (names set in Admin → Senevi Lab) */
+let NAMES = ["You", "Senevi West", "Senevi North", "Senevi East"];
+const refreshNames = () => (NAMES = ["You", seneviBotName(1), seneviBotName(2), seneviBotName(3)]);
 const SPOT = ["is-s", "is-w", "is-n", "is-e"];
 const CPU_CALL_MS = 600;
 const CPU_PLAY_MS = 650;
@@ -18,6 +21,8 @@ const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
 
 /** `initial`: start from a given position (tests / previews); normally a fresh deal. */
 export default function CallBreak({ onExit, initial }: { onExit: () => void; initial?: CBState }) {
+  useSeneviProfiles();
+  refreshNames();
   const [s, setS] = useState<CBState>(() => initial ?? dealRound(null));
   const [board, setBoard] = useState(false);
 
