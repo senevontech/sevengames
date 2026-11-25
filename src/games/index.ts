@@ -41,6 +41,7 @@ const loaders: Record<GameEngine, Loader<GameProps>> = {
   pool: () => import("./pool/index"),
   chain: () => import("./chain/index"),
   tune: () => import("./tune/index"),
+  lastcard: () => import("./lastcard/index"),
 };
 
 const previewLoaders: Partial<Record<GameEngine, Loader<object>>> = {

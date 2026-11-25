@@ -626,7 +626,7 @@ html.gp-playing .site.site-game main.route.site-main {
   }
 
   .site.site-game .gp-stage {
-    border-radius: 16px;
+    border-radius: 0;
   }
 
   .site.site-game .fitbox-inner {

@@ -611,7 +611,7 @@ export default function LudoGame(_props: GameProps) {
           preview={
             <div className="pf-preview lu-preview" inert>
               <div className="lu-board-wrap" style={{ "--lu-line": theme.line } as React.CSSProperties}>
-                <LudoBoard s={st} shown={shown} theme={theme} dice={diceStyle} choices={[]} onPick={() => {}} labels={labels} paints={previewPaints} avatars={previewAvatars} />
+                <LudoBoard s={st} shown={shown} theme={theme} dice={diceStyle} choices={[]} onPick={() => {}} labels={labels} paints={previewPaints} avatars={previewAvatars} live={false} />
               </div>
             </div>
           }

@@ -236,6 +236,17 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
     ],
     controls: ["Tap to set it off · swipe a domino to push it", "Bigger chains score more per piece"],
   },
+  lastcard: {
+    steps: [
+      { icon: "🎯", title: "Match it", text: "Play a card that matches the top card's colour, or its number or symbol. Can't? Draw one card: if it fits you may play it straight away, or keep it." },
+      { icon: "⚡", title: "Action cards", text: "Skip: the next player misses a turn. Reverse: play changes direction (with two players it's a skip). +2: the next player takes two and misses a turn." },
+      { icon: "🌈", title: "Wilds", text: "A Wild can go on anything: you pick the colour. A Wild +4 also makes the next player take four." },
+      { icon: "✋", title: "One card!", text: "When you play your second-last card, tap “One card!” first, or you draw 2 as a penalty." },
+      { icon: "🏆", title: "Win", text: "First to play their last card wins, and scores the points left in everyone else's hand (numbers by face value, action cards 20, wilds 50)." },
+      { icon: "🧩", title: "House rules", text: "In the ⚙ settings: stack +2/+4 to pass the pile on (on by default), 7 swaps hands and 0 passes them along, jump in with an identical card (vs Senevi), or keep drawing until you can play." },
+    ],
+    controls: ["Tap a raised card to play it · tap the deck to draw", "Online: 2–4 players, the host deals, 25 s a turn"],
+  },
   tune: {
     steps: [
       { icon: "✏️", title: "Draw", text: "Draw anything on the canvas. When you press Play, a bar sweeps from left to right and plays every line it touches." },

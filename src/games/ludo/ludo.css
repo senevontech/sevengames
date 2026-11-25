@@ -111,11 +111,27 @@
 }
 
 .lu-yard-label {
-  font-size: 0.42px;
+  font-size: 42px;
   font-weight: 800;
   text-anchor: middle;
   dominant-baseline: middle;
   pointer-events: none;
+}
+
+/* whose turn: the yard glows, the others dim a little (opacity only, so phones keep it smooth) */
+.lu-yard {
+  transition: opacity 0.3s ease;
+}
+.lu-yard.is-waiting {
+  opacity: 0.62;
+}
+.lu-yard-glow {
+  animation: lu-glow 1.4s ease-in-out infinite;
+}
+@keyframes lu-glow {
+  50% {
+    opacity: 0.25;
+  }
 }
 
 .lu-token {
@@ -164,6 +180,11 @@
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.lu-die.is-skinned {
+  border-radius: 18px;
+  box-shadow: 0 0 0 3px var(--lu-turn);
 }
 
 .lu-die.is-ready {
@@ -275,6 +296,7 @@
 @media (prefers-reduced-motion: reduce) {
   .lu-token,
   .lu-token-ring,
+  .lu-yard-glow,
   .lu-die {
     animation: none !important;
     transition: none !important;

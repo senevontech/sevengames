@@ -40,7 +40,8 @@ export type GameEngine =
   | "blackjack"
   | "pool"
   | "chain"
-  | "tune";
+  | "tune"
+  | "lastcard";
 
 export type Game = {
   id: string;
@@ -482,6 +483,17 @@ export const games: Game[] = [
     minutes: 5,
     accent: "#17703f",
     description: "Two card games on a real felt table: beat the dealer to 21 at Blackjack with free table chips, or call your tricks at Call Break against three Senevi players.",
+  },
+  {
+    id: "last-card",
+    title: "One Card",
+    category: "Cards",
+    kind: "builtin",
+    engine: "lastcard",
+    difficulty: "Easy",
+    minutes: 6,
+    accent: "#ee4545",
+    description: "Match the colour or the symbol, hit them with Skips, Reverses and +2s, and play your last card first. Don't forget to say \u201cOne card!\u201d. vs Senevi, on one device, or online with friends.",
   },
   {
     id: "pool",

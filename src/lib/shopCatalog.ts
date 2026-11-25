@@ -188,7 +188,7 @@ export const frameClass = (id: string | null | undefined) => (id && FRAMES[id] ?
 
 /* ---------------- Chess + Ludo cosmetics ---------------- */
 
-export type BoardGame = "chess" | "ludo" | "pool" | "chain" | "tune";
+export type BoardGame = "chess" | "ludo" | "pool" | "chain" | "tune" | "lastcard";
 /** Games whose level can unlock shop items (Arrows: the puzzle level reached). */
 export type LevelGame = BoardGame | "arrows";
 

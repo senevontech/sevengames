@@ -21,6 +21,7 @@ import {
   MoveUpRight,
   Music,
   Music4,
+  GalleryHorizontalEnd,
   Orbit,
   Palette,
   Puzzle,
@@ -60,6 +61,7 @@ const byEngine: Record<string, LucideIcon> = {
   pool: Disc,
   chain: Atom,
   tune: Music4,
+  lastcard: GalleryHorizontalEnd,
 };
 
 const byId: Record<string, LucideIcon> = {

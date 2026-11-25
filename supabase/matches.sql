@@ -22,7 +22,7 @@ alter table public.token_ledger add constraint token_ledger_reason_check
 
 -- Arrows and Pool get their own XP
 alter table public.game_xp drop constraint if exists game_xp_game_check;
-alter table public.game_xp add constraint game_xp_game_check check (game in ('chess', 'ludo', 'arrows', 'pool', 'chain', 'tune'));
+alter table public.game_xp add constraint game_xp_game_check check (game in ('chess', 'ludo', 'arrows', 'pool', 'chain', 'tune', 'lastcard'));
 
 create table if not exists public.match_reports (
   game text not null check (game in ('chess', 'ludo', 'carrom', 'arrows', 'pool')),

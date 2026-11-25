@@ -79,6 +79,8 @@ type Props = {
   paints?: SeatPaints;
   /** Player pictures by colour: shown on their tokens and in their yard. */
   avatars?: Partial<Record<Color, string>>;
+  /** a game in progress: glow the yard of whoever's turn it is (off for the menu preview) */
+  live?: boolean;
 };
 
 /** Gradient / glow definitions for special token colours (gold, rainbow, galaxy, neon). */
@@ -161,7 +163,7 @@ function turnPoint(x: number, y: number, q: number): [number, number] {
   return [7.5 + dx, 7.5 + dy];
 }
 
-export default function LudoBoard({ s, shown, theme, dice, choices, onPick, labels, rot = 0, paints, avatars = {} }: Props) {
+export default function LudoBoard({ s, shown, theme, dice, choices, onPick, labels, rot = 0, paints, avatars = {}, live = true }: Props) {
   const paint: SeatPaints =
     paints ?? ({ 0: { solid: theme.red }, 1: { solid: theme.green }, 2: { solid: theme.yellow }, 3: { solid: theme.blue } } as SeatPaints);
   /** fill for areas and tokens (gradients for special colours) */
@@ -197,7 +199,15 @@ export default function LudoBoard({ s, shown, theme, dice, choices, onPick, labe
 
       {/* yards */}
       {YARD_ORIGINS.map(([ox, oy], c) => (
-        <g key={c} opacity={s.colors.includes(c as Color) ? 1 : 0.35}>
+        <g
+          key={c}
+          className={live && s.phase !== "over" && s.colors.includes(c as Color) ? (c === turnColor ? "lu-yard is-turn" : "lu-yard is-waiting") : "lu-yard"}
+          opacity={s.colors.includes(c as Color) ? 1 : 0.35}
+        >
+          {/* whose turn: a pulsing glow ring around the yard (opacity only, cheap on any phone) */}
+          {live && c === turnColor && s.phase !== "over" ? (
+            <rect className="lu-yard-glow" x={ox + 0.1} y={oy + 0.1} width={5.8} height={5.8} rx={0.45} fill="none" stroke={solid(c)} strokeWidth={0.32} />
+          ) : null}
           <rect x={ox + 0.1} y={oy + 0.1} width={5.8} height={5.8} rx={0.45} fill={col(c)} />
           <rect x={ox + 0.9} y={oy + 0.9} width={4.2} height={4.2} rx={0.5} fill={theme.track} />
           {[0, 1, 2, 3].map((i) => {
@@ -278,15 +288,22 @@ export default function LudoBoard({ s, shown, theme, dice, choices, onPick, labe
         );
       })}
 
-      {/* player names, upright, in each yard's top or bottom band wherever the yard ended up */}
+      {/* player names, upright, in each yard's top or bottom band wherever the yard ended up.
+          Drawn at 42px and scaled down: browsers space letters wrongly at sub-pixel font sizes. */}
       {YARD_ORIGINS.map(([ox, oy], c) => {
         const name = labels[c as Color];
         if (!name) return null;
         const [cx, cy] = turnPoint(ox + 3, oy + 3, rot);
         const top = cy < 7.5;
+        const short = [...name].length > 13 ? [...name].slice(0, 12).join("").trimEnd() + "…" : name;
         return (
-          <text key={`label-${c}`} x={cx} y={top ? cy - 2.32 : cy + 2.62} className="lu-yard-label" fill={theme.track}>
-            {name}
+          <text
+            key={`label-${c}`}
+            transform={`translate(${cx} ${top ? cy - 2.32 : cy + 2.62}) scale(0.01)`}
+            className="lu-yard-label"
+            fill={theme.track}
+          >
+            {short}
           </text>
         );
       })}
@@ -319,6 +336,7 @@ export function Die({ value, rollId, style, onClick, disabled, color }: { value:
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rollId]);
+  const tinted = style.name === "Classic";
   const PIPS: Record<number, [number, number][]> = {
     1: [[50, 50]],
     2: [[28, 28], [72, 72]],
@@ -330,16 +348,18 @@ export function Die({ value, rollId, style, onClick, disabled, color }: { value:
   return (
     <button
       type="button"
-      className={`lu-die${tumbling ? " is-rolling" : ""}${onClick && !disabled ? " is-ready" : ""}`}
+      className={`lu-die${tumbling ? " is-rolling" : ""}${onClick && !disabled ? " is-ready" : ""}${tinted ? "" : " is-skinned"}`}
       onClick={onClick}
       disabled={disabled || !onClick}
       aria-label={onClick && !disabled ? "Roll the dice" : `Dice shows ${value || "nothing yet"}`}
       style={{ "--lu-turn": color } as React.CSSProperties}
     >
       <svg viewBox="0 0 100 100" aria-hidden="true">
-        <rect x={4} y={4} width={92} height={92} rx={20} fill={style.face} stroke={style.edge} strokeWidth={5} />
+        {/* the classic die takes the colour of whoever's turn it is; bought dice keep their look
+            and get a ring in that colour (CSS) */}
+        <rect x={4} y={4} width={92} height={92} rx={20} fill={tinted ? color : style.face} stroke={tinted ? "rgba(0,0,0,0.22)" : style.edge} strokeWidth={5} />
         {PIPS[face].map(([x, y], i) => (
-          <circle key={i} cx={x} cy={y} r={9} fill={style.pip} />
+          <circle key={i} cx={x} cy={y} r={9} fill={tinted ? "#fff" : style.pip} />
         ))}
       </svg>
     </button>

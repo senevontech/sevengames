@@ -4,8 +4,8 @@
 -- Safe to re-run.
 --
 --   * A song is a drawing (strokes + scale/key/tempo/beat) stored as jsonb. Anyone can open a
---     song by its id (share links); lists come from tune_list(): today's songs, the most liked
---     of all time, and your own.
+--     song by its id (share links); lists come from tune_list(): today's songs, recent songs from
+--     every day (newest first), the most liked of all time, and your own.
 --   * tune_post(): up to 20 songs a day, one every 10 seconds. The first song each day (India time)
 --     gives 30 XP and keeps your streak going. No chips.
 --   * tune_like() toggles a like (not on your own songs). tune_delete() removes your own song.
@@ -14,7 +14,7 @@
 
 -- XP for tune (keep this game list in sync with shop.sql, matches.sql and chain.sql)
 alter table public.game_xp drop constraint if exists game_xp_game_check;
-alter table public.game_xp add constraint game_xp_game_check check (game in ('chess', 'ludo', 'arrows', 'pool', 'chain', 'tune'));
+alter table public.game_xp add constraint game_xp_game_check check (game in ('chess', 'ludo', 'arrows', 'pool', 'chain', 'tune', 'lastcard'));
 
 create table if not exists public.tune_songs (
   id uuid primary key default gen_random_uuid(),
@@ -130,7 +130,8 @@ returns jsonb language sql stable security definer set search_path = public as $
   select _tune_row(s, auth.uid()) from tune_songs s where s.id = p_id and not s.hidden
 $$;
 
--- A list: 'today' (today's songs, most liked first), 'best' (most liked ever), 'mine'.
+-- A list: 'today' (today's songs, most liked first), 'recent' (every day, newest first),
+-- 'best' (most liked ever), 'mine'.
 create or replace function public.tune_list(p_tab text)
 returns jsonb language plpgsql stable security definer set search_path = public as $$
 declare
@@ -140,6 +141,9 @@ begin
   if p_tab = 'today' then
     select coalesce(jsonb_agg(_tune_row(s, v_me) order by s.likes desc, s.created_at desc), '[]'::jsonb) into v_out
     from (select * from tune_songs where day = _tune_today() and not hidden order by likes desc, created_at desc limit 30) s;
+  elsif p_tab = 'recent' then
+    select coalesce(jsonb_agg(_tune_row(s, v_me) order by s.created_at desc), '[]'::jsonb) into v_out
+    from (select * from tune_songs where not hidden order by created_at desc limit 60) s;
   elsif p_tab = 'best' then
     select coalesce(jsonb_agg(_tune_row(s, v_me) order by s.likes desc, s.created_at desc), '[]'::jsonb) into v_out
     from (select * from tune_songs where not hidden and likes > 0 order by likes desc, created_at desc limit 30) s;

@@ -97,7 +97,7 @@ const noteName = (m: number) => `${KEYS[((m % 12) + 12) % 12]}${Math.floor(m / 1
 
 /* ---------------- server ---------------- */
 type SongRow = { id: string; user_id: string; name: string; avatar: unknown; title: string | null; likes: number; liked: boolean; mine: boolean; day: string; song: unknown };
-type Tab = "today" | "best" | "mine";
+type Tab = "today" | "recent" | "best" | "mine";
 
 async function listSongs(tab: Tab): Promise<SongRow[] | null> {
   if (!supabase) return null;
@@ -1346,9 +1346,9 @@ export default function TuneGame(_props: GameProps) {
           <div className="tn-sheet-card tn-gallery" onClick={(e) => e.stopPropagation()}>
             <h3>Songs</h3>
             <div className="tn-tabs" role="tablist">
-              {(["today", "best", "mine"] as Tab[]).map((t) => (
+              {(["today", "recent", "best", "mine"] as Tab[]).map((t) => (
                 <button key={t} type="button" role="tab" aria-selected={gallery === t} className={gallery === t ? "active" : ""} onClick={() => setGallery(t)}>
-                  {t === "today" ? "Today" : t === "best" ? "Most liked" : "Mine"}
+                  {t === "today" ? "Today" : t === "recent" ? "Recent" : t === "best" ? "Most liked" : "Mine"}
                 </button>
               ))}
             </div>
@@ -1360,7 +1360,13 @@ export default function TuneGame(_props: GameProps) {
             ) : gallery === "mine" && !user ? (
               <p className="tn-sheet-note">Sign in to post songs and see them here.</p>
             ) : !rows.length ? (
-              <p className="tn-sheet-note">{gallery === "mine" ? "You haven't posted a song yet." : "No songs yet today. Post the first one."}</p>
+              <p className="tn-sheet-note">{gallery === "mine"
+                  ? "You haven't posted a song yet."
+                  : gallery === "today"
+                    ? "No songs yet today. Post the first one."
+                    : gallery === "best"
+                      ? "No liked songs yet."
+                      : "No songs yet. Post the first one."}</p>
             ) : (
               <div className="tn-grid">
                 {rows.map((r) => {
