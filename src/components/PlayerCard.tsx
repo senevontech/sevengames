@@ -10,6 +10,8 @@ import { usePublicProfile, type PublicProfile } from "../lib/social";
 import { getGame, scoreLabel } from "../catalog";
 import { levelForXp } from "../lib/shopCatalog";
 import { clubOf } from "../lib/clubs";
+import TokenIcon from "./TokenIcon";
+import { formatTokens } from "../lib/currency";
 import "./player-card.css";
 
 const MEDAL = ["", "🥇", "🥈", "🥉"];
@@ -149,6 +151,14 @@ export function ProfileDetails({ userId, full = false }: { userId: string; full?
         )}
       </div>
       {error ? <p className="pc-error">{error}</p> : null}
+
+      {typeof p.chips === "number" ? (
+        <p className="pc-chips" aria-label={`${formatTokens(p.chips)} chips`}>
+          <TokenIcon size={22} />
+          <b>{formatTokens(p.chips)}</b>
+          <small>chips</small>
+        </p>
+      ) : null}
 
       <div className="pc-stats">
         <span>

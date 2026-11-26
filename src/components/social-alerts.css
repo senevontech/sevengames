@@ -1,0 +1,120 @@
+/* Gift / friend request / follower popup (SocialAlerts). Uses the player card's popup look. */
+.sa-backdrop {
+  z-index: 1200;
+}
+
+.sa-card {
+  width: min(360px, 100%);
+}
+
+.sa-body {
+  justify-items: center;
+  gap: 14px;
+  padding-top: 30px;
+  text-align: center;
+}
+
+.sa-who {
+  position: relative;
+}
+
+.sa-who .lb-initial {
+  box-shadow: var(--pc-raise);
+}
+
+.sa-icon {
+  position: absolute;
+  right: -10px;
+  bottom: -6px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 19px;
+  background: var(--pc-bg);
+  box-shadow: var(--pc-raise-sm);
+  animation: sa-wiggle 0.9s ease 0.35s both;
+}
+
+/* no sender (deleted account): the icon alone, bigger */
+.sa-who:not(:has(.lb-initial)) .sa-icon {
+  position: static;
+  width: 72px;
+  height: 72px;
+  font-size: 36px;
+}
+
+@keyframes sa-wiggle {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2) rotate(-12deg);
+  }
+  75% {
+    transform: rotate(8deg);
+  }
+}
+
+.sa-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.sa-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 20px;
+  border-radius: 999px;
+  background: var(--pc-bg);
+  box-shadow: var(--pc-well);
+}
+
+.sa-chips b {
+  font-size: 22px;
+  color: var(--pc-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.sa-chips small {
+  font-size: 13px;
+  color: var(--pc-muted);
+}
+
+.sa-note {
+  margin: 0;
+  font-style: italic;
+  color: var(--pc-muted);
+  overflow-wrap: anywhere;
+}
+
+.sa-actions {
+  width: 100%;
+}
+
+.sa-actions .sa-wide {
+  flex-basis: 100%;
+}
+
+.sa-more {
+  border: 0;
+  padding: 2px 6px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--pc-muted);
+  background: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sa-icon {
+    animation: none;
+  }
+}

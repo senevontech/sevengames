@@ -27,6 +27,8 @@ const ClubsPage = lazy(() => import("./pages/ClubsPage"));
 const SeneviPage = lazy(() => import("./pages/SeneviPage"));
 const BusinessPage = lazy(() => import("./pages/BusinessPage"));
 const AdFreePromo = lazy(() => import("./components/AdFreePromo"));
+// gift / friend request / new follower popups (supabase/notifications.sql)
+const SocialAlerts = lazy(() => import("./components/SocialAlerts"));
 
 /** /tokens → /chips, keeping ?query and #hash */
 function ToChips() {
@@ -139,6 +141,7 @@ export default function App() {
       <ReferralCapture />
       <Suspense fallback={null}>
         <AdFreePromo />
+        <SocialAlerts />
       </Suspense>
       <ShopProvider>
       <RouterRoutes>

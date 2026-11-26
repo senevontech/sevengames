@@ -159,6 +159,30 @@
   color: var(--pc-muted);
 }
 
+/* chip balance: one raised pill above the stat tiles */
+.pc-chips {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: fit-content;
+  margin: 0 auto;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: var(--pc-bg);
+  box-shadow: var(--pc-well);
+}
+
+.pc-chips b {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pc-chips small {
+  font-size: 12px;
+  color: var(--pc-muted);
+}
+
 /* pressed-in stat tiles */
 .pc-counts,
 .pc-stats {

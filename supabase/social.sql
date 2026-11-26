@@ -207,6 +207,7 @@ begin
     'ludo_xp', _opt_int('select xp from game_xp where user_id = $1 and game = ''ludo''', p_user),
     'chess_rating', _opt_int('select rating from chess_ratings where user_id = $1', p_user),
     'frame', _opt_text('select frame from player_cosmetics where user_id = $1', p_user),
+    'chips', coalesce(_opt_int('select balance from token_wallets where user_id = $1', p_user), 0),
     'is_following', v_me is not null and exists (select 1 from follows where follower = v_me and followee = p_user),
     'relation', v_rel,
     'request_id', case when v_rel = 'incoming' then v_req end

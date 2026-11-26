@@ -26,6 +26,8 @@ export type PublicProfile = {
   ludo_xp: number | null;
   chess_rating: number | null;
   frame: string | null;
+  /** chip balance (older servers leave it out) */
+  chips?: number;
   is_following: boolean;
   relation: Relation;
   request_id: number | null;
@@ -109,7 +111,7 @@ export function usePublicProfile(userId: string | null) {
 export type MiniPlayer = { id: string; name: string; avatar: AvatarChoice | null };
 export type FriendRequest = { id: number; from: MiniPlayer; at: string };
 
-async function namesFor(ids: string[]): Promise<Map<string, MiniPlayer>> {
+export async function namesFor(ids: string[]): Promise<Map<string, MiniPlayer>> {
   const out = new Map<string, MiniPlayer>();
   if (!ids.length || !supabase) return out;
   // "*": works whether or not the avatar column exists
