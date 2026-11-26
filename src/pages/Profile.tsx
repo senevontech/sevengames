@@ -18,6 +18,7 @@ import AvatarFrame from "../components/AvatarFrame";
 import FriendsSection from "../components/FriendsSection";
 import AchievementGrid from "../components/AchievementGrid";
 import { achievementsSync, type Achievement } from "../lib/engagement";
+import { setPerfChoice, usePerf, type PerfChoice } from "../lib/perf";
 
 /** One game's saved level, with a two-step reset. */
 function ProgressRow({ gameId }: { gameId: string }) {
@@ -284,7 +285,37 @@ export default function Profile() {
             ))}
           </ul>
         </section>
+
+        <PerformanceCard />
       </div>
     </div>
+  );
+}
+
+const PERF_OPTIONS: { v: PerfChoice; label: string }[] = [
+  { v: "auto", label: "Auto" },
+  { v: "lite", label: "Smooth (lite)" },
+  { v: "full", label: "Full effects" },
+];
+
+/** Lite mode switch (lib/perf.ts): saved on this device. */
+function PerformanceCard() {
+  const { lite, choice } = usePerf();
+  return (
+    <section className="ac-card pf-perf">
+      <h2 className="ac-h2">Performance</h2>
+      <p className="ac-sub">
+        Smooth mode turns off blur and background animations and runs Senevi and the games at a lighter quality, so slower phones stay smooth.
+        {choice === "auto" ? (lite ? " Auto has turned it on for this device." : " Auto keeps full effects on this device.") : ""}
+      </p>
+      <div className="pf-seg" role="radiogroup" aria-label="Performance">
+        {PERF_OPTIONS.map((o) => (
+          <button key={o.v} type="button" role="radio" aria-checked={choice === o.v} className={choice === o.v ? "is-on" : ""} onClick={() => setPerfChoice(o.v)}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+      <p className="ac-sub pf-perf-note">Saved on this device. Senevi and games pick it up the next time they open.</p>
+    </section>
   );
 }

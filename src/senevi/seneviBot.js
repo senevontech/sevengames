@@ -91,6 +91,8 @@ export const DEFAULT_CONFIG = {
   zoom: 0.84,
   fov: 30,
   maxDpr: 2,
+  // frame cap: a face reads the same at 30 fps and costs half as much as at 60 (or 120) next to a game
+  maxFps: 30,
 };
 
 // Tuning controls, shared by the Bot Lab and the Settings page.
@@ -1546,9 +1548,15 @@ class LedDomeBot {
     if (this.destroyed) return;
     this.rafId = requestAnimationFrame(this.loop);
     const now = performance.now();
+    if (!this.root.isConnected || !this.visible || document.hidden) {
+      this.lastFrame = now;
+      return;
+    }
+    // frame cap (the 2 ms slack keeps a 60 Hz screen on every 2nd frame instead of drifting to every 3rd)
+    const fps = Number(this.cfg.maxFps) || 0;
+    if (fps > 0 && now - this.lastFrame < 1000 / fps - 2) return;
     const dt = clamp(now - this.lastFrame, 1, 64);
     this.lastFrame = now;
-    if (!this.root.isConnected || !this.visible || document.hidden) return;
     this.update(now, dt);
     if (this.ledFace.render(this, now)) {
       this.dotTex.needsUpdate = true;

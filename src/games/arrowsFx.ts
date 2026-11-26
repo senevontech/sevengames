@@ -4,6 +4,7 @@
    Coordinates are the board SVG's viewBox units; the canvases sit exactly over the SVG box and
    map the viewBox the same way the SVG does (preserveAspectRatio "xMidYMid meet"). The loop
    only runs while something is moving; at rest the dots are drawn once. */
+import { capDpr } from "../lib/perf";
 
 export type FxStyle =
   | "fx:wave"
@@ -127,7 +128,7 @@ export class ArrowsFx {
   resize(w: number, h: number) {
     this.w = w;
     this.h = h;
-    this.dpr = Math.min(2, window.devicePixelRatio || 1);
+    this.dpr = capDpr(2);
     for (const c of [this.underCanvas, this.overCanvas]) {
       c.width = Math.max(1, Math.round(w * this.dpr));
       c.height = Math.max(1, Math.round(h * this.dpr));

@@ -4,6 +4,7 @@
    The canvas is transparent and sits in a soft neumorphic well that follows the site theme:
    ink is raised on light paper and glows on dark. Notes that sound ripple and bloom a wash of
    their colour into the background. */
+import { capDpr } from "../../lib/perf";
 import { COL, H, INSTRUMENTS, KEYS, STEPS, W, isRoot, midiOf, rowY, rowsOf, type Inst, type Song, type Stroke } from "./music";
 
 export const PEN = [7, 12, 18];
@@ -132,7 +133,7 @@ export function drawGuides(g: CanvasRenderingContext2D, song: Song, m: Map, opts
 
 /** a still picture of a song (gallery cards); transparent, on the card's well */
 export function drawThumb(cv: HTMLCanvasElement, song: Song, theme: Theme) {
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const dpr = capDpr(2);
   const w = cv.clientWidth || 160;
   const h = Math.round((w * H) / W);
   cv.width = Math.round(w * dpr);
@@ -174,7 +175,7 @@ export class TuneView {
   }
   resize(cssW: number, cssH: number) {
     if (cssW === this.cssW && cssH === this.cssH) return;
-    this.dpr = Math.min(2, window.devicePixelRatio || 1);
+    this.dpr = capDpr(2);
     this.cssW = cssW;
     this.cssH = cssH;
     this.cv.width = Math.round(cssW * this.dpr);

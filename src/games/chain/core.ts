@@ -3,6 +3,7 @@
      time and the variant); every board's simulation uses only seeded numbers, so a run can be
      replayed from its taps;
    - a fixed-step loop on a canvas, sized to its box, with pointer mapping and screen shake. */
+import { capDpr } from "../../lib/perf";
 
 export type Variant = "orbs" | "grid" | "dominoes";
 export const VARIANTS: Variant[] = ["orbs", "grid", "dominoes"];
@@ -116,7 +117,7 @@ export abstract class Board {
     const s = Math.min(cssW / this.viewW, cssH / this.viewH);
     const w = Math.floor(this.viewW * s);
     const hh = Math.floor(this.viewH * s);
-    this.dpr = Math.min(2.5, window.devicePixelRatio || 1);
+    this.dpr = capDpr(2.5);
     this.canvas.width = Math.round(w * this.dpr);
     this.canvas.height = Math.round(hh * this.dpr);
     this.canvas.style.width = `${w}px`;

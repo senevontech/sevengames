@@ -8,13 +8,14 @@
  *    which is one of the slowest canvas operations
  *  - honours "reduce motion" (no shake, fewer particles)
  */
+import { capDpr } from "../lib/perf";
 
 export const reducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 /** Size a canvas for its logical size × device pixel ratio; draw in logical units afterwards. */
 export function setupCanvas(canvas: HTMLCanvasElement, w: number, h: number) {
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const dpr = capDpr(2);
   canvas.width = Math.round(w * dpr);
   canvas.height = Math.round(h * dpr);
   const ctx = canvas.getContext("2d", { alpha: false })!;

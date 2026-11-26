@@ -1,0 +1,53 @@
+/* Lite mode (html.is-lite, set by src/lib/perf.ts on low-end phones or by the player).
+   Same idea as app-perf.css, on any device that needs it: nothing re-blurred every frame and no
+   decorative loops, so scrolling and the games keep the frame rate. Game cues (whose turn,
+   dice ready, a playable card) keep their animations. */
+
+html.is-lite *,
+html.is-lite *::before,
+html.is-lite *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* decorative loops: rest on their first frame */
+html.is-lite .rail-glow-bloom,
+html.is-lite .hero-accent,
+html.is-lite .hero h1 .text-secondary,
+html.is-lite .hero-glow i,
+html.is-lite .fx-bloom,
+html.is-lite .ring-fx::before,
+html.is-lite .fx-beam,
+html.is-lite .fx-ticks,
+html.is-lite .fx-inner,
+html.is-lite .fx-comet,
+html.is-lite .fx-orbit,
+html.is-lite .fx-flare,
+html.is-lite .light-ray-diagonal,
+html.is-lite .light-ray-flare,
+html.is-lite .rail-dock::after,
+html.is-lite .ml-mist,
+html.is-lite .ml-f1,
+html.is-lite .ml-f2,
+html.is-lite .h3-rail::before,
+html.is-lite .h3-rail-glow i,
+html.is-lite .h3-games-text,
+html.is-lite .h3-orbit-star,
+html.is-lite .h3 .h3-nav .h3-play-btn,
+html.is-lite .av-ring > i,
+html.is-lite .av-frame::before,
+html.is-lite .chip-float-flat,
+html.is-lite .chip-float-flat * {
+  animation: none !important;
+}
+
+/* the rail's blurred neon copy: a large blurred layer, not worth it here */
+html.is-lite .h3-rail-glow {
+  display: none;
+}
+
+/* shorter page / popup entrances */
+html.is-lite .pc-backdrop,
+html.is-lite .pc-card {
+  animation-duration: 0.15s !important;
+}

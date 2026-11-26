@@ -6,6 +6,7 @@ import { Browser } from "@capacitor/browser";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { supabase } from "../supabase";
+import { isLite } from "./perf";
 
 export const isNative = Capacitor.isNativePlatform();
 export const APP_SCHEME = "com.senevon.games";
@@ -125,7 +126,8 @@ function startStatusBarSync() {
     soon();
   });
   // anything else (pages that paint their own background a moment later)
-  window.setInterval(() => void syncStatusBar(), 2000);
+  // (slower on low-end phones: each check reads the page layout)
+  window.setInterval(() => void syncStatusBar(), isLite() ? 5000 : 2000);
   soon(300);
 }
 

@@ -264,6 +264,17 @@ export type Chip3DProps = {
   active?: boolean;
 };
 
+/** Draws a frame `fps` times a second (the canvas is on frameloop "demand"): the slow spin and
+    float look the same at 30 fps and cost half as much as at 60 (or 120 on fast phones). */
+function FrameCap({ fps }: { fps: number }) {
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    const id = window.setInterval(() => invalidate(), 1000 / fps);
+    return () => window.clearInterval(id);
+  }, [fps, invalidate]);
+  return null;
+}
+
 /** The chip, floating on a transparent canvas (the page shows through). */
 export default function Chip3D({ mobile = false, active = true }: Chip3DProps) {
   const [hovered, setHovered] = useState(false);
@@ -272,7 +283,7 @@ export default function Chip3D({ mobile = false, active = true }: Chip3DProps) {
       orthographic
       camera={{ position: [0, 0, 10], zoom: 100, near: 0.1, far: 100 }}
       dpr={[1, mobile ? 1.75 : 2]}
-      frameloop={active ? "always" : "never"}
+      frameloop={active ? "demand" : "never"}
       gl={{ alpha: true, antialias: false, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping }}
       onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
       onPointerMissed={() => setHovered(false)}
@@ -297,6 +308,7 @@ export default function Chip3D({ mobile = false, active = true }: Chip3DProps) {
         </group>
       </Float>
       <Cam />
+      {active ? <FrameCap fps={30} /> : null}
       {/* anti-aliasing (MSAA) and a bloom that only the LEDs are bright enough to trigger */}
       <EffectComposer multisampling={mobile ? 0 : 4}>
         <Bloom mipmapBlur luminanceThreshold={1} luminanceSmoothing={0.1} intensity={mobile ? 0.7 : 0.8} radius={0.5} />

@@ -6,6 +6,7 @@
    shows them inside its own player strip (never over the board). */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { SeneviInstance } from "./seneviBot";
+import { isLite } from "../lib/perf";
 import "./senevi.css";
 
 export const SENEVI_NAME = "Senevi";
@@ -207,6 +208,7 @@ export function SeneviFace({ size, body = "head", seat = "cpu", speech = true, c
         if (gone || !host.current) return;
         if (!Senevi.isSupported()) return setFallback(true);
         const small = size < 90;
+        const lite = isLite(); // low-end phone: fewer LEDs, lower resolution, fewer frames
         const prof = seneviProfile(botNo);
         const cols = Number(prof.config.cols) || 58;
         bot = Senevi.create(host.current, {
@@ -219,8 +221,9 @@ export function SeneviFace({ size, body = "head", seat = "cpu", speech = true, c
             ...prof.config,
             body,
             // tiny heads: fewer, bigger LEDs read better and cost less
-            ...(small ? { cols: Math.min(cols, 40), maxDpr: 2, bob: Math.min(Number(prof.config.bob ?? 0.4), 0.25) } : {}),
-            ...(lowPower ? { cols: Math.min(cols, 34), maxDpr: Math.min(1.5, window.devicePixelRatio || 1), glowRadius: 2, flicker: 0, scanOnChange: false } : {}),
+            ...(small ? { cols: Math.min(cols, 40), maxDpr: 2, maxFps: 24, bob: Math.min(Number(prof.config.bob ?? 0.4), 0.25) } : {}),
+            ...(lowPower ? { cols: Math.min(cols, 34), maxDpr: Math.min(1.5, window.devicePixelRatio || 1), glowRadius: 2, flicker: 0, scanOnChange: false, maxFps: 24 } : {}),
+            ...(lite ? { cols: Math.min(cols, small ? 30 : 40), maxDpr: small ? 1 : 1.25, glowRadius: 2, flicker: 0, scanOnChange: false, maxFps: small ? 12 : 15 } : {}),
             ...(body === "full" ? { zoom: 0.9 } : {}),
           },
         });

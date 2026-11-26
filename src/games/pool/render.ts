@@ -7,6 +7,7 @@
      roll with the ball (each ball keeps a 3-D orientation, turned by its spin as it moves).
    - On narrow screens the table stands upright (head rail at the bottom).
    World coordinates are the engine's (cloth 0..L × 0..W). */
+import { capDpr } from "../../lib/perf";
 import { CUSHIONS, HEAD_X, L, POCKETS, R, STRIDE, W, type Ball, type SimEvent, type SimResult, type Vec } from "./engine";
 import { poolCueOf, poolTableOf, type PoolCue, type PoolTableTheme } from "../../lib/shopCatalog";
 
@@ -304,7 +305,7 @@ export class PoolView {
 
   resize(cssW: number, cssH: number, portrait: boolean, compact = portrait) {
     this.F = frameFor(compact);
-    const dpr = Math.min(2.5, window.devicePixelRatio || 1);
+    const dpr = capDpr(2.5);
     this.dpr = dpr;
     this.portrait = portrait;
     this.canvas.width = Math.round(cssW * dpr);

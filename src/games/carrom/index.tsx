@@ -1,5 +1,6 @@
 /* Carrom game component — mode menu (1vCPU, 2P, 4P, online), lobby,
    and the shared game table with host-authoritative online sync. */
+import { capDpr } from "../../lib/perf";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useOnline } from "../../lib/online";
 import type { PointerEvent as ReactPointerEvent } from "react";
@@ -526,7 +527,7 @@ export default function CarromGame({ onFinish }: GameProps) {
     const fit = () => {
       const w = canvas.getBoundingClientRect().width;
       if (!w) return;
-      const px = Math.max(480, Math.min(1080, Math.round((w * Math.min(2, window.devicePixelRatio || 1)) / 60) * 60));
+      const px = Math.max(480, Math.min(1080, Math.round((w * capDpr(2)) / 60) * 60));
       if (canvas.width !== px) {
         canvas.width = px;
         canvas.height = px;

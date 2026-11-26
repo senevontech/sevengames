@@ -1,5 +1,6 @@
 /* Carrom locker + shop: strikers (with stat upgrades), coin sets and boards, bought with tokens.
    Top items and high upgrade levels also need a minimum player level. Pro owns every item. */
+import { capDpr } from "../../lib/perf";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTokens } from "../../lib/tokens";
@@ -51,7 +52,7 @@ function DiscPreview({ draw, size = 64, spin = false }: { draw: (px: number) => 
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const c = ref.current!;
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const dpr = capDpr(2);
     const px = Math.round(size * dpr);
     c.width = c.height = px;
     const g = c.getContext("2d")!;

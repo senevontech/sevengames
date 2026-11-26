@@ -1,5 +1,6 @@
 import { Component, Suspense, lazy, useEffect, useRef, useState, type ReactNode } from "react";
 import TokenIcon from "../TokenIcon";
+import { isLite } from "../../lib/perf";
 import "./chip-showcase.css";
 
 /* The chip in 3D, small and floating on the page (no box, no background). The 3D code
@@ -30,7 +31,8 @@ export default function ChipShowcase({ className = "" }: { className?: string })
   const ref = useRef<HTMLDivElement>(null);
   const [near, setNear] = useState(false); // close enough to load
   const [onScreen, setOnScreen] = useState(false); // drawing frames
-  const [webgl] = useState(hasWebGL);
+  // lite mode (low-end phones): the flat chip, and three.js is never downloaded
+  const [webgl] = useState(() => !isLite() && hasWebGL());
   const [mobile] = useState(() => {
     try {
       return window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 720;
