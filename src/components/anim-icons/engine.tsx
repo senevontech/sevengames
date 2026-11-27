@@ -5,17 +5,14 @@
    like the static icon until it moves. Motion (motion.dev) moves either the whole icon or single
    strokes, in the style of Lucide Animated and Animate UI.
 
-   When an icon plays:
-     appear  — its strokes draw in once when it first scrolls into view
-     hover   — the pointer enters the button/link the icon sits in (mouse only)
-     tap     — a finger or pen presses that button/link
-     loop    — `loop` prop: replays every few seconds while on screen and the tab is visible
-     play    — `play` prop: replays whenever the value changes (e.g. a new unread count)
-   Only transform, opacity and stroke drawing are animated, and nothing runs while off screen. */
+   An icon plays only when the pointer enters the button/link it sits in (mouse), or a finger
+   or pen presses it. No draw-in on appear, no loops (they made pages lag). index.tsx mounts this
+   only after the first hover/tap, so icons nobody touches stay plain lucide-react SVGs.
+   Only transform, opacity and stroke drawing are animated. */
 import { LazyMotion, domAnimation, m, useAnimationControls, type Transition } from "motion/react";
 import { useEffect, useRef, type ReactNode } from "react";
 import * as N from "./nodes";
-import type { AnimIconProps } from "./index";
+import { TRIGGER, type AnimIconProps } from "./index";
 
 type Target = Record<string, number | number[] | string | Transition>;
 type Recipe = {
@@ -29,8 +26,6 @@ type Recipe = {
   partOrigin?: Record<number, [number, number]>;
   dur?: number;
   ease?: Transition["ease"];
-  /** seconds between replays for `loop` */
-  every?: number;
   /** spins non-stop (loaders) */
   forever?: boolean;
 };
@@ -51,7 +46,7 @@ const R: Record<string, Recipe> = {
   ArrowRight: right,
   ArrowUpDown: { svg: { y: [0, -2, 2, 0] } },
   Atom: { svg: { rotate: [0, 180] }, dur: 0.9 },
-  Bell: { svg: { rotate: [0, -16, 13, -9, 5, 0] }, origin: [0.5, 0.08], parts: { 0: { x: [0, -1.6, 1.6, -0.8, 0] } }, dur: 0.75, every: 4.5 },
+  Bell: { svg: { rotate: [0, -16, 13, -9, 5, 0] }, origin: [0.5, 0.08], parts: { 0: { x: [0, -1.6, 1.6, -0.8, 0] } }, dur: 0.75 },
   BellOff: wiggle,
   Bomb: buzz,
   Bot: { parts: { 0: { rotate: [0, -18, 14, 0] }, 4: { scaleY: [1, 0.15, 1] }, 5: { scaleY: [1, 0.15, 1] } }, partOrigin: { 0: [0.5, 1] } },
@@ -66,10 +61,10 @@ const R: Record<string, Recipe> = {
   ChevronLeft: left,
   ChevronRight: right,
   CircleDot: pop,
-  Coins: { parts: { 0: { y: [0, -3, 0] }, 2: { y: [0, -3, 0] }, 1: stagger(1, { y: [0, -2, 0] }), 3: stagger(1, { y: [0, -2, 0] }) }, every: 3.5 },
+  Coins: { parts: { 0: { y: [0, -3, 0] }, 2: { y: [0, -3, 0] }, 1: stagger(1, { y: [0, -2, 0] }), 3: stagger(1, { y: [0, -2, 0] }) } },
   Columns3: { svg: { scaleY: [1, 0.82, 1.06, 1] } },
   Copy: { parts: { 0: { x: [0, -2, 0], y: [0, -2, 0] } }, dur: 0.4 },
-  Crown: { parts: { 0: { y: [0, -2.6, 0] } }, svg: { rotate: [0, -6, 5, 0] }, every: 4 },
+  Crown: { parts: { 0: { y: [0, -2.6, 0] } }, svg: { rotate: [0, -6, 5, 0] } },
   Dices: { svg: { rotate: [0, -22, 12, 0] } },
   Disc: spin,
   DoorOpen: { parts: { 1: { scaleX: [1, 0.6, 1] } }, partOrigin: { 1: [0, 0.5] } },
@@ -77,18 +72,18 @@ const R: Record<string, Recipe> = {
   ExternalLink: { parts: { 0: { x: [0, 2, 0], y: [0, -2, 0] }, 1: { x: [0, 2, 0], y: [0, -2, 0] } }, dur: 0.45 },
   Eye: { svg: { scaleY: [1, 0.12, 1] }, dur: 0.35 },
   EyeOff: wiggle,
-  Flame: { svg: { scaleY: [1, 1.12, 0.94, 1.06, 1], rotate: [0, -4, 4, 0] }, origin: [0.5, 1], dur: 0.8, every: 3 },
+  Flame: { svg: { scaleY: [1, 1.12, 0.94, 1.06, 1], rotate: [0, -4, 4, 0] }, origin: [0.5, 1], dur: 0.8 },
   GalleryHorizontalEnd: right,
   Gamepad2: buzz,
   Gauge: { parts: { 0: { rotate: [0, -70, 25, 0] } }, partOrigin: { 0: [0, 1] }, dur: 0.8 },
-  Gift: { parts: { 0: { y: [0, -3, 0], rotate: [0, -7, 0] }, 3: { y: [0, -3, 0], rotate: [0, -7, 0] } }, svg: { scale: [1, 1.05, 1] }, dur: 0.6, every: 3.5 },
+  Gift: { parts: { 0: { y: [0, -3, 0], rotate: [0, -7, 0] }, 3: { y: [0, -3, 0], rotate: [0, -7, 0] } }, svg: { scale: [1, 1.05, 1] }, dur: 0.6 },
   Globe: { parts: { 1: { scaleX: [1, -1, 1] } }, dur: 0.9 },
   GraduationCap: { parts: { 0: { y: [0, -2.5, 0], rotate: [0, -6, 0] } } },
   Grid2x2: { svg: { rotate: [0, 90] } },
   Hammer: { svg: { rotate: [0, -28, 6, 0] }, origin: [0.1, 0.9] },
   HandCoins: { parts: { 3: { y: [0, -3, 0] }, 4: stagger(1, { y: [0, -3, 0] }) } },
   Hash: { svg: { rotate: [0, -12, 0] } },
-  Heart: { svg: { scale: [1, 1.25, 0.95, 1.12, 1] }, dur: 0.7, every: 2.5 },
+  Heart: { svg: { scale: [1, 1.25, 0.95, 1.12, 1] }, dur: 0.7 },
   HelpCircle: { parts: { 1: { rotate: [0, -14, 12, 0] }, 2: { y: [0, -1.5, 0] } } },
   History: { svg: { rotate: [0, -360] }, parts: { 2: { rotate: [0, 360] } }, partOrigin: { 2: [0, 5 / 7] }, dur: 0.8 },
   House: { parts: { 0: { scaleY: [1, 0.55, 1] } }, partOrigin: { 0: [0.5, 1] }, svg: { y: [0, -1.5, 0] } },
@@ -104,7 +99,7 @@ const R: Record<string, Recipe> = {
   LogIn: { parts: { 0: { x: [0, 2.5, 0] }, 1: { x: [0, 2.5, 0] } }, dur: 0.45 },
   LogOut: { parts: { 0: { x: [0, 3, 0] }, 1: { x: [0, 3, 0] } }, dur: 0.45 },
   Mail: { parts: { 0: { y: [0, 2, 0] } } },
-  Medal: { svg: { rotate: [0, -12, 9, -4, 0] }, origin: [0.5, 0], every: 4 },
+  Medal: { svg: { rotate: [0, -12, 9, -4, 0] }, origin: [0.5, 0] },
   Megaphone: { svg: { rotate: [0, -10, 8, -4, 0], scale: [1, 1.08, 1] }, origin: [0.25, 0.6] },
   Menu: { parts: { 0: { x: [0, -3, 0] }, 1: stagger(1, { x: [0, 3, 0] }), 2: stagger(2, { x: [0, -3, 0] }) } },
   MessageCircle: nod,
@@ -142,13 +137,12 @@ const R: Record<string, Recipe> = {
   Sparkles: {
     parts: { 0: { scale: [1, 0.75, 1.12, 1], rotate: [0, 14, 0] }, 1: { opacity: [1, 0, 1] }, 2: { opacity: [1, 0, 1] }, 3: { scale: [1, 0, 1] } },
     dur: 0.8,
-    every: 3,
   },
   Sun: { svg: { rotate: [0, 45] }, parts: { 0: { scale: [1, 0.8, 1] } }, dur: 0.6 },
   Swords: { svg: { rotate: [0, -12, 12, 0], scale: [1, 1.08, 1] } },
   Target: { parts: { 0: { scale: [1, 0.92, 1] }, 1: stagger(1, { scale: [1, 1.15, 1] }), 2: stagger(2, { scale: [1, 1.7, 1] }) } },
   TrainFront: { svg: { y: [0, -1, 0, -1, 0] } },
-  Trophy: { svg: { y: [0, -2.5, 0, -1, 0], rotate: [0, -7, 6, 0] }, origin: [0.5, 1], dur: 0.7, every: 4 },
+  Trophy: { svg: { y: [0, -2.5, 0, -1, 0], rotate: [0, -7, 6, 0] }, origin: [0.5, 1], dur: 0.7 },
   Tv: { parts: { 0: { rotate: [0, -14, 12, 0] } }, partOrigin: { 0: [0.5, 1] } },
   Type: pop,
   UserPlus: { parts: { 2: { scale: [1, 1.5, 1] }, 3: { scale: [1, 1.5, 1] }, 1: { y: [0, -1.5, 0] } } },
@@ -167,21 +161,6 @@ const R: Record<string, Recipe> = {
   Zap: { svg: { scale: [1, 1.15, 1], rotate: [0, -8, 8, 0] }, parts: { 0: { opacity: [1, 0.4, 1, 0.7, 1] } } },
 };
 
-/* ---------- the shared on-screen watcher ---------- */
-type Watch = (visible: boolean) => void;
-const watchers = new Map<Element, Watch>();
-let io: IntersectionObserver | null = null;
-function watch(el: Element, fn: Watch) {
-  io ??= new IntersectionObserver((entries) => entries.forEach((e) => watchers.get(e.target)?.(e.isIntersecting)), { rootMargin: "40px" });
-  watchers.set(el, fn);
-  io.observe(el);
-  return () => {
-    watchers.delete(el);
-    io?.unobserve(el);
-  };
-}
-
-const TRIGGER = "button, a, [role='button'], [role='tab'], label, summary, .ai-trigger";
 const REST: Record<string, number> = { scale: 1, scaleX: 1, scaleY: 1, opacity: 1, pathLength: 1 };
 /** the still pose for every property a move touches */
 function rest(t?: Target) {
@@ -193,24 +172,21 @@ function rest(t?: Target) {
 const TAGS = { path: m.path, circle: m.circle, rect: m.rect, line: m.line, polyline: m.polyline, polygon: m.polygon, ellipse: m.ellipse } as const;
 const kebab = (s: string) => s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/([a-zA-Z])(\d)/g, "$1-$2").toLowerCase();
 
-export default function AnimSvg({ name, loop, appear = true, play, size = 24, color = "currentColor", strokeWidth = 2, absoluteStrokeWidth, className, fill = "none", children, ...rest_ }: AnimIconProps & { name: string }) {
+export default function AnimSvg({ name, startNow, size = 24, color = "currentColor", strokeWidth = 2, absoluteStrokeWidth, className, fill = "none", children, ...rest_ }: AnimIconProps & { name: string; startNow?: boolean }) {
   const node = (N as Record<string, [string, Record<string, string | number>][]>)[name] ?? [];
   const r = R[name] ?? pop;
   const controls = useAnimationControls();
   const ref = useRef<SVGSVGElement>(null);
   const busy = useRef(false);
-  const seen = useRef(false);
-  const visible = useRef(false);
-  const draws = appear && fill === "none";
   const base: Transition = { duration: r.dur ?? 0.6, ease: r.ease ?? "easeInOut" };
 
-  const run = (state: "play" | "appear") => {
+  const run = () => {
     if (busy.current) return;
     busy.current = true;
-    void controls.start(state).finally(() => (busy.current = false));
+    void controls.start("play").finally(() => (busy.current = false));
   };
 
-  // hover / tap on the surrounding button, appear, loop
+  // hover / tap on the surrounding button
   useEffect(() => {
     const svg = ref.current;
     if (!svg) return;
@@ -218,43 +194,19 @@ export default function AnimSvg({ name, loop, appear = true, play, size = 24, co
       void controls.start("play");
       return;
     }
+    // mounted by the first hover/tap: play that one now
+    if (startNow) run();
     const host = svg.parentElement?.closest(TRIGGER) ?? svg;
-    const onEnter = (e: PointerEvent) => e.pointerType === "mouse" && run("play");
-    const onDown = (e: PointerEvent) => e.pointerType !== "mouse" && run("play");
+    const onEnter = (e: PointerEvent) => e.pointerType === "mouse" && run();
+    const onDown = (e: PointerEvent) => e.pointerType !== "mouse" && run();
     host.addEventListener("pointerenter", onEnter as EventListener);
     host.addEventListener("pointerdown", onDown as EventListener);
-    const stop = watch(svg, (v) => {
-      visible.current = v;
-      if (v && !seen.current) {
-        seen.current = true;
-        if (appear) {
-          busy.current = false;
-          run("appear");
-        }
-      }
-    });
-    let timer = 0;
-    if (loop) {
-      const every = (typeof loop === "number" ? loop : (r.every ?? 4)) * 1000;
-      timer = window.setInterval(() => visible.current && !document.hidden && run("play"), every);
-    }
     return () => {
       host.removeEventListener("pointerenter", onEnter as EventListener);
       host.removeEventListener("pointerdown", onDown as EventListener);
-      stop();
-      window.clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loop, appear, r]);
-
-  // `play` changed: replay (not on the first render)
-  const lastPlay = useRef(play);
-  useEffect(() => {
-    if (play === lastPlay.current) return;
-    lastPlay.current = play;
-    if (play && visible.current) run("play");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [play]);
+  }, [r]);
 
   const sw = absoluteStrokeWidth ? (Number(strokeWidth) * 24) / Number(size) : strokeWidth;
   const label = rest_["aria-label"] || rest_["aria-labelledby"];
@@ -277,9 +229,9 @@ export default function AnimSvg({ name, loop, appear = true, play, size = 24, co
         aria-hidden={label ? undefined : true}
         {...(rest_ as object)}
         style={{ ...(r.origin ? { originX: r.origin[0], originY: r.origin[1] } : null), ...rest_.style }}
-        initial={draws ? "hidden" : false}
+        initial={false}
         animate={controls}
-        variants={{ rest: rest(r.svg), play: svgPlay, appear: draws ? {} : { scale: [0.7, 1.08, 1], opacity: [0, 1], transition: { duration: 0.4 } }, hidden: {} }}
+        variants={{ rest: rest(r.svg), play: svgPlay }}
       >
         {node.map(([tag, attrs], i) => {
           const El = TAGS[tag as keyof typeof TAGS];
@@ -292,12 +244,7 @@ export default function AnimSvg({ name, loop, appear = true, play, size = 24, co
               key={i}
               {...(a as object)}
               style={o ? { originX: o[0], originY: o[1] } : undefined}
-              variants={{
-                rest: { ...rest(part), ...(draws ? { pathLength: 1, opacity: 1 } : null) },
-                play: part ? { transition: base, ...part } : {},
-                hidden: draws ? { pathLength: 0, opacity: 0 } : {},
-                appear: draws ? { pathLength: [0, 1], opacity: [0, 1], transition: { duration: 0.55, delay: i * 0.05, ease: "easeOut" } } : {},
-              }}
+              variants={part ? { rest: rest(part), play: { transition: base, ...part } } : undefined}
             />
           );
         })}

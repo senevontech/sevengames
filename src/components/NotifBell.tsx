@@ -31,7 +31,7 @@ export default function NotifBell({ className = "", size = 19 }: { className?: s
         onPointerEnter={() => void loadPanel()}
         onClick={() => setOpen((o) => !o)}
       >
-        <Bell size={size} strokeWidth={1.8} aria-hidden="true" loop={unread > 0} play={unread} />
+        <Bell size={size} strokeWidth={1.8} aria-hidden="true" />
         {unread ? <span className="nb-badge">{unread > 9 ? "9+" : unread}</span> : null}
       </button>
       {open ? (

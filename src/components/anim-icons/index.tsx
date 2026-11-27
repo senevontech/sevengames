@@ -1,13 +1,11 @@
 /* Drop-in animated icons for the site's shell (nav, menus, home, shop, rewards, profile…).
    Same names and props as lucide-react, so a file only swaps its import:
        import { Bell, Gift } from "../components/anim-icons";
-   Extra props:  loop  (true or seconds) replays every few seconds while on screen
-                 appear={false}  skips the draw-in when the icon first shows
-                 play={value}    replays whenever `value` changes
+   They animate only on hover (mouse) or tap (touch) of the button/link they sit in.
    Lite mode and "reduce motion" get the plain lucide-react icon, and the animation code
    (./engine, with Motion) is never downloaded there. Icons inside game screens stay plain
    lucide-react on purpose, so the games keep their frame rate. */
-import { lazy, Suspense, type ComponentType } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ComponentType } from "react";
 import type { LucideIcon as StaticIcon, LucideProps } from "lucide-react";
 import { usePerf } from "../../lib/perf";
 import {
@@ -118,18 +116,15 @@ import {
   Zap as S_Zap,
 } from "lucide-react";
 
-export type AnimIconProps = LucideProps & {
-  /** replay every few seconds while visible (true = the icon's own pace, or seconds) */
-  loop?: boolean | number;
-  /** draw in when first on screen (default true) */
-  appear?: boolean;
-  /** replays whenever this value changes */
-  play?: unknown;
-};
+export type AnimIconProps = LucideProps;
 /** what a map of icons (category icons, poster icons…) should be typed as */
 export type LucideIcon = ComponentType<AnimIconProps>;
 
-const Engine = lazy(() => import("./engine"));
+/** the button/link around an icon whose hover or tap plays it */
+export const TRIGGER = "button, a, [role='button'], [role='tab'], label, summary, .ai-trigger";
+
+const loadEngine = () => import("./engine");
+const Engine = lazy(loadEngine);
 
 let reduced = false;
 try {
@@ -145,13 +140,43 @@ export function useStillIcons() {
   return usePerf().lite || reduced;
 }
 
+/* fetch the engine once the page is idle, so the first hover plays straight away */
+let prefetched = false;
+function prefetch() {
+  if (prefetched) return;
+  prefetched = true;
+  const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
+  window.setTimeout(() => (idle ? idle(() => void loadEngine(), { timeout: 4000 }) : void loadEngine()), 3000);
+}
+
+/* An icon renders as the plain lucide-react SVG. It switches to its animated twin (identical
+   look) only on the first hover/tap of its button, so icons nobody touches cost nothing. */
 function make(name: string, Still: StaticIcon): LucideIcon {
-  function Icon({ loop, appear, play, ...props }: AnimIconProps) {
+  const always = name === "LoaderCircle"; // a loader spins on its own
+  function Icon(props: AnimIconProps) {
     const still = useStillIcons();
-    if (still) return <Still {...props} />;
+    const [armed, setArmed] = useState(always);
+    const ref = useRef<SVGSVGElement>(null);
+
+    useEffect(() => {
+      if (still || armed) return;
+      prefetch();
+      const svg = ref.current;
+      const host = svg?.parentElement?.closest(TRIGGER) ?? svg;
+      if (!host) return;
+      const arm = () => setArmed(true);
+      host.addEventListener("pointerenter", arm);
+      host.addEventListener("pointerdown", arm);
+      return () => {
+        host.removeEventListener("pointerenter", arm);
+        host.removeEventListener("pointerdown", arm);
+      };
+    }, [still, armed]);
+
+    if (still || !armed) return <Still ref={ref} {...props} />;
     return (
       <Suspense fallback={<Still {...props} />}>
-        <Engine name={name} loop={loop} appear={appear} play={play} {...props} />
+        <Engine name={name} startNow {...props} />
       </Suspense>
     );
   }
