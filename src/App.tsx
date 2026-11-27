@@ -1,8 +1,9 @@
-import { lazy, Suspense, useEffect, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, type ReactNode } from "react";
 import { syncPlayPurchases } from "./lib/playBilling";
 import { isNative } from "./lib/native";
 import { useOnline } from "./lib/online";
 import { useTokens } from "./lib/tokens";
+import { startNotifications } from "./lib/notifications";
 import { Navigate, Route, Routes as RouterRoutes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuthContext } from "./context/AuthContext";
 import SiteChrome from "./components/SiteChrome";
@@ -27,8 +28,8 @@ const ClubsPage = lazy(() => import("./pages/ClubsPage"));
 const SeneviPage = lazy(() => import("./pages/SeneviPage"));
 const BusinessPage = lazy(() => import("./pages/BusinessPage"));
 const AdFreePromo = lazy(() => import("./components/AdFreePromo"));
-// gift / friend request / new follower popups (supabase/notifications.sql)
-const SocialAlerts = lazy(() => import("./components/SocialAlerts"));
+// small toast when a gift / friend request / new follower arrives live (the bell holds them all)
+const NotifToast = lazy(() => import("./components/NotifToast"));
 
 /** /tokens → /chips, keeping ?query and #hash */
 function ToChips() {
@@ -116,6 +117,16 @@ function ReferralCapture() {
 }
 
 /** Sends progress made offline once the player is known (and whenever the connection returns). */
+/** The player's notifications (nav bell + toast): load, then live. A gift refreshes the chips. */
+function NotifSync() {
+  const { user } = useAuthContext();
+  const { refresh } = useTokens();
+  const refreshRef = useRef(refresh);
+  refreshRef.current = refresh;
+  useEffect(() => startNotifications(user?.id ?? null, () => void refreshRef.current()), [user?.id]);
+  return null;
+}
+
 function OfflineSync() {
   const { user } = useAuthContext();
   const { refresh } = useTokens();
@@ -138,10 +149,11 @@ export default function App() {
       <ExternalGamePrompt />
       <TokensProvider>
       <OfflineSync />
+      <NotifSync />
       <ReferralCapture />
       <Suspense fallback={null}>
         <AdFreePromo />
-        <SocialAlerts />
+        <NotifToast />
       </Suspense>
       <ShopProvider>
       <RouterRoutes>

@@ -7,6 +7,7 @@ import { GET_APP_PATH } from "../lib/appLinks";
 import { categories, games, type Game } from "../catalog";
 import { categoryIcon } from "../lib/categoryIcons";
 import NavAccount from "./NavAccount";
+import NotifBell from "./NotifBell";
 import { RiHomeSmile, RiSearchReicon, RiTrophyLine } from "./ReIcons";
 
 /*
@@ -388,6 +389,7 @@ export default function GamesNav({
           <Users size={21} strokeWidth={1.6} aria-hidden="true" />
         </Link>
         {children}
+        <NotifBell className="gs-icon-btn" />
         {mobileMenu ? <MobileMenu onPick={pickGame} /> : null}
         <NavAccount />
       </div>

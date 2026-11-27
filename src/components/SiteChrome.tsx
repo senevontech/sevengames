@@ -5,6 +5,7 @@ import { Building2, Coins, Gift, House, Menu, Moon, Smartphone, Sun, Trophy, Use
 import { categories, games } from "../catalog";
 import { categoryIcon } from "../lib/categoryIcons";
 import NavAccount from "./NavAccount";
+import NotifBell from "./NotifBell";
 import TokenPill from "./TokenPill";
 import { useGameTheme } from "../hooks/useGameTheme";
 import { isNative } from "../lib/native";
@@ -195,6 +196,7 @@ export default function SiteChrome({ children }: { children: ReactNode }) {
                 {theme === "light" ? <Moon size={17} /> : <Sun size={17} />}
               </button>
             ) : null}
+            <NotifBell className="h3-theme-toggle" size={17} />
             <SiteMenu pathname={pathname} />
             <NavAccount />
           </div>

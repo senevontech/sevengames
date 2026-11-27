@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import type { User } from "@supabase/supabase-js";
-import { RiNotificationLine, RiSearchLine } from "./ReIcons";
+import { RiSearchLine } from "./ReIcons";
+import NotifBell from "./NotifBell";
 import DynamicAvatar from "./DynamicAvatar";
 
 /**
@@ -154,16 +155,7 @@ export default function Nav({ user, onSignOut }: { user: User | null; onSignOut:
         <SearchBox className="nav-search" />
 
         <div className="nav-actions">
-          <button
-            type="button"
-            className="nav-icon-btn nav-bell-btn"
-            aria-label="Notifications"
-            title="Notifications (1 new reward)"
-            onClick={() => alert("🎉 Daily reward is available to claim!")}
-          >
-            <RiNotificationLine size={18} />
-            <span className="nav-bell-dot" />
-          </button>
+          <NotifBell className="nav-icon-btn nav-bell-btn" size={18} />
 
           <DynamicAvatar user={user} onSignOut={onSignOut} />
         </div>

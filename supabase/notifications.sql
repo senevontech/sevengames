@@ -1,13 +1,13 @@
 -- ============================================================
--- Notifications: a popup for the player when someone
+-- Notifications (the nav bell's window + a small live toast) for the player when someone
 --   * gifts them chips        (chip_gifts, from entries.sql)
 --   * sends a friend request  (friend_requests, from social.sql)
 --   * starts following them   (follows, from social.sql)
 -- Run in: Supabase Dashboard → SQL Editor, AFTER social.sql (and entries.sql for gifts). Safe to re-run.
 --
 --   * Rows are written only by triggers (nobody inserts from the browser).
---   * A player sees only their own rows; new rows arrive live (Supabase Realtime), and rows not
---     yet seen pop up the next time they open the site.
+--   * A player sees only their own rows; new rows arrive live (Supabase Realtime); "seen" is
+--     read / unread (notif_seen / notif_unread).
 --   * Follow spam (follow / unfollow / follow…) makes at most one notification a day per follower.
 --   * Each player keeps their latest 100.
 -- ============================================================
@@ -87,12 +87,18 @@ begin
 end;
 $$;
 
--- the player closed these popups
+-- read / unread (the bell's notification window). "seen" = read.
 create or replace function public.notif_seen(p_ids bigint[])
 returns void language sql security definer set search_path = public as $$
   update notifications set seen = true where user_id = auth.uid() and id = any(p_ids) and not seen;
 $$;
 grant execute on function public.notif_seen(bigint[]) to authenticated;
+
+create or replace function public.notif_unread(p_ids bigint[])
+returns void language sql security definer set search_path = public as $$
+  update notifications set seen = false where user_id = auth.uid() and id = any(p_ids) and seen;
+$$;
+grant execute on function public.notif_unread(bigint[]) to authenticated;
 
 -- new notifications arrive live (Supabase Realtime)
 do $$
