@@ -22,29 +22,19 @@
   padding-bottom: clamp(64px, 9vh, 84px);
 }
 
-/* Transparent nav that follows the slide's text colour */
-.cp .h3-nav::before {
-  display: none;
+/* The global header: its wrapper only lends it the site's styles and theme (the header is
+   position: fixed), it takes no space and paints nothing itself. */
+.cp .gs.g2.cp-gnav {
+  display: contents;
 }
 
-.cp .h3-nav {
+.cp .gs.g2.cp-gnav::before,
+.cp .gs.g2.cp-gnav::after {
+  content: none;
+}
+
+.cp .gs.g2 .h3-nav {
   z-index: 20;
-}
-
-.cp .h3-menu a {
-  color: var(--cp-ink);
-}
-
-.cp .cp-logo-light {
-  display: none;
-}
-
-.cp.cp-on-dark .cp-logo-dark {
-  display: none;
-}
-
-.cp.cp-on-dark .cp-logo-light {
-  display: block;
 }
 
 /* ---------- Category switcher ---------- */

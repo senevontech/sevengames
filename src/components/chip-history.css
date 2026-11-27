@@ -2,12 +2,12 @@
    Theme tokens (--ac-*) come from account.css. */
 
 /* ---------- collapsible head ---------- */
-.ch-card {
+.ac-card.ch-card {
   padding-top: clamp(14px, 2.2vw, 20px);
   padding-bottom: clamp(14px, 2.2vw, 20px);
 }
 
-.ch-toggle {
+.ch-card .ch-toggle {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -69,7 +69,7 @@
   padding-top: 14px;
 }
 
-.ch-more {
+.ch-card .ch-more {
   display: block;
   margin: 10px auto 0;
 }
@@ -82,7 +82,7 @@
 }
 
 /* ---------- rows ---------- */
-.tw-history {
+.ch-card .tw-history {
   display: grid;
   gap: 4px;
   margin: 0;

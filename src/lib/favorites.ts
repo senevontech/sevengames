@@ -32,13 +32,17 @@ function write(list: string[]) {
 let account: string | null = null;
 let syncing: string | null = null;
 const synced = new Set<string>(); // accounts already synced since the app opened
+let noTable = false; // favorites.sql not run: stay device-only and stop asking until the app reopens
 
 async function syncAccount(uid: string) {
-  if (!supabase || syncing === uid || synced.has(uid)) return;
+  if (!supabase || noTable || syncing === uid || synced.has(uid)) return;
   syncing = uid;
   try {
     const { data, error } = await supabase.from("favorite_games").select("game_id").order("created_at", { ascending: false });
-    if (error) return; // not set up yet: stay device-only
+    if (error) {
+      if (error.code === "PGRST205" || error.code === "42P01") noTable = true;
+      return; // not set up yet (or offline): stay device-only
+    }
     synced.add(uid);
     const server = (data ?? []).map((r) => r.game_id as string);
     let firstTime = true;
@@ -73,7 +77,7 @@ export function toggleFavorite(id: string) {
   const list = read();
   const on = !list.includes(id);
   write(on ? [id, ...list] : list.filter((x) => x !== id));
-  if (account && supabase) {
+  if (account && supabase && !noTable) {
     const q = on
       ? supabase.from("favorite_games").upsert({ user_id: account, game_id: id }, { ignoreDuplicates: true })
       : supabase.from("favorite_games").delete().eq("user_id", account).eq("game_id", id);

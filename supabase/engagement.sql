@@ -746,11 +746,12 @@ begin
   end loop;
   return jsonb_build_object(
     'new', v_new,
+    -- alias "ac", not "a": "a" is the loop variable above, and reusing it makes a.id ambiguous
     'list', (select jsonb_agg(jsonb_build_object(
-      'id', a.id, 'title', a.title, 'description', a.description, 'icon', a.icon, 'reward', a.reward, 'target', a.target,
-      'progress', least(a.target, coalesce((m ->> a.metric)::integer, 0)),
-      'unlocked_at', u.unlocked_at) order by a.sort)
-      from achievements a left join user_achievements u on u.achievement_id = a.id and u.user_id = v_user)
+      'id', ac.id, 'title', ac.title, 'description', ac.description, 'icon', ac.icon, 'reward', ac.reward, 'target', ac.target,
+      'progress', least(ac.target, coalesce((m ->> ac.metric)::integer, 0)),
+      'unlocked_at', u.unlocked_at) order by ac.sort)
+      from achievements ac left join user_achievements u on u.achievement_id = ac.id and u.user_id = v_user)
   );
 end;
 $$;

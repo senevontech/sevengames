@@ -772,7 +772,7 @@ function ClubMembers({ club, setNote }: { club: MyClub; setNote: (n: Note) => vo
           <li key={m.user_id} className="ac-card">
             <div className="cl-member">
               <PlayerAvatar id={m.user_id} name={m.name} avatar={m.avatar} size={34} className="lb-initial" />
-              <span>
+              <span className="cl-member-text">
                 <Link to={`/player/${m.user_id}`}>{m.user_id === uid ? `${m.name} (you)` : m.name}</Link>
                 <small>
                   {m.role === "owner" ? "Owner · " : ""}

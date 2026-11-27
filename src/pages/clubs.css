@@ -356,7 +356,7 @@ select.cl-input option {
   align-items: center;
   gap: 10px;
 }
-.cl-member > span {
+.cl-member .cl-member-text {
   display: grid;
   flex: 1;
   min-width: 0;

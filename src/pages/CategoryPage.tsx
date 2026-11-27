@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { categories, games, type Game, type GameCategory } from "../catalog";
 import FeatureCarousel from "../components/FeatureCarousel";
-import NavAccount from "../components/NavAccount";
+import GamesNav from "../components/GamesNav";
+import TokenPill from "../components/TokenPill";
+import { useGameTheme } from "../hooks/useGameTheme";
+import { THEMES } from "./Game2";
 import "./home3.css";
+import "./games-globe.css";
+import "./game2.css";
 import "../components/feature-carousel.css";
 import "./category-page.css";
 
@@ -27,6 +33,8 @@ export default function CategoryPage() {
   const { slug = "" } = useParams();
   const category = usedCategories.find((c) => categorySlug(c) === slug.toLowerCase());
   const [ink, setInk] = useState("#ffffff");
+  const { theme, toggle } = useGameTheme();
+  const dark = theme === "dark";
 
   const { slides, soonIds } = useMemo(() => {
     const list: Game[] = category ? games.filter((g) => g.category === category) : [];
@@ -62,20 +70,17 @@ export default function CategoryPage() {
   const realCount = slides.length - soonIds.size;
 
   return (
-    <div className={`cp h3${ink === "#ffffff" ? " cp-on-dark" : ""}`} style={{ "--cp-ink": ink } as React.CSSProperties}>
-      <nav className="h3-nav cp-nav">
-        <Link className="h3-logo" to="/" aria-label="Senevon Game Studio — home">
-          <img className="cp-logo-dark" src="/logo/logo-h-dark-nav.webp" width={432} height={120} alt="Senevon Game Studio" />
-          <img className="cp-logo-light" src="/logo/logo-h-light-nav.webp" width={432} height={120} alt="" aria-hidden="true" />
-            <img className="h3-logo-mark" src="/logo/mark-256.webp" width={256} height={256} alt="" aria-hidden="true" />
-        </Link>
-        <div className="h3-nav-end">
-          <div className="h3-menu h3-menu-end">
-            <Link to="/">All games</Link>
-          </div>
-          <NavAccount />
-        </div>
-      </nav>
+    <div className={`cp h3${ink === "#ffffff" ? " cp-on-dark" : ""}`} style={{ "--cp-ink": ink } as CSSProperties}>
+      {/* the site's global header (same as every other page); the wrapper only lends it its theme */}
+      <div
+        className={`gs h3 gs-flat g2 cp-gnav${dark ? " gs-on-dark" : ""}`}
+        data-theme={theme}
+        style={{ "--gs-bg": THEMES[theme].bg, "--gs-ink": THEMES[theme].ink } as CSSProperties}
+      >
+        <GamesNav mobileMenu theme={{ dark, toggle }}>
+          <TokenPill variant="solid" />
+        </GamesNav>
+      </div>
 
       {/* key: a fresh carousel (index, colours) for each category */}
       <FeatureCarousel

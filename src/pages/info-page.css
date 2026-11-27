@@ -17,7 +17,13 @@
   max-width: 560px;
 }
 
+/* plain orange label: undo the old global pill (ui.css .eyebrow: dark background, border, padding) */
 .g2 .info-page .eyebrow {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
   margin: 0 0 8px;
   font-size: 12px;
   font-weight: 700;

@@ -123,16 +123,7 @@
   min-height: 320px;
 }
 
-.lb-initial {
-  display: grid;
-  place-items: center;
-  flex: none;
-  border-radius: 50%;
-  font-weight: 800;
-  color: #fff;
-  background: linear-gradient(145deg, hsl(var(--h) 75% 62%), hsl(calc(var(--h) + 30) 70% 42%));
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.15);
-}
+/* .lb-initial base: components/player-avatar.css (loaded with every PlayerAvatar) */
 
 /* podium: 2nd · 1st · 3rd */
 .lb-podium {

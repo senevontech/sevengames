@@ -727,8 +727,10 @@
 
 .fr-list li {
   display: flex;
+  flex-wrap: wrap; /* narrow screens: the buttons drop under the name instead of overflowing */
   align-items: center;
   gap: 8px;
+  min-width: 0;
   padding: 6px 8px 6px 6px;
   border-radius: 16px;
   box-shadow: var(--ac-well);
@@ -738,7 +740,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  flex: 1;
+  flex: 1 1 120px;
   min-width: 0;
   padding: 0;
   border: 0;
@@ -758,11 +760,16 @@
 
 .fr-acts {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
+  margin-left: auto;
+  padding: 2px;
 }
 
 .fr-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 10px;
 }

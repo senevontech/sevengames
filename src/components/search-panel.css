@@ -7,15 +7,18 @@
   padding: 10px;
 }
 
+/* rules are scoped to .sx-panel: the pages' `.h3 *` reset (home3.css) zeroes padding/margin
+   at the same weight as a single class and loads later. */
+
 /* no overflow scrolling here: a scroll box clips the chips' soft shadows. They wrap instead. */
-.sx-chips {
+.sx-panel .sx-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   padding: 4px 4px 12px;
 }
 
-.sx-chip {
+.sx-panel .sx-chip {
   flex: none;
   height: 30px;
   padding: 0 12px;
@@ -31,17 +34,17 @@
   transition: box-shadow 0.2s ease, color 0.2s ease;
 }
 
-.sx-chip.is-on {
+.sx-panel .sx-chip.is-on {
   color: var(--neu-accent, #f26a0c);
   box-shadow: var(--neu-well, inset 0 0 0 1.5px currentColor);
 }
 
-.sx-chip:focus-visible {
+.sx-panel .sx-chip:focus-visible {
   outline: 2px solid var(--neu-accent, #f26a0c);
   outline-offset: 2px;
 }
 
-.sx-list {
+.sx-panel .sx-list {
   display: grid;
   gap: 2px;
   max-height: min(60vh, 420px);
@@ -59,7 +62,7 @@
   cursor: default;
 }
 
-.sx-group {
+.sx-panel .sx-group {
   display: block;
   padding: 8px 10px 4px;
   font-size: 10.5px;
@@ -69,7 +72,7 @@
   color: var(--g2-muted, #777);
 }
 
-.sx-row {
+.sx-panel .sx-row {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -80,7 +83,7 @@
   cursor: pointer;
 }
 
-.sx-row.is-hi {
+.sx-panel .sx-row.is-hi {
   box-shadow: var(--neu-well, none);
   background: var(--sx-hi, transparent);
 }
@@ -91,7 +94,7 @@
   overflow: hidden;
 }
 
-.sx-ico {
+.sx-panel .sx-ico {
   display: grid;
   flex: none;
   place-items: center;
@@ -102,8 +105,8 @@
   box-shadow: var(--neu-raise-sm, inset 0 0 0 1px rgba(127, 127, 127, 0.3));
 }
 
-.sx-note,
-.sx-hint {
+.sx-panel .sx-note,
+.sx-panel .sx-hint {
   margin: 0;
   padding: 10px;
   font-size: 13px;
