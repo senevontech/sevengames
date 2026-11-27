@@ -2,90 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { isNative } from "../lib/native";
 import { ADFREE_PRODUCT, PLUS_PRODUCT, buyPack, buySubscription, loadPlayPrices, manageSubscriptions, playErrorText, type PlayPrices } from "../lib/playBilling";
 import { Link, useLocation } from "react-router-dom";
-import {
-  CalendarClock,
-  Check,
-  Coins,
-  HandCoins,
-  Crown,
-  Gift,
-  Gamepad2,
-  KeyRound,
-  ShoppingBag,
-  Sparkles,
-  Tv,
-  X,
-  Zap,
-  ShieldCheck,
-  Users,
-  type LucideIcon,
-} from "../components/anim-icons";
+import { CalendarClock, Check, Crown, KeyRound, ShoppingBag, ShieldCheck, Tv, X, Zap } from "../components/anim-icons";
 import TokenIcon from "../components/TokenIcon";
 import ChipShowcase from "../components/chip/ChipShowcase";
 import ChipMath from "../components/ChipMath";
+import ChipHistory, { PACK_META } from "../components/ChipHistory";
 import { useAuthContext } from "../context/AuthContext";
-import { tokenErrorText, usePlanPrices, useTokenPacks, useTokens, type LedgerRow, type TokenPack } from "../lib/tokens";
+import { tokenErrorText, usePlanPrices, useTokenPacks, useTokens, type TokenPack } from "../lib/tokens";
 import { formatMoney, formatTokens, pickCurrency } from "../lib/currency";
-import { getGame } from "../catalog";
 import AdRewardModal from "../components/AdRewardModal";
 import ShopHub from "../components/ShopHub";
 import "./tokens.css";
 import "./account.css";
 import "./tokens-page.css";
-
-const REASON: Record<string, { label: string; Icon: LucideIcon }> = {
-  signup: { label: "Welcome bonus", Icon: Gift },
-  play: { label: "Played", Icon: Gamepad2 },
-  ad: { label: "Watched an ad", Icon: Tv },
-  subscription: { label: "Subscription chips", Icon: CalendarClock },
-  admin: { label: "Adjustment", Icon: Sparkles },
-  guest: { label: "Guest chips carried over", Icon: Gift },
-  purchase: { label: "Bought a chip pack", Icon: ShoppingBag },
-  carrom: { label: "Carrom shop", Icon: Gamepad2 },
-  adfree: { label: "Ad-free month", Icon: ShieldCheck },
-  shop: { label: "Shop", Icon: ShoppingBag },
-  match: { label: "Online win", Icon: Gamepad2 },
-  daily: { label: "Daily reward", Icon: Gift },
-  challenge: { label: "Daily challenge", Icon: Check },
-  achievement: { label: "Achievement", Icon: Sparkles },
-  referral: { label: "Invited a friend", Icon: Gift },
-  weekly: { label: "Weekly competition prize", Icon: Crown },
-  friend: { label: "Friend challenge", Icon: Zap },
-  tournament: { label: "Tournament", Icon: Crown },
-  entry: { label: "Chip match", Icon: Coins },
-  gift: { label: "Gift", Icon: HandCoins },
-  club: { label: "Club wallet", Icon: Users },
-};
-
-/** "give:K7Q2MX" → "Put in club #K7Q2MX" */
-function clubRefLabel(ref: string) {
-  const [kind, tag] = ref.split(":");
-  return kind === "give" ? `Put in club #${tag}` : kind === "pay" ? `Paid by club #${tag}` : kind === "closed" ? `Club #${tag} closed` : `#${tag}`;
-}
-
-const ENTRY_GAMES: Record<string, string> = { chess: "Chess", ludo: "Ludo", carrom: "Carrom", arrows: "Arrows", pool: "Eight Ball" };
-/** "cpu:pool" → "Eight Ball vs Senevi", "pool:match-id" → "Eight Ball" */
-function entryRefLabel(ref: string, delta: number) {
-  const [a, b] = ref.split(":");
-  const game = a === "cpu" ? `${ENTRY_GAMES[b] ?? b} vs Senevi` : ENTRY_GAMES[a] ?? a;
-  return `${game} · ${delta < 0 ? "entry" : "prize"}`;
-}
-
-const PACK_META: Record<string, { name: string; flag?: string; coins: number }> = {
-  starter: { name: "Starter", coins: 1 },
-  player: { name: "Player", flag: "Most popular", coins: 2 },
-  pro: { name: "Pro", coins: 3 },
-  legend: { name: "Legend", flag: "Best value", coins: 4 },
-};
-
-/** "striker:neon" → "Neon striker", "upgrade:gold:power:7" → "Gold power → Lv 7" */
-function carromRefLabel(ref: string) {
-  const cap = (w: string) => w.charAt(0).toUpperCase() + w.slice(1);
-  const p = ref.split(":");
-  if (p[0] === "upgrade" && p.length === 4) return `${cap(p[1])} ${p[2]} → Lv ${p[3]}`;
-  if (p.length === 2) return `${cap(p[1])} ${p[0] === "coins" ? "coin set" : p[0]}`;
-  return ref;
-}
 
 type Checkout = { kind: "plan"; plan: "monthly" | "yearly" } | { kind: "pack"; pack: TokenPack };
 
@@ -104,7 +33,7 @@ function CoinStack({ n }: { n: number }) {
 
 export default function TokensPage() {
   const { user } = useAuthContext();
-  const { wallet, guestBalance, loading, subscribe, buyPack, cancel, history, refresh, redeem, adFree } = useTokens();
+  const { wallet, guestBalance, loading, subscribe, buyPack, cancel, refresh, redeem, adFree } = useTokens();
   const noAds = Boolean(adFree?.active);
   const location = useLocation();
   const [code, setCode] = useState("");
@@ -120,7 +49,6 @@ export default function TokensPage() {
     if (isNative) void loadPlayPrices().then(setPlay);
   }, []);
   const [note, setNote] = useState<{ text: string; ok: boolean } | null>(null);
-  const [rows, setRows] = useState<LedgerRow[]>([]);
 
   useEffect(() => {
     document.title = "Chips — Senevon Game Studio";
@@ -133,13 +61,6 @@ export default function TokensPage() {
     const id = requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" }));
     return () => cancelAnimationFrame(id);
   }, [location.hash, packs]);
-
-  // reload history whenever the balance changes
-  const balance = wallet?.balance;
-  useEffect(() => {
-    if (balance === undefined) return;
-    void history().then(setRows);
-  }, [balance, history]);
 
   const currencies = useMemo(
     () => [...new Set([...prices.map((p) => p.currency), ...(packs ?? []).flatMap((p) => Object.keys(p.prices))])],
@@ -584,45 +505,8 @@ export default function TokensPage() {
         ) : null}
       </div>
 
-      {/* ---------- history ---------- */}
-      <section className="ac-card tw-history-card">
-        <div className="ac-section-head">
-          <h2 className="ac-h2">History</h2>
-        </div>
-        {rows.length ? (
-          <ul className="tw-history">
-            {rows.map((r) => {
-              const meta = REASON[r.reason] ?? REASON.admin;
-              const detail =
-                (r.reason === "play" && r.ref ? (getGame(r.ref)?.title ?? r.ref) : null) ??
-                (r.reason === "purchase" && r.ref ? (PACK_META[r.ref]?.name ?? r.ref) + " pack" : null) ??
-                (r.reason === "carrom" && r.ref ? carromRefLabel(r.ref) : null) ??
-                (r.reason === "admin" && r.ref ? r.ref : null) ??
-                (r.reason === "entry" && r.ref ? entryRefLabel(r.ref, r.delta) : null) ??
-                (r.reason === "gift" ? (r.delta < 0 ? "Sent" : "Received") : null) ??
-                (r.reason === "club" && r.ref ? clubRefLabel(r.ref) : null);
-              return (
-                <li key={r.id}>
-                  <span className={`tw-h-icon${r.delta >= 0 ? " plus" : ""}`} aria-hidden="true">
-                    <meta.Icon size={15} />
-                  </span>
-                  <span className="tw-h-what">
-                    {meta.label}
-                    {detail ? <small>{detail}</small> : null}
-                  </span>
-                  <span className="tw-h-when">{fmtDate(r.created_at)}</span>
-                  <b className={r.delta >= 0 ? "plus" : "minus"}>
-                    {r.delta >= 0 ? "+" : "−"}
-                    {formatTokens(Math.abs(r.delta))}
-                  </b>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="ac-sub">No activity yet.</p>
-        )}
-      </section>
+      {/* ---------- history (collapsible) ---------- */}
+      <ChipHistory />
 
       {/* ---------- test checkout ---------- */}
       {checkout ? (

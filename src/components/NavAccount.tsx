@@ -19,7 +19,7 @@ export default function NavAccount() {
 
   if (!user) {
     return (
-      <Link className="h3-account" to="/login" aria-label="Sign in">
+      <Link className="h3-account" to="/login" aria-label="Sign in" data-tip="Sign in">
         <span className="h3-account-icon">
           <RiUser3Line size={18} aria-hidden="true" />
         </span>
@@ -35,7 +35,7 @@ export default function NavAccount() {
   const n = requests.length + unreadMsgs;
   return (
     <span className="h3-account-wrap">
-    <Link className="h3-account" to={n ? "/profile#friends" : "/profile"} aria-label={`Your profile (${name})${n ? `, ${n} new (friend requests and messages)` : ""}`}>
+    <Link className="h3-account" to={n ? "/profile#friends" : "/profile"} data-tip="Your profile" aria-label={`Your profile (${name})${n ? `, ${n} new (friend requests and messages)` : ""}`}>
       <AvatarFrame userId={user.id}>
         <span className="h3-account-icon">
           {uri ? <img src={uri} alt="" width={40} height={40} referrerPolicy="no-referrer" /> : <RiUser3Line size={18} aria-hidden="true" />}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { Crown, Download, Play } from "../components/anim-icons";
 import { isNative } from "../lib/native";
 import { APK_URL, GET_APP_PATH, PLAY_STORE_URL } from "../lib/appLinks";
@@ -19,6 +19,7 @@ import GameDisk from "../components/GameDisk";
 import PlayerAvatar from "../components/PlayerAvatar";
 import TokenPill from "../components/TokenPill";
 import SoftFooter from "../components/SoftFooter";
+import HomeDrift from "../components/HomeDrift";
 import { useLiveAds, type Ad } from "../lib/ads";
 import { useSiteSettings } from "../lib/siteSettings";
 import { useShowAds } from "../lib/tokens";
@@ -322,11 +323,12 @@ export default function Game2() {
       onPointerDown={prefetchFromEvent}
       onPointerOver={prefetchFromEvent}
     >
+      <HomeDrift />
       <GamesNav mobileMenu theme={{ dark, toggle }}>
         {!isNative ? (
-          <Link to={GET_APP_PATH} className="gs-icon-btn g2-get-app" aria-label="Get the app" title="Get the app">
+          <NavLink to={GET_APP_PATH} className="gs-icon-btn g2-get-app" aria-label="Get the app" data-tip="Get the app">
             <Download size={19} strokeWidth={1.8} aria-hidden="true" />
-          </Link>
+          </NavLink>
         ) : null}
         <TokenPill variant="solid" />
       </GamesNav>

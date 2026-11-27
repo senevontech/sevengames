@@ -1,26 +1,30 @@
 /* /clubs and /clubs/:tag: community clubs (lib/clubs.ts, supabase/clans.sql).
-   Not in a club: find one (public clubs, or any club by its ID), open an invite link, or start one.
+   Everyone: the top clubs rail (club points) and the public club showcase (live search, sorts).
+   Not in a club: join one from the showcase, open an invite link, or start one.
    In a club: club rooms, the club wallet, members, and (for the owner) settings. */
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Check, Copy, Crown, DoorOpen, Globe, Lock, LogOut, Search, Settings, Shield, Users, Wallet } from "../components/anim-icons";
+import { Check, Copy, Crown, DoorOpen, Globe, Lock, LogOut, Search, Settings, Shield, Trophy, Users, Wallet } from "../components/anim-icons";
 import { useAuthContext } from "../context/AuthContext";
 import { useTokens } from "../lib/tokens";
 import {
   CLUB,
   CLUB_GAMES,
   clubApi,
+  clubBrowse,
   clubErrorText,
   clubLink,
-  clubSearch,
+  clubTop,
   clubTagText,
   clubView,
   setMyClub,
   useMyClub,
   type ClubCard,
   type ClubGame,
+  type ClubSort,
   type ClubView,
   type MyClub,
+  type RankedClub,
 } from "../lib/clubs";
 import TokenIcon from "../components/TokenIcon";
 import PlayerAvatar from "../components/PlayerAvatar";
@@ -88,6 +92,8 @@ export default function ClubsPage() {
         </div>
       </section>
 
+      <TopClubs />
+
       {note ? (
         <p className={`tw-note${note.ok ? " ok" : " bad"}`} role="status">
           {note.ok ? <Check size={16} aria-hidden="true" /> : null}
@@ -113,7 +119,7 @@ export default function ClubsPage() {
         <CreateClub setNote={setNote} />
       )}
 
-      {!club ? <FindClubs setNote={setNote} /> : null}
+      <FindClubs setNote={setNote} hasClub={Boolean(club)} loaded={loaded} />
     </div>
   );
 }
@@ -216,24 +222,41 @@ function MemberFaces({ list }: { list: { user_id: string; name: string; avatar: 
   );
 }
 
-function FindClubs({ setNote }: { setNote: (n: Note) => void }) {
+const SORTS: { key: ClubSort; label: string }[] = [
+  { key: "popular", label: "Popular" },
+  { key: "newest", label: "Newest" },
+  { key: "open", label: "Open spots" },
+];
+
+/** The public club showcase: live search (name or #ID) and sorts. Everyone can browse and open
+    a club; Join needs a signed-in player who isn't in a club yet. */
+function FindClubs({ setNote, hasClub, loaded }: { setNote: (n: Note) => void; hasClub: boolean; loaded: boolean }) {
   const { uid } = useMyClub();
   const [q, setQ] = useState("");
-  const [list, setList] = useState<ClubCard[] | null>(null);
+  const [sort, setSort] = useState<ClubSort>("popular");
+  const [list, setList] = useState<RankedClub[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [invite, setInvite] = useState<Record<string, string>>({});
 
-  const search = async (text: string) => {
-    try {
-      setList(await clubSearch(text));
-    } catch (e) {
-      setList([]);
-      setNote({ ok: false, text: clubErrorText(e) });
-    }
-  };
+  // search as you type (a short pause first, so typing doesn't send a request per letter)
   useEffect(() => {
-    void search("");
-  }, []);
+    let live = true;
+    const t = window.setTimeout(
+      () =>
+        void clubBrowse(q.trim(), sort)
+          .then((l) => live && setList(l))
+          .catch((e) => {
+            if (!live) return;
+            setList([]);
+            setNote({ ok: false, text: clubErrorText(e) });
+          }),
+      q.trim() ? 300 : 0,
+    );
+    return () => {
+      live = false;
+      window.clearTimeout(t);
+    };
+  }, [q, sort, setNote]);
 
   async function join(c: ClubCard) {
     if (!uid) return;
@@ -241,6 +264,7 @@ function FindClubs({ setNote }: { setNote: (n: Note) => void }) {
     try {
       setMyClub(uid, await clubApi.join(c.tag, invite[c.id]));
       setNote({ ok: true, text: `Welcome to ${c.name}!` });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
       setNote({ ok: false, text: clubErrorText(e) });
     } finally {
@@ -248,40 +272,71 @@ function FindClubs({ setNote }: { setNote: (n: Note) => void }) {
     }
   }
 
+  const query = q.trim();
   return (
-    <section className="tw-section">
+    <section className="tw-section cl-find">
       <div className="ac-section-head">
         <div>
-          <h2 className="ac-h2">Find a club</h2>
-          <p className="ac-sub">Search public clubs by name, or any club by its ID (like #K7Q2MX).</p>
+          <h2 className="ac-h2">Discover clubs</h2>
+          <p className="ac-sub">
+            {hasClub
+              ? "Have a look around. To join another club, leave yours first."
+              : "Search public clubs by name, or any club by its ID (like #K7Q2MX)."}
+          </p>
         </div>
       </div>
-      <form
-        className="cl-search"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void search(q);
-        }}
-      >
-        <Search size={16} aria-hidden="true" />
-        <input className="cl-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Club name or #ID" aria-label="Search clubs" />
-        <button type="submit" className="ac-btn ac-btn-sm">
-          Search
-        </button>
-      </form>
-      {list === null ? null : list.length === 0 ? (
-        <p className="ac-sub">No clubs found. Start one!</p>
+      <div className="cl-find-bar">
+        <label className="cl-search">
+          <Search size={16} aria-hidden="true" />
+          <input
+            className="cl-input"
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Club name or #ID"
+            aria-label="Search clubs"
+            enterKeyHint="search"
+          />
+        </label>
+        <div className="cl-sort" role="radiogroup" aria-label="Sort clubs">
+          {SORTS.map((o) => (
+            <button key={o.key} type="button" role="radio" aria-checked={sort === o.key} className={sort === o.key ? "on" : ""} onClick={() => setSort(o.key)}>
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {list === null ? (
+        <ul className="cl-list" aria-hidden="true">
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="ac-card cl-item cl-skeleton" />
+          ))}
+        </ul>
+      ) : list.length === 0 ? (
+        <p className="ac-sub cl-none">
+          {query ? `No clubs match "${query}".` : sort === "open" ? "Every club is full right now." : "No clubs yet."}
+          {hasClub ? null : " Start one!"}
+        </p>
       ) : (
         <ul className="cl-list">
           {list.map((c) => (
             <li key={c.id} className="ac-card cl-item">
               <ClubHead c={c} />
               {c.about ? <p className="cl-about">{c.about}</p> : null}
+              {c.points ? (
+                <p className="cl-points">
+                  <Trophy size={14} aria-hidden="true" /> <b>{c.points.toLocaleString()}</b> club points
+                </p>
+              ) : null}
               <div className="cl-row">
                 <Link className="ac-btn ac-btn-sm" to={`/clubs/${c.tag}`}>
                   Open
                 </Link>
-                {uid ? (
+                {!uid ? (
+                  <Link className="ac-btn ac-btn-sm ac-btn-primary" to={`/login?next=${encodeURIComponent(`/clubs/${c.tag}`)}`}>
+                    Sign in to join
+                  </Link>
+                ) : !loaded || hasClub ? null : (
                   <>
                     {c.visibility === "private" ? (
                       <input
@@ -302,12 +357,72 @@ function FindClubs({ setNote }: { setNote: (n: Note) => void }) {
                       {c.members >= CLUB.maxMembers ? "Full" : "Join"}
                     </button>
                   </>
-                ) : null}
+                )}
               </div>
             </li>
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+/** Top clubs by club points (every member's overall leaderboard points added up), as a rail. */
+function TopClubs() {
+  const [list, setList] = useState<RankedClub[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    void clubTop(10)
+      .then((l) => live && setList(l))
+      .catch(() => live && setList([])); // SQL not run yet / offline: no rail
+    return () => {
+      live = false;
+    };
+  }, []);
+  if (list && !list.length) return null;
+
+  return (
+    <section className="tw-section cl-top" aria-labelledby="cl-top-title">
+      <div className="ac-section-head">
+        <div>
+          <h2 className="ac-h2" id="cl-top-title">
+            <Trophy size={18} aria-hidden="true" /> Top clubs
+          </h2>
+          <p className="ac-sub">Ranked by club points: every member's leaderboard points added up.</p>
+        </div>
+      </div>
+      <ol className="cl-rail">
+        {list
+          ? list.map((c, i) => (
+              <li key={c.id}>
+                <Link
+                  to={`/clubs/${c.tag}`}
+                  className={`cl-rail-card${i < 3 ? ` place-${i + 1}` : ""}`}
+                  aria-label={`${i + 1}. ${c.name}, ${c.points} club points, ${c.members} members`}
+                >
+                  <span className="cl-rail-rank" aria-hidden="true">
+                    {i === 0 ? <Crown size={15} /> : i + 1}
+                  </span>
+                  <span className="cl-badge" aria-hidden="true">
+                    {c.name.slice(0, 1).toUpperCase()}
+                  </span>
+                  <b className="cl-rail-name">{c.name}</b>
+                  <span className="cl-rail-tag">
+                    <span className="cl-tag">{clubTagText(c.tag)}</span>
+                    {c.visibility === "private" ? <Lock size={12} aria-hidden="true" /> : null}
+                  </span>
+                  <span className="cl-rail-stats">
+                    <b>{c.points.toLocaleString()}</b> pts · {c.members}/{CLUB.maxMembers}
+                  </span>
+                </Link>
+              </li>
+            ))
+          : [0, 1, 2, 3].map((i) => (
+              <li key={i} aria-hidden="true">
+                <span className="cl-rail-card cl-skeleton" />
+              </li>
+            ))}
+      </ol>
     </section>
   );
 }

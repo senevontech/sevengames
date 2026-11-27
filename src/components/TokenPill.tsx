@@ -80,7 +80,7 @@ export default function TokenPill({ variant = "default" }: { variant?: "default"
       to="/chips"
       className={`tk-pill${variant === "solid" ? " tk-pill-solid" : ""}${change ? (change.delta > 0 ? " is-up" : " is-down") : ""}`}
       aria-label={label}
-      title={user ? "Get more chips" : "Guest chips: sign in for 100 free"}
+      data-tip={user ? "Chips" : "Sign in for 100 free chips"}
     >
       <span className="tk-pill-coin" aria-hidden="true">
         <TokenIcon size={variant === "solid" ? 22 : 18} />

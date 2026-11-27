@@ -121,6 +121,84 @@
     transform 0.08s ease-out;
 }
 
+/* The current page's button (NavLink .active; categories on a category page) and an open
+   menu / window: a 30% orange tint, pressed into the surface */
+.gs.g2 :is(.gs-icon-btn, .gs-home).active,
+.gs.g2 .gs-icon-btn[aria-expanded="true"],
+.gs.g2 .gs-search.is-open .gs-icon-btn {
+  opacity: 1;
+  background: color-mix(in srgb, var(--neu-accent) 30%, var(--neu-bg));
+  box-shadow: var(--neu-press);
+  color: var(--neu-accent);
+}
+
+.gs.g2[data-theme="light"] :is(.gs-icon-btn, .gs-home).active,
+.gs.g2[data-theme="light"] .gs-icon-btn[aria-expanded="true"],
+.gs.g2[data-theme="light"] .gs-search.is-open .gs-icon-btn {
+  color: #b84600; /* the light accent is too faint on its own tint */
+}
+
+@media (hover: hover) {
+  .gs.g2 :is(.gs-icon-btn, .gs-home).active:hover {
+    box-shadow: var(--neu-press);
+    transform: scale(0.97);
+  }
+}
+
+/* Header tooltips: hovering a nav button names it (data-tip). Mouse / keyboard only. */
+:where(.gs.g2 .h3-nav [data-tip]) {
+  position: relative;
+}
+
+@media (hover: hover) {
+  .gs.g2 .h3-nav [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    z-index: 70;
+    top: calc(100% + 10px);
+    left: 50%;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1.2;
+    letter-spacing: 0;
+    white-space: nowrap;
+    color: var(--neu-bg);
+    background: var(--gs-ink);
+    box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    transform: translate(-50%, -4px);
+    pointer-events: none;
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease;
+  }
+
+  .gs.g2 .h3-nav [data-tip]:is(:hover, :focus-visible)::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    transition-delay: 0.2s;
+  }
+
+  /* the right-most button (account): the tip lines up with its right edge, not off screen */
+  .gs.g2 .h3-nav .h3-account[data-tip]::after {
+    left: auto;
+    right: 0;
+    transform: translateY(-4px);
+  }
+
+  .gs.g2 .h3-nav .h3-account[data-tip]:is(:hover, :focus-visible)::after {
+    transform: none;
+  }
+
+  /* its menu / window is open: no tip over it */
+  .gs.g2 .h3-nav [data-tip][aria-expanded="true"]::after,
+  .gs.g2 .gs-search.is-open [data-tip]::after {
+    display: none;
+  }
+}
+
 /* Dropdowns and the phone menu: soft panels on the page surface */
 .gs.g2 .gs-cats-menu,
 .gs.g2 .gs-burger-panel,

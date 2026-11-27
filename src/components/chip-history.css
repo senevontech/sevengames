@@ -1,0 +1,170 @@
+/* Chip history (ChipHistory.tsx): the Chips page "History" and the profile "Chip usage".
+   Theme tokens (--ac-*) come from account.css. */
+
+/* ---------- collapsible head ---------- */
+.ch-card {
+  padding-top: clamp(14px, 2.2vw, 20px);
+  padding-bottom: clamp(14px, 2.2vw, 20px);
+}
+
+.ch-toggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ch-toggle-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.ch-chev {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  box-shadow: var(--ac-raise-sm);
+  color: var(--ac-muted);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ch-card.is-open .ch-chev {
+  transform: rotate(180deg);
+}
+
+.ch-toggle:focus-visible {
+  outline: 2px solid var(--ac-accent);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+/* expands with a height animation (grid rows 0fr → 1fr) */
+.ch-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ch-card.is-open .ch-body {
+  grid-template-rows: 1fr;
+}
+
+.ch-body-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ch-card.is-open .ch-body-inner {
+  padding-top: 14px;
+}
+
+.ch-more {
+  display: block;
+  margin: 10px auto 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ch-body,
+  .ch-chev {
+    transition: none;
+  }
+}
+
+/* ---------- rows ---------- */
+.tw-history {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tw-history li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+  font-size: 14px;
+}
+
+.tw-history li + li {
+  border-top: 1px solid var(--ac-line);
+}
+
+.tw-h-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  color: var(--ac-muted);
+  box-shadow: var(--ac-well);
+}
+
+.tw-h-icon.plus {
+  color: var(--ac-accent);
+}
+
+.tw-h-what {
+  display: grid;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.tw-h-what small {
+  overflow: hidden;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ac-muted);
+}
+
+.tw-h-when {
+  font-size: 12.5px;
+  color: var(--ac-faint);
+  white-space: nowrap;
+}
+
+.tw-history b {
+  min-width: 64px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tw-history b.plus {
+  color: var(--ac-good);
+}
+
+.tw-history b.minus {
+  color: var(--ac-muted);
+}
+
+@media (max-width: 560px) {
+  .tw-history li {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    row-gap: 2px;
+  }
+
+  .tw-h-when {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .tw-history b {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+}

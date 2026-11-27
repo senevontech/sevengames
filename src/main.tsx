@@ -9,6 +9,8 @@ import "./ui.css";
 import "./orbit.css";
 import "./app-perf.css";
 import "./lite.css";
+// clay buttons, site-wide (after everything: see the file)
+import "./clay.css";
 import { initPerf } from "./lib/perf";
 
 initPerf(); // lite mode on low-end phones (before the first paint)

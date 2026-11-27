@@ -422,75 +422,6 @@
 }
 
 /* ---------- history ---------- */
-.tw-history {
-  display: grid;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.tw-history li {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 4px;
-  font-size: 14px;
-}
-
-.tw-history li + li {
-  border-top: 1px solid var(--ac-line);
-}
-
-.tw-h-icon {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  color: var(--ac-muted);
-  box-shadow: var(--ac-well);
-}
-
-.tw-h-icon.plus {
-  color: var(--ac-accent);
-}
-
-.tw-h-what {
-  display: grid;
-  min-width: 0;
-  font-weight: 600;
-}
-
-.tw-h-what small {
-  overflow: hidden;
-  font-size: 12.5px;
-  font-weight: 500;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  color: var(--ac-muted);
-}
-
-.tw-h-when {
-  font-size: 12.5px;
-  color: var(--ac-faint);
-  white-space: nowrap;
-}
-
-.tw-history b {
-  min-width: 64px;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.tw-history b.plus {
-  color: var(--ac-good);
-}
-
-.tw-history b.minus {
-  color: var(--ac-muted);
-}
 
 /* checkout modal: coin stack centred */
 .tk-modal-center .tw-stack {
@@ -538,20 +469,6 @@
     width: 100%;
   }
 
-  .tw-history li {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    row-gap: 2px;
-  }
-
-  .tw-h-when {
-    grid-column: 2;
-    grid-row: 2;
-  }
-
-  .tw-history b {
-    grid-column: 3;
-    grid-row: 1 / span 2;
-  }
 }
 
 @media (max-width: 360px) {
@@ -669,4 +586,39 @@
   color: var(--ac-text) !important;
   background: var(--ac-bg);
   box-shadow: var(--ac-raise-sm);
+}
+
+/* ---------- spacing (Chips page only) ----------
+   The soft raised shadows reach ~20px past each card, so cards and sections need clear room
+   or they read as overlapping. Sections: wide gaps. Inside a section: an even rhythm. */
+.acct.tw {
+  gap: clamp(40px, 5.5vw, 64px);
+}
+
+.acct.tw > .tw-section {
+  display: grid;
+  gap: clamp(18px, 2.4vw, 26px);
+  align-content: start;
+}
+
+.acct.tw > .tw-section > .ac-section-head {
+  margin-bottom: 0;
+}
+
+.acct.tw > .tw-section > .tw-fine,
+.acct.tw > .tw-section > .cm-foot {
+  margin: 0 !important;
+}
+
+.acct.tw .tw-packs,
+.acct.tw .tw-plans,
+.acct.tw .tw-row,
+.acct.tw .cm-grid {
+  gap: clamp(20px, 2.6vw, 28px);
+}
+
+/* the "Most popular" / "Best value" flags sit on the card edge: leave room above the row */
+.acct.tw .tw-packs,
+.acct.tw .tw-plans {
+  padding-top: 12px;
 }

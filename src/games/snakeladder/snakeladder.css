@@ -65,28 +65,6 @@
   will-change: transform;
 }
 
-.sl-num {
-  font: 700 23px/1 Georgia, "Times New Roman", serif;
-  fill: var(--sl-ink);
-  paint-order: stroke;
-  stroke: rgba(246, 236, 210, 0.85);
-  stroke-width: 4px;
-  stroke-linejoin: round;
-  font-variant-numeric: tabular-nums;
-}
-.sl-num.is-special {
-  fill: #fff8e0;
-  stroke: rgba(40, 25, 10, 0.55);
-}
-.sl-tag {
-  font: 800 17px/1 Georgia, "Times New Roman", serif;
-  letter-spacing: 2px;
-  text-anchor: middle;
-  paint-order: stroke;
-  stroke: rgba(30, 50, 20, 0.6);
-  stroke-width: 3px;
-}
-
 /* tokens */
 .sl-token.is-settling {
   transition: transform 0.28s cubic-bezier(0.3, 0.7, 0.4, 1);

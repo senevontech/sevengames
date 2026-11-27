@@ -88,6 +88,25 @@ export const clubLink = (tag: string, invite?: string | null) =>
 
 export const clubView = async (tag: string) => fixMembers(await rpc<ClubView | null>("club_view", { p_tag: tag }));
 export const clubSearch = (q: string) => rpc<ClubCard[]>("club_search", { p_query: q });
+
+/** Club showcase sort: most members · newest · clubs with room (most room first). */
+export type ClubSort = "popular" | "newest" | "open";
+/** A club card with its club points (the members' overall leaderboard points). */
+export type RankedClub = ClubCard & { points: number };
+
+/** Public clubs by name, or any club by its exact #ID (supabase/clans.sql club_browse). Falls back
+    to the older club_search when that SQL hasn't been run yet. */
+export async function clubBrowse(q: string, sort: ClubSort): Promise<RankedClub[]> {
+  try {
+    return await rpc<RankedClub[]>("club_browse", { p_query: q, p_sort: sort });
+  } catch (e) {
+    if ((e as { code?: string }).code !== "PGRST202") throw e; // PGRST202: no such function
+    return (await clubSearch(q)).map((c) => ({ ...c, points: 0 }));
+  }
+}
+
+/** The top clubs by club points (refreshed at most every 10 minutes on the server). */
+export const clubTop = (limit = 10) => rpc<RankedClub[]>("club_top", { p_limit: limit });
 export const clubOf = (user: string) => rpc<{ tag: string; name: string; role: string } | null>("club_of", { p_user: user });
 
 const mine = async (fn: string, args: Record<string, unknown> = {}) => fixMembers(await rpc<MyClub | null>(fn, args));

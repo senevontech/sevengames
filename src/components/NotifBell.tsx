@@ -25,7 +25,7 @@ export default function NotifBell({ className = "", size = 19 }: { className?: s
         type="button"
         className={`nb-bell ${className}`.trim()}
         aria-label={label}
-        title={label}
+        data-tip={unread ? `Notifications (${unread} new)` : "Notifications"}
         aria-haspopup="dialog"
         aria-expanded={open}
         onPointerEnter={() => void loadPanel()}

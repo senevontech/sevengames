@@ -14,6 +14,8 @@
 --     can't be used to get around the gift rules. Ledger reason 'club'.
 --   * Club rooms: a member posts an open room (game + room code) so other members can join it.
 --     Posts disappear after 30 minutes.
+--   * Discovering: club_browse (the public showcase, sorted) and club_top (top clubs by club points:
+--     the members' leaderboard points, cached 10 min in club_points; needs leaderboard.sql).
 --   * Tournaments: later.
 -- Needs the entries.sql version of _gift_sent_today (it counts club deposits too).
 -- ============================================================
@@ -493,5 +495,79 @@ grant execute on function public.club_give(integer) to authenticated;
 grant execute on function public.club_pay(uuid, integer, text) to authenticated;
 grant execute on function public.club_room_post(text, text) to authenticated;
 grant execute on function public.club_room_clear() to authenticated;
+
+-- ---------- discovering clubs: browse + top clubs ----------
+-- Club points = the sum of the members' overall leaderboard points (leaderboard.sql's
+-- leaderboard_overall, the same points as /leaderboards). Worked out at most every 10 minutes
+-- into club_points (whoever asks first after that refreshes it), so the page stays cheap.
+create table if not exists public.club_points (
+  club_id uuid primary key references public.clubs(id) on delete cascade,
+  points integer not null default 0,
+  updated_at timestamptz not null default now()
+);
+alter table public.club_points enable row level security;
+-- no policies: read through club_top() / club_browse()
+
+create or replace function public._club_points_refresh()
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if exists (select 1 from club_points where updated_at > now() - interval '10 minutes') then return; end if;
+  if not exists (select 1 from clubs) or to_regclass('public.leaderboard_overall') is null then return; end if;
+  -- one refresh at a time; anyone else just reads the old numbers
+  if not pg_try_advisory_xact_lock(hashtext('club_points_refresh')) then return; end if;
+  delete from club_points where true;
+  insert into club_points (club_id, points, updated_at)
+  select m.club_id, coalesce(sum(o.points), 0)::integer, now()
+  from club_members m
+  left join leaderboard_overall o on o.user_id = m.user_id
+  group by m.club_id;
+end;
+$$;
+revoke execute on function public._club_points_refresh() from public, anon, authenticated;
+
+-- The top clubs by club points (ties: more members, then older). Private clubs are listed too
+-- (their card is public anyway, like club_view); who's in them is not.
+create or replace function public.club_top(p_limit integer default 10)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  perform _club_points_refresh();
+  return coalesce((
+    select jsonb_agg(_club_card(c) || jsonb_build_object('points', coalesce(cp.points, 0))
+                     order by coalesce(cp.points, 0) desc, c.members desc, c.created_at)
+    from (
+      select c2.* from clubs c2
+      left join club_points cp2 on cp2.club_id = c2.id
+      order by coalesce(cp2.points, 0) desc, c2.members desc, c2.created_at
+      limit least(greatest(coalesce(p_limit, 10), 1), 20)
+    ) c
+    left join club_points cp on cp.club_id = c.id
+  ), '[]'::jsonb);
+end;
+$$;
+
+-- The club showcase: public clubs by name (or any club by its exact club ID), sorted:
+--   'popular' most members · 'newest' newest first · 'open' clubs with room, most room first.
+create or replace function public.club_browse(p_query text default '', p_sort text default 'popular')
+returns jsonb language sql stable security definer set search_path = public as $$
+  with q as (select btrim(replace(coalesce(p_query, ''), '#', '')) as s),
+  hits as (
+    select k.id, row_number() over (order by
+        case when p_sort = 'newest' then k.created_at end desc nulls last,
+        case when p_sort = 'open' then k.members end asc nulls last,
+        k.members desc, k.created_at desc) as n
+    from clubs k, q
+    where ((k.visibility = 'public' and (q.s = '' or k.name ilike '%' || replace(replace(q.s, '%', ''), '_', '') || '%'))
+           or k.tag = upper(q.s))
+      and (p_sort is distinct from 'open' or k.members < _club_const('max_members'))
+  )
+  select coalesce(jsonb_agg(_club_card(c) || jsonb_build_object('points', coalesce(cp.points, 0)) order by h.n), '[]'::jsonb)
+  from hits h
+  join clubs c on c.id = h.id
+  left join club_points cp on cp.club_id = c.id
+  where h.n <= 30
+$$;
+
+grant execute on function public.club_top(integer) to anon, authenticated;
+grant execute on function public.club_browse(text, text) to anon, authenticated;
 
 notify pgrst, 'reload schema';

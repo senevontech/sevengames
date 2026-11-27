@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { SeneviIcon } from "../senevi/Senevi";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Gift, LayoutGrid, Moon, Smartphone, Sun, Users } from "./anim-icons";
 import { MenuToggle } from "./anim-icons/toggles";
 import { isNative } from "../lib/native";
@@ -37,6 +37,7 @@ function searchGames(query: string): Game[] {
 /** Icon-only "Categories" button with a dropdown of category pages. */
 function CategoryMenu() {
   const [open, setOpen] = useState(false);
+  const onCategory = useLocation().pathname.startsWith("/category/");
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,9 +60,9 @@ function CategoryMenu() {
     <div className={`gs-cats${open ? " is-open" : ""}`} ref={rootRef}>
       <button
         type="button"
-        className="gs-icon-btn"
+        className={`gs-icon-btn${onCategory ? " active" : ""}`}
         aria-label="Categories"
-        title="Categories"
+        data-tip="Categories"
         aria-haspopup="true"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
@@ -383,37 +384,38 @@ export default function GamesNav({
             type="button"
             className="gs-icon-btn"
             aria-label={searchOpen ? "Close search" : "Search games"}
-            title={searchOpen ? "Close search" : "Search"}
+            data-tip={searchOpen ? "Close search" : "Search"}
             onClick={() => (searchOpen ? closeSearch() : setSearchOpen(true))}
           >
             <RiSearchReicon size={21} aria-hidden="true" />
           </button>
         </div>
-        <Link className="gs-home" to="/senevi" aria-label="Meet Senevi" title="Meet Senevi">
+        {/* NavLink: the current page's button gets .active (orange tint, pressed in) */}
+        <NavLink className="gs-home" to="/senevi" aria-label="Meet Senevi" data-tip="Meet Senevi">
           <SeneviIcon size={22} />
-        </Link>
-        <Link className="gs-home" to="/rewards" aria-label="Rewards" title="Rewards">
+        </NavLink>
+        <NavLink className="gs-home" to="/rewards" aria-label="Rewards" data-tip="Rewards">
           <Gift size={21} strokeWidth={1.6} aria-hidden="true" />
-        </Link>
-        <Link className="gs-home" to="/leaderboards" aria-label="Leaderboards" title="Leaderboards">
+        </NavLink>
+        <NavLink className="gs-home" to="/leaderboards" aria-label="Leaderboards" data-tip="Leaderboards">
           <RiTrophyLine size={22} strokeWidth={1.5} aria-hidden="true" />
-        </Link>
-        <Link className="gs-home" to="/" aria-label="Home" title="Home">
+        </NavLink>
+        <NavLink className="gs-home" to="/" end aria-label="Home" data-tip="Home">
           <RiHomeSmile size={22} aria-hidden="true" />
-        </Link>
+        </NavLink>
         <CategoryMenu />
         </div>
         {/* Clubs and the theme switch: in the phone menu when there is one */}
-        <Link className="gs-home gs-clubs gs-desk-only" to="/clubs" aria-label="Clubs" title="Clubs">
+        <NavLink className="gs-home gs-clubs gs-desk-only" to="/clubs" aria-label="Clubs" data-tip="Clubs">
           <Users size={21} strokeWidth={1.6} aria-hidden="true" />
-        </Link>
+        </NavLink>
         {children}
         {theme ? (
           <button
             type="button"
             className="gs-icon-btn gs-desk-only"
             aria-label={theme.dark ? "Switch to light theme" : "Switch to dark theme"}
-            title={theme.dark ? "Light theme" : "Dark theme"}
+            data-tip={theme.dark ? "Light mode" : "Dark mode"}
             onClick={theme.toggle}
           >
             {theme.dark ? <Sun size={19} strokeWidth={1.8} aria-hidden="true" /> : <Moon size={19} strokeWidth={1.8} aria-hidden="true" />}

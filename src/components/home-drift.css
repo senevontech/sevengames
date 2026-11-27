@@ -1,0 +1,89 @@
+/* Drifting shapes behind the home page (HomeDrift.tsx). Three nested layers, each animating
+   transform only: the diagonal trip, a side-to-side sway, and a slow tumble with a petal flip. */
+
+/* lets the layer sit above the page background but under all of its content */
+.gs.g2 {
+  isolation: isolate;
+}
+
+.hd-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+.hd-path {
+  position: absolute;
+  left: 0;
+  top: 0;
+  animation: hd-trip var(--dur) linear var(--delay) infinite;
+  will-change: transform;
+}
+
+.hd-sway {
+  display: block;
+  animation: hd-sway var(--sway-dur) ease-in-out var(--delay) infinite alternate;
+}
+
+.hd-shape {
+  display: block;
+  width: var(--size);
+  height: var(--size);
+  overflow: visible;
+  fill: none;
+  stroke: var(--color);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  opacity: var(--alpha);
+  animation: hd-tumble var(--spin-dur) linear var(--delay) infinite var(--spin-dir);
+}
+
+/* bottom-left (below the screen) → top-right (above the screen) */
+@keyframes hd-trip {
+  from {
+    transform: translate3d(var(--x0), 108vh, 0);
+  }
+  to {
+    transform: translate3d(var(--x1), -14vh, 0);
+  }
+}
+
+@keyframes hd-sway {
+  from {
+    transform: translate3d(calc(var(--sway) * -1), 0, 0);
+  }
+  to {
+    transform: translate3d(var(--sway), calc(var(--sway) * -0.6), 0);
+  }
+}
+
+/* a slow turn; rotation only, so a circle stays round and a square stays square */
+@keyframes hd-tumble {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* phones: fewer shapes */
+@media (max-width: 640px) {
+  .hd-path:nth-child(n + 5) {
+    display: none;
+  }
+}
+
+/* belt and braces: the component already skips these cases */
+html.is-lite .hd-layer {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hd-layer {
+    display: none;
+  }
+}

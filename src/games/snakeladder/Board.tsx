@@ -15,6 +15,7 @@ const CREAM = "#f3e7cb";
 const HUES = ["#dca892", "#b9c595", "#e6c77c", "#a7bfcd"];
 const INK = "#3b2a1a";
 const FRAME = 26;
+const SERIF = "Georgia, 'Times New Roman', serif";
 
 function tileFill(n: number) {
   if (n === 1) return "url(#sl-start)";
@@ -155,12 +156,13 @@ function Snake({ s, lite }: { s: SnakeShape; lite: boolean }) {
   );
 }
 
-const PrintedBoard = memo(function PrintedBoard({ lite }: { lite: boolean }) {
+/** The board as SVG. Shown only until it has been turned into an image (see PrintedBoard). */
+function BoardSvg({ lite, svgRef }: { lite: boolean; svgRef?: React.Ref<SVGSVGElement> }) {
   const cells = Array.from({ length: CELLS }, (_, i) => i + 1);
   const V = -FRAME;
   const VS = BOARD + FRAME * 2;
   return (
-    <svg className="sl-board" viewBox={`${V} ${V} ${VS} ${VS}`} role="img" aria-label="Snake and ladder board">
+    <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" className="sl-board" viewBox={`${V} ${V} ${VS} ${VS}`} role="img" aria-label="Snake and ladder board">
       <defs>
         {/* paper: fine grain and soft mottling, printed onto the board */}
         <filter id="sl-grain" x="0" y="0" width="100%" height="100%">
@@ -260,7 +262,7 @@ const PrintedBoard = memo(function PrintedBoard({ lite }: { lite: boolean }) {
       <rect x={0} y={0} width={BOARD} height={BOARD} fill="none" stroke={INK} strokeWidth={4} />
 
       {/* start and finish marks */}
-      <text x={cellCenter(1).x} y={cellCenter(1).y + 26} className="sl-tag" fill="#f6efd6">
+      <text x={cellCenter(1).x} y={cellCenter(1).y + 26} fill="#f6efd6" fontFamily={SERIF} fontSize={17} fontWeight={800} letterSpacing={2} textAnchor="middle" stroke="rgba(30,50,20,0.6)" strokeWidth={3} paintOrder="stroke">
         START
       </text>
       <g transform={`translate(${cellCenter(CELLS).x} ${cellCenter(CELLS).y + 10})`}>
@@ -284,12 +286,13 @@ const PrintedBoard = memo(function PrintedBoard({ lite }: { lite: boolean }) {
       ))}
 
       {/* numbers on top of everything, with a paper-coloured halo so a snake never hides one */}
-      <g className="sl-nums">
+      {/* (styles inline, not CSS: the board is shown as an image, which can't see the page's CSS) */}
+      <g fontFamily={SERIF} fontSize={23} fontWeight={700} strokeWidth={4} strokeLinejoin="round" paintOrder="stroke">
         {cells.map((n) => {
           const { row, col } = cellRC(n);
           const special = n === 1 || n === CELLS;
           return (
-            <text key={n} x={col * CELL + 9} y={(9 - row) * CELL + 27} className={`sl-num${special ? " is-special" : ""}`}>
+            <text key={n} x={col * CELL + 9} y={(9 - row) * CELL + 27} fill={special ? "#fff8e0" : INK} stroke={special ? "rgba(40,25,10,0.55)" : "rgba(246,236,210,0.85)"}>
               {n}
             </text>
           );
@@ -298,6 +301,42 @@ const PrintedBoard = memo(function PrintedBoard({ lite }: { lite: boolean }) {
       <rect x={0} y={0} width={BOARD} height={BOARD} fill="url(#sl-vignette)" pointerEvents="none" />
     </svg>
   );
+}
+
+/* The printed board never changes, but as live SVG (100 squares, clipped snakes, blurred
+   shadows, paper texture) the browser kept re-rasterising it while the dice rolled, which halved
+   the frame rate. So it is drawn once as SVG, turned into an image, and the image is shown from
+   then on (kept for the session, so the menu and the game share it). */
+const boardImages: Partial<Record<"lite" | "full", string>> = {};
+
+const PrintedBoard = memo(function PrintedBoard({ lite }: { lite: boolean }) {
+  const key = lite ? "lite" : "full";
+  const [src, setSrc] = useState(() => boardImages[key] ?? null);
+  const svg = useRef<SVGSVGElement>(null);
+  useLayoutEffect(() => {
+    if (src || !svg.current) return;
+    let alive = true;
+    try {
+      const markup = new XMLSerializer().serializeToString(svg.current);
+      const url = URL.createObjectURL(new Blob([markup], { type: "image/svg+xml" }));
+      const img = new Image();
+      img.src = url;
+      img
+        .decode()
+        .then(() => {
+          boardImages[key] = url;
+          if (alive) setSrc(url);
+        })
+        .catch(() => URL.revokeObjectURL(url)); // keep the live SVG
+    } catch {
+      /* keep the live SVG */
+    }
+    return () => {
+      alive = false;
+    };
+  }, [src, key]);
+  if (src) return <img className="sl-board" src={src} alt="Snake and ladder board" draggable={false} />;
+  return <BoardSvg lite={lite} svgRef={svg} />;
 });
 
 /* ---------------- tokens ---------------- */

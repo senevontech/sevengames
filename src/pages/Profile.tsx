@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, Gamepad2, History, LogOut, Pencil, ShieldCheck, Trophy } from "../components/anim-icons";
+import { ArrowRight, Check, Eye, Gamepad2, History, LogOut, Medal, Pencil, Share2, ShieldCheck, Trophy, Users } from "../components/anim-icons";
 import { promptAdFree } from "../lib/adFreePromo";
 import TokenIcon from "../components/TokenIcon";
 import { useAuthContext } from "../context/AuthContext";
@@ -17,7 +17,10 @@ import "./profile.css";
 import AvatarFrame from "../components/AvatarFrame";
 import FriendsSection from "../components/FriendsSection";
 import AchievementGrid from "../components/AchievementGrid";
+import ChipHistory from "../components/ChipHistory";
 import { achievementsSync, type Achievement } from "../lib/engagement";
+import { usePublicProfile } from "../lib/social";
+import { clubTagText, useMyClub } from "../lib/clubs";
 import { setPerfChoice, usePerf, type PerfChoice } from "../lib/perf";
 
 /** One game's saved level, with a two-step reset. */
@@ -98,6 +101,10 @@ export default function Profile() {
     return () => cancelAnimationFrame(id);
   }, [location.hash, location.key]);
 
+  // header numbers (friends, followers, rank…) from the public profile, and your club
+  const { profile: pub } = usePublicProfile(user?.id ?? null);
+  const { club, loaded: clubLoaded } = useMyClub();
+
   useEffect(() => {
     if (!user) {
       navigate("/login?next=/profile", { replace: true });
@@ -130,19 +137,19 @@ export default function Profile() {
 
   return (
     <div className="acct pf">
-      {/* ---------- identity ---------- */}
-      <section className="ac-card pf-hero">
+      {/* ---------- identity: on the page itself (no card), then the stat strip ---------- */}
+      <section className="pf-hero" aria-label="Your profile">
         <AvatarFrame userId={user.id}>
-        <a href="#avatars" className="pf-avatar" aria-label="Change avatar">
-          {avatarUri ? (
-            <img src={avatarUri} alt="" width={128} height={128} referrerPolicy="no-referrer" />
-          ) : (
-            <span className="pf-avatar-initial">{(displayName ?? "?").charAt(0).toUpperCase()}</span>
-          )}
-          <span className="pf-avatar-edit" aria-hidden="true">
-            <Pencil size={13} />
-          </span>
-        </a>
+          <a href="#avatars" className="pf-avatar" aria-label="Change avatar">
+            {avatarUri ? (
+              <img src={avatarUri} alt="" width={128} height={128} referrerPolicy="no-referrer" />
+            ) : (
+              <span className="pf-avatar-initial">{(displayName ?? "?").charAt(0).toUpperCase()}</span>
+            )}
+            <span className="pf-avatar-edit" aria-hidden="true">
+              <Pencil size={13} />
+            </span>
+          </a>
         </AvatarFrame>
         <div className="pf-id">
           <span className="pf-eyebrow">Player profile</span>
@@ -151,22 +158,85 @@ export default function Profile() {
             <span className="pf-email">{user.email}</span>
             {since ? <span>Joined {since}</span> : null}
           </p>
+          <div className="pf-chips">
+            {club ? (
+              <Link className="pf-chip" to={`/clubs/${club.tag}`}>
+                <Users size={14} aria-hidden="true" /> {club.name} <span className="pf-chip-tag">{clubTagText(club.tag)}</span>
+              </Link>
+            ) : clubLoaded ? (
+              <Link className="pf-chip pf-chip-ghost" to="/clubs">
+                <Users size={14} aria-hidden="true" /> Join a club
+              </Link>
+            ) : null}
+          </div>
         </div>
-        <button
-          type="button"
-          className="ac-btn ac-btn-sm pf-signout"
-          onClick={async () => {
-            await auth.signOut();
-            navigate("/");
-          }}
-        >
-          <LogOut size={15} aria-hidden="true" />
-          Sign out
-        </button>
+        <div className="pf-hero-actions">
+          <ShareProfile userId={user.id} />
+          <Link className="ac-btn ac-btn-sm" to={`/player/${user.id}`}>
+            <Eye size={15} aria-hidden="true" /> Public view
+          </Link>
+          <button
+            type="button"
+            className="ac-btn ac-btn-sm pf-signout"
+            onClick={async () => {
+              await auth.signOut();
+              navigate("/");
+            }}
+          >
+            <LogOut size={15} aria-hidden="true" />
+            Sign out
+          </button>
+        </div>
       </section>
 
+      {/* friends / followers / following (highlighted, open the Friends section) + leaderboard standing */}
+      <ul className="pf-strip" aria-label="Your numbers">
+        <li>
+          <a className="pf-pill is-social" href="#friends">
+            <b>{pub ? formatTokens(pub.friends) : "–"}</b>
+            <span>Friends</span>
+          </a>
+        </li>
+        <li>
+          <a className="pf-pill is-social" href="#friends">
+            <b>{pub ? formatTokens(pub.followers) : "–"}</b>
+            <span>Followers</span>
+          </a>
+        </li>
+        <li>
+          <a className="pf-pill is-social" href="#friends">
+            <b>{pub ? formatTokens(pub.following) : "–"}</b>
+            <span>Following</span>
+          </a>
+        </li>
+        <li>
+          <Link className="pf-pill" to="/leaderboards">
+            <b>{pub?.rank ? `#${pub.rank}` : "–"}</b>
+            <span>
+              <Trophy size={12} aria-hidden="true" /> Rank
+            </span>
+          </Link>
+        </li>
+        <li>
+          <Link className="pf-pill" to="/leaderboards">
+            <b>{pub ? formatTokens(pub.points) : "–"}</b>
+            <span>Points</span>
+          </Link>
+        </li>
+        <li>
+          <Link className="pf-pill" to="/leaderboards">
+            <b>{pub ? formatTokens(pub.firsts) : "–"}</b>
+            <span>
+              <Medal size={12} aria-hidden="true" /> 1st places
+            </span>
+          </Link>
+        </li>
+      </ul>
+
+      <JumpBar />
+
       {/* ---------- wallet + stats ---------- */}
-      <div className="pf-overview">
+      <div className="pf-overview" id="overview">
         <section className="ac-card ac-coin-card pf-wallet" aria-label="Chip wallet">
           <div className="pf-wallet-top">
             <TokenIcon size={52} className="ac-token" />
@@ -223,74 +293,177 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* ---------- avatars + bests ---------- */}
+      {/* ---------- chip usage (collapsible) ---------- */}
+      <ChipHistory title="Chip usage" sub="Where your chips came from and where they went." />
+
+      {/* ---------- two independent stacks (wide screens), so a tall card on one side never leaves
+           a hole on the other; phones: one column in reading order (see .pf-col in profile.css) ---------- */}
       <div className="pf-columns">
-        <section className="ac-card pf-avatars" id="avatars">
-          <div className="ac-section-head">
-            <div>
-              <h2 className="ac-h2">Avatar library</h2>
-              <p className="ac-sub">Pick a style, then a character. It follows your account to every device.</p>
+        <div className="pf-col pf-col-main">
+          <section className="ac-card pf-avatars" id="avatars">
+            <div className="ac-section-head">
+              <div>
+                <h2 className="ac-h2">Avatar library</h2>
+                <p className="ac-sub">Pick a style, then a character. It follows your account to every device.</p>
+              </div>
             </div>
-          </div>
-          <AvatarLibrary user={user} />
-        </section>
+            <AvatarLibrary user={user} />
+          </section>
 
-        <section className="ac-card pf-bests">
-          <div className="ac-section-head">
-            <h2 className="ac-h2">Your bests</h2>
-          </div>
-          {playedGameIds.length === 0 ? (
-            <div className="pf-empty">
-              <p>No rounds yet. Pick a game and set your first record.</p>
-              <Link className="ac-btn ac-btn-primary ac-btn-sm" to="/">
-                Browse games
-              </Link>
+          {ach ? (
+            <div className="pf-ach" id="achievements">
+              <AchievementGrid list={ach} />
             </div>
-          ) : (
+          ) : null}
+
+          <PerformanceCard />
+        </div>
+
+        <div className="pf-col pf-col-side">
+          <section className="ac-card pf-bests" id="bests">
+            <div className="ac-section-head">
+              <h2 className="ac-h2">Your bests</h2>
+            </div>
+            {playedGameIds.length === 0 ? (
+              <div className="pf-empty">
+                <p>No rounds yet. Pick a game and set your first record.</p>
+                <Link className="ac-btn ac-btn-primary ac-btn-sm" to="/">
+                  Browse games
+                </Link>
+              </div>
+            ) : (
+              <ul className="pf-best-list">
+                {playedGameIds.map((gameId) => {
+                  const game = games.find((item) => item.id === gameId);
+                  if (!game) return null;
+                  return (
+                    <li key={gameId}>
+                      <Link to={`/game/${game.id}`}>
+                        <GamePoster game={game} size="thumb" />
+                        <span className="pf-best-title">{game.title}</span>
+                        <span className="pf-best-score">
+                          <small>{scoreLabel(game)}</small>
+                          <b>{bestFor(gameId)}</b>
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          <FriendsSection />
+
+          <section className="ac-card pf-progress" id="progress">
+            <div className="ac-section-head">
+              <div>
+                <h2 className="ac-h2">Saved progress</h2>
+                <p className="ac-sub">Levels you've reached. Resetting sends that game back to level 1.</p>
+              </div>
+            </div>
             <ul className="pf-best-list">
-              {playedGameIds.map((gameId) => {
-                const game = games.find((item) => item.id === gameId);
-                if (!game) return null;
-                return (
-                  <li key={gameId}>
-                    <Link to={`/game/${game.id}`}>
-                      <GamePoster game={game} size="thumb" />
-                      <span className="pf-best-title">{game.title}</span>
-                      <span className="pf-best-score">
-                        <small>{scoreLabel(game)}</small>
-                        <b>{bestFor(gameId)}</b>
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
+              {PROGRESS_GAMES.map((id) => (
+                <ProgressRow key={id} gameId={id} />
+              ))}
             </ul>
-          )}
-        </section>
-
-        <FriendsSection />
-
-        {ach ? <AchievementGrid list={ach} /> : null}
-
-        <section className="ac-card pf-progress">
-          <div className="ac-section-head">
-            <div>
-              <h2 className="ac-h2">Saved progress</h2>
-              <p className="ac-sub">Levels you've reached. Resetting sends that game back to level 1.</p>
-            </div>
-          </div>
-          <ul className="pf-best-list">
-            {PROGRESS_GAMES.map((id) => (
-              <ProgressRow key={id} gameId={id} />
-            ))}
-          </ul>
-        </section>
-
-        <PerformanceCard />
+          </section>
+        </div>
       </div>
     </div>
   );
 }
+
+/** Copy (or share, on phones) the link to your public profile. */
+function ShareProfile({ userId }: { userId: string }) {
+  const [done, setDone] = useState(false);
+  const timer = useRef(0);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  async function share() {
+    const url = `${window.location.origin}/player/${userId}`;
+    try {
+      if (navigator.share && window.matchMedia("(pointer: coarse)").matches) {
+        await navigator.share({ title: "My Senevon profile", url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setDone(true);
+      window.clearTimeout(timer.current);
+      timer.current = window.setTimeout(() => setDone(false), 1800);
+    } catch {
+      /* share sheet closed / clipboard blocked: nothing to do */
+    }
+  }
+
+  return (
+    <button type="button" className="ac-btn ac-btn-sm" onClick={() => void share()}>
+      {done ? <Check size={15} aria-hidden="true" /> : <Share2 size={15} aria-hidden="true" />}
+      {done ? "Link copied" : "Share"}
+    </button>
+  );
+}
+
+const JUMPS = [
+  { id: "overview", label: "Overview" },
+  { id: "avatars", label: "Avatars" },
+  { id: "bests", label: "Bests" },
+  { id: "friends", label: "Friends" },
+  { id: "progress", label: "Progress" },
+  { id: "settings", label: "Settings" },
+] as const;
+
+/** Sticky section chips under the header; the one in view is highlighted. */
+function JumpBar() {
+  const [on, setOn] = useState<string>("overview");
+  const barRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const els = JUMPS.map((j) => document.getElementById(j.id)).filter((e): e is HTMLElement => Boolean(e));
+    if (!els.length) return;
+    // a section counts as "in view" while it crosses a line ~35% down the screen
+    const io = new IntersectionObserver(
+      (entries) => {
+        const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (hit) setOn(hit.target.id);
+      },
+      { rootMargin: "-35% 0px -60% 0px" },
+    );
+    els.forEach((e) => io.observe(e));
+    return () => io.disconnect();
+  }, []);
+
+  // keep the highlighted chip visible in the bar (phones scroll it sideways)
+  useEffect(() => {
+    const chip = barRef.current?.querySelector<HTMLElement>(`[data-jump="${on}"]`);
+    chip?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [on]);
+
+  return (
+    <nav className="pf-jump" aria-label="Profile sections" ref={barRef}>
+      {JUMPS.map((j) => (
+        <a
+          key={j.id}
+          href={`#${j.id}`}
+          data-jump={j.id}
+          className={on === j.id ? "on" : ""}
+          aria-current={on === j.id ? "true" : undefined}
+          onClick={(e) => {
+            const el = document.getElementById(j.id);
+            if (!el) return;
+            e.preventDefault();
+            setOn(j.id);
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+            history.replaceState(null, "", `#${j.id}`);
+          }}
+        >
+          {j.label}
+        </a>
+      ))}
+    </nav>
+  );
+}
+
 
 const PERF_OPTIONS: { v: PerfChoice; label: string }[] = [
   { v: "auto", label: "Auto" },
@@ -302,7 +475,7 @@ const PERF_OPTIONS: { v: PerfChoice; label: string }[] = [
 function PerformanceCard() {
   const { lite, choice } = usePerf();
   return (
-    <section className="ac-card pf-perf">
+    <section className="ac-card pf-perf" id="settings">
       <h2 className="ac-h2">Performance</h2>
       <p className="ac-sub">
         Smooth mode turns off blur and background animations and runs Senevi and the games at a lighter quality, so slower phones stay smooth.
