@@ -2,7 +2,7 @@
    Google Play first, a direct APK for phones without Play, and iOS marked as coming soon. */
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { ArrowRight, ChevronDown, Download, Gauge, Smartphone, UserRound, WifiOff } from "lucide-react";
+import { ArrowRight, ChevronDown, Download, Gauge, Smartphone, UserRound, WifiOff } from "../components/anim-icons";
 import { isNative } from "../lib/native";
 import { APK_NOTE, APK_URL, PLAY_STORE_URL, isAndroidBrowser, isIosBrowser } from "../lib/appLinks";
 import { AppleGlyph, PlayGlyph } from "../components/StoreGlyphs";

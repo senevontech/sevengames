@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "./anim-icons";
 import { Link } from "react-router-dom";
 import { ENTRY } from "../lib/entries";
 import TokenIcon from "./TokenIcon";

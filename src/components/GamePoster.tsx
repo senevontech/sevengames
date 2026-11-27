@@ -11,6 +11,7 @@ import {
   CircleDot,
   Columns3,
   Copy,
+  Dices,
   Gamepad2,
   Grid2x2,
   Hammer,
@@ -32,7 +33,7 @@ import {
   Wind,
   Worm,
   type LucideIcon,
-} from "lucide-react";
+} from "./anim-icons";
 import type { Game } from "../catalog";
 
 const byEngine: Record<string, LucideIcon> = {
@@ -62,6 +63,7 @@ const byEngine: Record<string, LucideIcon> = {
   chain: Atom,
   tune: Music4,
   lastcard: GalleryHorizontalEnd,
+  snakeladder: Dices,
 };
 
 const byId: Record<string, LucideIcon> = {

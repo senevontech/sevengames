@@ -2,7 +2,7 @@
    game page, open the game's own site. Android players of games with an app get a choice first:
    "Open in app" or "Open in web". Mounted once in App. */
 import { useEffect, useState } from "react";
-import { ExternalLink, Smartphone, X } from "lucide-react";
+import { ExternalLink, Smartphone, X } from "./anim-icons";
 import { getGame } from "../catalog";
 import { asksForApp, isExternal, openGameApp, openGameWeb, type ExternalGame } from "../lib/externalGames";
 import { GamePoster } from "./GamePoster";

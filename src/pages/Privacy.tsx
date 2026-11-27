@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import "./info-page.css";
 
 /*
  * Privacy policy. Describes what the site actually does today (Supabase accounts, scores,
@@ -18,7 +19,7 @@ export default function Privacy() {
   }, []);
 
   return (
-    <article className="page narrow privacy-page">
+    <article className="page info-page privacy-page">
       <p className="eyebrow">Legal</p>
       <h1>Privacy policy</h1>
       <p className="privacy-updated">Last updated: {UPDATED}</p>

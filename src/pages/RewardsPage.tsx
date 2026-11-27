@@ -2,7 +2,7 @@
    weekly competition, friend challenges, tournaments, invite-a-friend and achievements. */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { CalendarCheck, Check, Copy, Gift, Swords, Target, Trophy, UserPlus, Users } from "lucide-react";
+import { CalendarCheck, Check, Copy, Gift, Swords, Target, Trophy, UserPlus, Users } from "../components/anim-icons";
 import { useAuthContext } from "../context/AuthContext";
 import { useTokens } from "../lib/tokens";
 import { useMyCircle } from "../lib/social";
@@ -10,6 +10,7 @@ import { games } from "../catalog";
 import { formatTokens } from "../lib/currency";
 import TokenIcon from "../components/TokenIcon";
 import PlayerAvatar from "../components/PlayerAvatar";
+import { celebrate } from "../lib/celebrate";
 import AchievementGrid from "../components/AchievementGrid";
 import {
   achievementsSync,
@@ -190,7 +191,7 @@ export default function RewardsPage() {
               type="button"
               className="ac-btn ac-btn-primary"
               disabled={daily.claimed || busy === "daily"}
-              onClick={() => void act("daily", async () => `+${formatTokens((await dailyClaim()).amount)} chips. See you tomorrow!`)}
+              onClick={() => void act("daily", async () => { const r = await dailyClaim(); celebrate("stars"); return `+${formatTokens(r.amount)} chips. See you tomorrow!`; })}
             >
               {daily.claimed ? "Claimed today ✓" : `Claim ${formatTokens(daily.reward)} chips`}
             </button>
@@ -229,7 +230,7 @@ export default function RewardsPage() {
                       <Check size={14} /> +{c.reward}
                     </span>
                   ) : done && user ? (
-                    <button type="button" className="ac-btn ac-btn-sm ac-btn-primary" disabled={busy === c.id} onClick={() => void act(c.id, async () => `+${formatTokens((await challengeClaim(c.id)).amount)} chips`)}>
+                    <button type="button" className="ac-btn ac-btn-sm ac-btn-primary" disabled={busy === c.id} onClick={() => void act(c.id, async () => { const r = await challengeClaim(c.id); celebrate("coins"); return `+${formatTokens(r.amount)} chips`; })}>
                       Claim <TokenIcon size={13} /> {c.reward}
                     </button>
                   ) : (

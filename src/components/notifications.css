@@ -11,8 +11,28 @@
   --np-accent: #ff8a3d;
   --np-raise-sm: 3px 3px 8px rgba(0, 0, 0, 0.5), -2px -2px 6px rgba(255, 255, 255, 0.04);
   --np-well: inset 3px 3px 8px rgba(0, 0, 0, 0.5), inset -2px -2px 6px rgba(255, 255, 255, 0.04);
+  --np-unread: rgba(255, 138, 61, 0.07);
+  --np-err: #ff7a7a;
+  --np-shadow: 12px 12px 30px rgba(0, 0, 0, 0.55), -6px -6px 18px rgba(255, 255, 255, 0.035);
   color: var(--np-text);
   font-family: inherit;
+}
+
+/* light pages: the same soft look on the page's light surface (game2.css --neu-* light tokens) */
+.np[data-theme="light"],
+.nt[data-theme="light"] {
+  --np-bg: #e3e5ea;
+  --np-bg-2: #eceef2;
+  --np-text: #1d1f24;
+  --np-muted: rgba(29, 31, 36, 0.58);
+  --np-line: rgba(0, 0, 0, 0.07);
+  --np-accent: #e25a00;
+  --np-raise-sm: 3px 3px 8px #b6bac3, -3px -3px 8px #ffffff;
+  --np-well: inset 3px 3px 7px #b6bac3, inset -3px -3px 7px #ffffff;
+  --np-unread: rgba(226, 90, 0, 0.08);
+  --np-err: #c62828;
+  --np-shadow: 14px 14px 32px rgba(120, 126, 138, 0.55), -10px -10px 26px #ffffff;
+  --np-sheet-shade: rgba(60, 66, 80, 0.22);
 }
 
 /* ---------- bell ---------- */
@@ -71,9 +91,7 @@
   width: min(380px, calc(100vw - 24px));
   max-height: min(560px, calc(100dvh - 90px));
   border-radius: 20px;
-  box-shadow:
-    12px 12px 30px rgba(0, 0, 0, 0.55),
-    -6px -6px 18px rgba(255, 255, 255, 0.035);
+  box-shadow: var(--np-shadow);
   animation: np-drop 0.18s ease-out both;
 }
 
@@ -105,7 +123,7 @@
   max-height: 86dvh;
   border-radius: 22px 22px 0 0;
   padding-bottom: env(safe-area-inset-bottom);
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 -10px 30px var(--np-sheet-shade, rgba(0, 0, 0, 0.5));
   animation: np-up 0.24s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
@@ -246,7 +264,7 @@
 }
 
 .np-item.is-unread {
-  background: rgba(255, 138, 61, 0.07);
+  background: var(--np-unread);
 }
 
 .np-main {
@@ -427,7 +445,7 @@
 .np-err {
   flex-basis: 100%;
   font-size: 12px;
-  color: #ff7a7a;
+  color: var(--np-err);
 }
 
 /* ---------- live toast ---------- */
@@ -441,9 +459,7 @@
   width: min(360px, calc(100vw - 32px));
   border-radius: 16px;
   background: var(--np-bg);
-  box-shadow:
-    10px 10px 26px rgba(0, 0, 0, 0.5),
-    -4px -4px 14px rgba(255, 255, 255, 0.03);
+  box-shadow: var(--np-shadow);
   animation: nt-in 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 

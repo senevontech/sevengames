@@ -3,7 +3,7 @@
    In a club: club rooms, the club wallet, members, and (for the owner) settings. */
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { Check, Copy, Crown, DoorOpen, Globe, Lock, LogOut, Search, Settings, Shield, Users, Wallet } from "lucide-react";
+import { Check, Copy, Crown, DoorOpen, Globe, Lock, LogOut, Search, Settings, Shield, Users, Wallet } from "../components/anim-icons";
 import { useAuthContext } from "../context/AuthContext";
 import { useTokens } from "../lib/tokens";
 import {

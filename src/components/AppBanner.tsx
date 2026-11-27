@@ -2,7 +2,7 @@
    Hidden on the download page itself and inside games; closing it is remembered. */
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { X } from "lucide-react";
+import { X } from "./anim-icons";
 import { isNative } from "../lib/native";
 import { GET_APP_PATH, isAndroidBrowser } from "../lib/appLinks";
 import "./app-banner.css";

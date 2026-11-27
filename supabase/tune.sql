@@ -14,7 +14,7 @@
 
 -- XP for tune (keep this game list in sync with shop.sql, matches.sql and chain.sql)
 alter table public.game_xp drop constraint if exists game_xp_game_check;
-alter table public.game_xp add constraint game_xp_game_check check (game in ('chess', 'ludo', 'arrows', 'pool', 'chain', 'tune', 'lastcard'));
+alter table public.game_xp add constraint game_xp_game_check check (game in ('chess', 'ludo', 'arrows', 'pool', 'chain', 'tune', 'lastcard', 'snakeladder'));
 
 create table if not exists public.tune_songs (
   id uuid primary key default gen_random_uuid(),

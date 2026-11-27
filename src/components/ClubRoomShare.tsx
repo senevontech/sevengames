@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Users } from "lucide-react";
+import { Users } from "./anim-icons";
 import { CLUB_GAMES, clubApi, clubErrorText, setMyClub, useMyClub, type ClubGame } from "../lib/clubs";
 
 /**

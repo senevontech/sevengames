@@ -5,8 +5,8 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
-import { markRead, notifIcon, notifTarget, notifText, onNotifArrival, useNotifications, type Notif } from "../lib/notifications";
+import { X } from "./anim-icons";
+import { markRead, notifIcon, notifTarget, notifText, onNotifArrival, pageTheme, useNotifications, type Notif } from "../lib/notifications";
 import { formatTokens } from "../lib/currency";
 import PlayerAvatar from "./PlayerAvatar";
 import "./notifications.css";
@@ -17,6 +17,7 @@ export default function NotifToast() {
   const { names } = useNotifications();
   const navigate = useNavigate();
   const [n, setN] = useState<Notif | null>(null);
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [paused, setPaused] = useState(false);
   const timer = useRef(0);
 
@@ -25,6 +26,7 @@ export default function NotifToast() {
       onNotifArrival((next) => {
         const html = document.documentElement;
         if (html.classList.contains("gp-playing") || document.querySelector(".np")) return;
+        setTheme(pageTheme());
         setN(next);
       }),
     [],
@@ -47,7 +49,7 @@ export default function NotifToast() {
   };
 
   return createPortal(
-    <div className="nt" role="status" aria-live="polite" onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)}>
+    <div className="nt" data-theme={theme} role="status" aria-live="polite" onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)}>
       <button type="button" className="nt-main" onClick={open}>
         <span className="np-av">
           {from ? <PlayerAvatar id={from.id} name={from.name} avatar={from.avatar} size={36} /> : <span className="np-av-blank" />}

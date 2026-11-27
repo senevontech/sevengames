@@ -1,7 +1,8 @@
 /* "You won!" / "You lost" / "Draw" card shown over the game when a round is decided.
    Shared by every game with a winner (tic-tac-toe, connect four, minesweeper, hangman, carrom…).
    Tapping "See board" (or the backdrop) hides it so the final position stays visible. */
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { celebrate } from "../lib/celebrate";
 import "./result-banner.css";
 import { GameShopButton } from "./gameShop";
 
@@ -57,6 +58,10 @@ export default function ResultBanner({
   onAgain?: () => void;
 }) {
   const [hidden, setHidden] = useState(false);
+  // a win gets confetti once the round is over (skipped in Lite mode)
+  useEffect(() => {
+    if (outcome === "win") celebrate("confetti");
+  }, [outcome]);
   if (hidden) return null;
   return (
     <div className={`rb rb-${outcome}`} role="dialog" aria-modal="false" aria-live="assertive" onClick={() => setHidden(true)}>

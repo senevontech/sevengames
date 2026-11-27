@@ -3,13 +3,14 @@ import { useAuthContext } from "../context/AuthContext";
 import { watchRewarded } from "../lib/admob";
 import { isNative } from "../lib/native";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { X } from "./anim-icons";
 import TokenIcon from "./TokenIcon";
 import { useLiveAds, type Ad } from "../lib/ads";
 import { trackAd } from "../lib/track";
 import { promptAdFree } from "../lib/adFreePromo";
 import { tokenErrorText, useTokens } from "../lib/tokens";
 import "../pages/tokens.css";
+import { celebrate } from "../lib/celebrate";
 
 /*
  * "Watch an ad, earn tokens".
@@ -127,6 +128,7 @@ export default function AdRewardModal({ open, onClose }: { open: boolean; onClos
       await claimAd(view.id);
       viewRef.current = null;
       setStage({ kind: "done", reward: wallet?.ad_reward ?? 50 });
+      celebrate("coins");
     } catch (err) {
       setStage({ kind: "message", text: tokenErrorText(err) });
     }

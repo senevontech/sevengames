@@ -154,6 +154,15 @@ export async function answerRequest(n: Notif, accept: boolean) {
   void markRead([n.id]);
 }
 
+/** The page's light / dark mode (home + soft pages: data-theme, game / account pages:
+    data-gtheme, other pages are dark). The window and toast are portaled out of the page, so
+    they ask: from the bell when there is one, else the page. */
+export function pageTheme(from?: Element | null): "light" | "dark" {
+  const sel = "[data-theme], [data-gtheme]";
+  const host = from?.closest(sel) ?? document.querySelector(sel);
+  return (host?.getAttribute("data-theme") ?? host?.getAttribute("data-gtheme")) === "light" ? "light" : "dark";
+}
+
 /** Where tapping a notification goes (the sender's profile), or null. */
 export const notifTarget = (n: Notif) => (n.from_user ? `/player/${n.from_user}` : null);
 

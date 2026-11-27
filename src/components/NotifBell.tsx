@@ -2,7 +2,7 @@
    bottom sheet on phones). The window's code is its own small download, fetched on first open
    (or when the pointer comes near the bell). Signed-out players see no bell. */
 import { lazy, Suspense, useRef, useState } from "react";
-import { Bell } from "lucide-react";
+import { Bell } from "./anim-icons";
 import { useAuthContext } from "../context/AuthContext";
 import { useUnreadCount } from "../lib/notifications";
 import "./notifications.css";
@@ -31,7 +31,7 @@ export default function NotifBell({ className = "", size = 19 }: { className?: s
         onPointerEnter={() => void loadPanel()}
         onClick={() => setOpen((o) => !o)}
       >
-        <Bell size={size} strokeWidth={1.8} aria-hidden="true" />
+        <Bell size={size} strokeWidth={1.8} aria-hidden="true" loop={unread > 0} play={unread} />
         {unread ? <span className="nb-badge">{unread > 9 ? "9+" : unread}</span> : null}
       </button>
       {open ? (

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Check } from "lucide-react";
+import { Check } from "./anim-icons";
 import TokenIcon from "./TokenIcon";
 import { useAuthContext } from "../context/AuthContext";
 import { useAvatar } from "../lib/avatar";

@@ -1,0 +1,97 @@
+/* Info pages on the soft frame (SoftPage): privacy policy, about us, connecting a partner game and
+   the sign-in callback. A raised soft card on the page surface; follows the page's light / dark
+   theme through the frame's --gs-ink / --neu-* tokens. */
+.g2 .info-page {
+  max-width: 760px;
+  margin: 92px auto 56px;
+  padding: 36px 40px 40px;
+  border-radius: 28px;
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise);
+  color: var(--g2-muted);
+  line-height: 1.65;
+  flex: none;
+}
+
+.g2 .info-page.narrow {
+  max-width: 560px;
+}
+
+.g2 .info-page .eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--neu-accent);
+}
+
+.g2 .info-page h1 {
+  margin: 0 0 6px;
+  font-size: clamp(28px, 5vw, 40px);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--gs-ink);
+}
+
+.g2 .info-page h2 {
+  margin: 32px 0 10px;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  color: var(--gs-ink);
+}
+
+.g2 .info-page p,
+.g2 .info-page li {
+  font-size: 15.5px;
+}
+
+.g2 .info-page ul {
+  display: grid;
+  gap: 8px;
+  padding-left: 20px;
+}
+
+.g2 .info-page strong {
+  color: var(--gs-ink);
+}
+
+.g2 .info-page a {
+  color: var(--neu-accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.g2 .info-page .privacy-updated {
+  margin-bottom: 22px;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+/* sign-in callback / partner game connect: a small centred status card */
+.g2 .info-page.callback-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  color: var(--gs-ink);
+}
+
+.g2 .info-page.callback-page svg {
+  color: var(--neu-accent);
+}
+
+@media (max-width: 640px) {
+  .g2 .info-page {
+    margin: 66px 12px 32px;
+    padding: 26px 20px 28px;
+    border-radius: 22px;
+  }
+
+  .g2 .info-page p,
+  .g2 .info-page li {
+    font-size: 15px;
+  }
+}

@@ -1,6 +1,6 @@
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
-import { Smartphone, Trophy } from "lucide-react";
+import { Smartphone, Trophy } from "../components/anim-icons";
 import { useAuthContext } from "../context/AuthContext";
 import AuthForm from "../components/AuthForm";
 import TokenIcon from "../components/TokenIcon";

@@ -17,7 +17,7 @@ import {
   Wand2,
   Zap,
   type LucideIcon,
-} from "lucide-react";
+} from "../components/anim-icons";
 import type { GameCategory } from "../catalog";
 
 export const categoryIcon: Record<GameCategory | "All", LucideIcon> = {

@@ -2,7 +2,7 @@
    Plus states for packs you don't own), and the friends-chat unread counts. */
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { BellOff, Bell } from "lucide-react";
+import { BellOff, Bell } from "../anim-icons";
 import TokenIcon from "../TokenIcon";
 import { useShop } from "../../lib/shop";
 import { useAuthContext } from "../../context/AuthContext";

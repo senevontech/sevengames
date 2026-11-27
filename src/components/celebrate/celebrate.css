@@ -1,0 +1,13 @@
+.cel-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  contain: strict;
+}
+
+.cel-anim {
+  pointer-events: none;
+}

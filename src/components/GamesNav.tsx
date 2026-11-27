@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { SeneviIcon } from "../senevi/Senevi";
 import { Link, useNavigate } from "react-router-dom";
-import { Gift, LayoutGrid, Menu, Smartphone, Users, X } from "lucide-react";
+import { Gift, LayoutGrid, Moon, Smartphone, Sun, Users } from "./anim-icons";
+import { MenuToggle } from "./anim-icons/toggles";
 import { isNative } from "../lib/native";
 import { GET_APP_PATH } from "../lib/appLinks";
 import { categories, games, type Game } from "../catalog";
@@ -90,10 +91,14 @@ function CategoryMenu() {
 }
 
 /**
- * Phones: one hamburger button opening a panel with search, home, leaderboards and categories.
+ * Phones: one hamburger button opening a panel with search, home, leaderboards, clubs, the
+ * light / dark switch and categories.
  * Closes on outside tap, Escape, or picking anything.
  */
-function MobileMenu({ onPick }: { onPick: (g: Game) => void }) {
+/** Light / dark switch: a header button on wide screens, an item in the phone menu. */
+export type NavTheme = { dark: boolean; toggle: () => void };
+
+function MobileMenu({ onPick, theme }: { onPick: (g: Game) => void; theme?: NavTheme }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
@@ -129,7 +134,7 @@ function MobileMenu({ onPick }: { onPick: (g: Game) => void }) {
         aria-expanded={open}
         onClick={() => (open ? close() : setOpen(true))}
       >
-        {open ? <X size={22} strokeWidth={1.8} aria-hidden="true" /> : <Menu size={22} strokeWidth={1.8} aria-hidden="true" />}
+        <MenuToggle open={open} size={22} strokeWidth={1.8} />
       </button>
       {open ? (
         <div className="gs-burger-panel">
@@ -216,6 +221,17 @@ function MobileMenu({ onPick }: { onPick: (g: Game) => void }) {
                     <span className="gs-cats-name">Clubs</span>
                   </Link>
                 </li>
+                {theme ? (
+                  <li>
+                    {/* stays open, so the switch is seen */}
+                    <button type="button" onClick={theme.toggle}>
+                      <span className="gs-cats-icon" aria-hidden="true">
+                        {theme.dark ? <Sun size={16} /> : <Moon size={16} />}
+                      </span>
+                      <span className="gs-cats-name">{theme.dark ? "Light mode" : "Dark mode"}</span>
+                    </button>
+                  </li>
+                ) : null}
                 {!isNative ? (
                   <li>
                     <Link to={GET_APP_PATH} onClick={close}>
@@ -255,16 +271,19 @@ function MobileMenu({ onPick }: { onPick: (g: Game) => void }) {
 /**
  * Picking a search result calls `onPick` (the globe spins to it); without it, opens the game.
  * `children` (extra icon buttons) sit just before the account button and stay visible on phones.
- * `mobileMenu`: on phones, search / leaderboards / home / categories fold into a hamburger menu.
+ * `mobileMenu`: on phones, search / leaderboards / home / categories / clubs fold into a hamburger
+ * menu (and the light / dark switch, when `theme` is given).
  */
 export default function GamesNav({
   onPick,
   children,
   mobileMenu = false,
+  theme,
 }: {
   onPick?: (g: Game) => void;
   children?: ReactNode;
   mobileMenu?: boolean;
+  theme?: NavTheme;
 }) {
   const navigate = useNavigate();
   // ---- search: filter by title or category, pick → spin that game to the front ----
@@ -384,13 +403,24 @@ export default function GamesNav({
         </Link>
         <CategoryMenu />
         </div>
-        {/* Clubs: shown on every screen size (not folded into the phone menu) */}
-        <Link className="gs-home gs-clubs" to="/clubs" aria-label="Clubs" title="Clubs">
+        {/* Clubs and the theme switch: in the phone menu when there is one */}
+        <Link className="gs-home gs-clubs gs-desk-only" to="/clubs" aria-label="Clubs" title="Clubs">
           <Users size={21} strokeWidth={1.6} aria-hidden="true" />
         </Link>
         {children}
+        {theme ? (
+          <button
+            type="button"
+            className="gs-icon-btn gs-desk-only"
+            aria-label={theme.dark ? "Switch to light theme" : "Switch to dark theme"}
+            title={theme.dark ? "Light theme" : "Dark theme"}
+            onClick={theme.toggle}
+          >
+            {theme.dark ? <Sun size={19} strokeWidth={1.8} aria-hidden="true" /> : <Moon size={19} strokeWidth={1.8} aria-hidden="true" />}
+          </button>
+        ) : null}
         <NotifBell className="gs-icon-btn" />
-        {mobileMenu ? <MobileMenu onPick={pickGame} /> : null}
+        {mobileMenu ? <MobileMenu onPick={pickGame} theme={theme} /> : null}
         <NavAccount />
       </div>
     </nav>

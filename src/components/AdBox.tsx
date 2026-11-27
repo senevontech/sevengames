@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight } from "./anim-icons";
 import { useLiveAds } from "../lib/ads";
 import { useSiteSettings } from "../lib/siteSettings";
 import { trackAd } from "../lib/track";

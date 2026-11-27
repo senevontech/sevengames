@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { Check, Shuffle } from "lucide-react";
+import { Check, Shuffle } from "./anim-icons";
 import {
   AVATAR_STYLES,
   googlePhoto,

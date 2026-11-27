@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Check, Crown, ShieldCheck, X } from "lucide-react";
+import { Check, Crown, ShieldCheck, X } from "./anim-icons";
 import TokenIcon from "./TokenIcon";
 import { useAuthContext } from "../context/AuthContext";
 import { tokenErrorText, usePlanPrices, useShowAds, useTokens } from "../lib/tokens";

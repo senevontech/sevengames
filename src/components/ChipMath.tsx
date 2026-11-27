@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SeneviIcon } from "../senevi/Senevi";
-import { Bot, Globe, RotateCcw, Users } from "lucide-react";
+import { Bot, Globe, RotateCcw, Users } from "./anim-icons";
 import { ENTRY } from "../lib/entries";
 import TokenIcon from "./TokenIcon";
 import "./chip-math.css";

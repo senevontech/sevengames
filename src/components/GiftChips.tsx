@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Gift } from "lucide-react";
+import { Gift } from "./anim-icons";
 import { ENTRY, entryErrorText, giftChips, useGiftLimits } from "../lib/entries";
 import { useTokens } from "../lib/tokens";
 import TokenIcon from "./TokenIcon";

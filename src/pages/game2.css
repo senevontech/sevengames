@@ -166,22 +166,32 @@
   color: var(--g2-muted);
 }
 
+/* phones: a compact one-line header (logo · chips · bell · menu · account) */
 @media (max-width: 640px) {
   .gs.g2 .h3-nav {
-    padding: 12px 16px;
+    padding: 8px 12px;
   }
 
   .gs.g2 .h3-nav-end {
-    gap: 10px;
+    gap: 8px;
   }
 
   .gs.g2 .gs-icon-btn,
   .gs.g2 .gs-home,
   .gs.g2 .h3-nav .h3-account,
   .gs.g2 .h3-nav .h3-account-icon {
-    width: 36px;
-    min-width: 36px;
-    height: 36px;
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+  }
+
+  .gs.g2 .gs-icon-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .gs.g2 .gs-burger-panel {
+    top: 56px;
   }
 }
 
@@ -189,7 +199,7 @@
    Layout
    ============================================================ */
 .g2-main {
-  padding: 74px 0 48px;
+  padding: 62px 0 48px; /* phones: under the compact header (wider screens below) */
 }
 
 .g2-section {
@@ -1043,8 +1053,8 @@
 @media (max-width: 640px) {
   .gs.g2 .h3-nav .tk-pill,
   .gs.g2 .h3-nav .tk-pill.tk-pill-solid {
-    height: 36px;
-    padding: 0 11px 0 6px;
+    height: 34px;
+    padding: 0 10px 0 5px;
     font-size: 12.5px;
   }
 
@@ -1289,8 +1299,8 @@
   gap: 12px;
 }
 
-/* the header download button: phones already have it in the menu, keep the bar roomy */
-@media (max-width: 420px) {
+/* the header download button: phones have it in the menu, keep the bar compact */
+@media (max-width: 640px) {
   .gs.g2 .g2-get-app {
     display: none;
   }

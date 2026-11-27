@@ -3,7 +3,7 @@
    shows; games that sell nothing get no shop, and useGameShop() returns null for them.
    Carrom draws the sheet itself (useCustomGameShop) because its progress lives in the game. */
 import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag } from "../components/anim-icons";
 import ShopSheet from "../components/ShopSheet";
 import type { ShopScope } from "../components/ShopSection";
 

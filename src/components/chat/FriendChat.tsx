@@ -2,7 +2,7 @@
    New messages arrive live; opening it marks them read. Block / unblock stops their messages. */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, ShieldBan } from "lucide-react";
+import { ChevronLeft, ShieldBan } from "../anim-icons";
 import PlayerAvatar from "../PlayerAvatar";
 import { supabase } from "../../supabase";
 import { useAuthContext } from "../../context/AuthContext";

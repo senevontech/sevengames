@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Crown, Download, Moon, Play, Sun } from "lucide-react";
+import { Crown, Download, Play } from "../components/anim-icons";
 import { isNative } from "../lib/native";
 import { APK_URL, GET_APP_PATH, PLAY_STORE_URL } from "../lib/appLinks";
 import { PlayGlyph } from "../components/StoreGlyphs";
@@ -53,9 +53,9 @@ const byIds = (ids: string[]) => ids.map((id) => getGame(id)).filter((g): g is G
 const COLLECTIONS: { key: string; label: string; games: Game[] }[] = [
   // the catalog lists the newest games last
   { key: "new", label: "New", games: games.slice(-8).reverse() },
-  { key: "online", label: "Multiplayer", games: byIds(["chess", "ludo", "carrom", "arrows"]) },
+  { key: "online", label: "Multiplayer", games: byIds(["chess", "ludo", "carrom", "arrows", "snake-ladder"]) },
   { key: "quick", label: "Quick games", games: games.filter((g) => g.minutes <= 2) },
-  { key: "duo", label: "2 players", games: byIds(["chess", "ludo", "carrom"]) },
+  { key: "duo", label: "2 players", games: byIds(["chess", "ludo", "carrom", "snake-ladder"]) },
   {
     key: "brain",
     label: "Brain teasers",
@@ -322,22 +322,13 @@ export default function Game2() {
       onPointerDown={prefetchFromEvent}
       onPointerOver={prefetchFromEvent}
     >
-      <GamesNav mobileMenu>
+      <GamesNav mobileMenu theme={{ dark, toggle }}>
         {!isNative ? (
           <Link to={GET_APP_PATH} className="gs-icon-btn g2-get-app" aria-label="Get the app" title="Get the app">
             <Download size={19} strokeWidth={1.8} aria-hidden="true" />
           </Link>
         ) : null}
         <TokenPill variant="solid" />
-        <button
-          type="button"
-          className="gs-icon-btn"
-          aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
-          title={dark ? "Light theme" : "Dark theme"}
-          onClick={toggle}
-        >
-          {dark ? <Sun size={19} strokeWidth={1.8} aria-hidden="true" /> : <Moon size={19} strokeWidth={1.8} aria-hidden="true" />}
-        </button>
       </GamesNav>
 
       <main className="g2-main">

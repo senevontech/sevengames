@@ -6,7 +6,7 @@ import {
   Minimize2,
   Share2,
   X,
-} from "lucide-react";
+} from "./anim-icons";
 import { RiFullscreenLine, RiGamepadLine, RiPlayFill } from "./ReIcons";
 
 export type ConsoleGame = {

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LoaderCircle } from "lucide-react";
+import { Spinner } from "../components/anim-icons/toggles";
+import "./info-page.css";
 import { supabase } from "../supabase";
 
 export default function AuthCallback() {
@@ -23,8 +24,8 @@ export default function AuthCallback() {
   }, [navigate]);
 
   return (
-    <div className="page narrow callback-page">
-      <LoaderCircle className="spin" size={22} />
+    <div className="page narrow info-page callback-page">
+      <Spinner size={22} />
       <p>Signing you in…</p>
     </div>
   );

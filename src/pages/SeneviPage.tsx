@@ -3,7 +3,7 @@
    in, your record against him (this device) and his speech switch. */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { MessageCircle, MessageCircleOff, Swords } from "lucide-react";
+import { MessageCircle, MessageCircleOff, Swords } from "../components/anim-icons";
 import { games } from "../catalog";
 import { GamePoster } from "../components/GamePoster";
 import { readSeneviRecord, SeneviFace, SeneviIcon, SeneviLine, setSeneviMuted, useSeneviMuted, SENEVI_NAME } from "../senevi/Senevi";
@@ -17,6 +17,7 @@ const HIS_GAMES: { id: string; how: string }[] = [
   { id: "pool", how: "Plays at your Eight Ball level, so he gets better as you do." },
   { id: "carrom", how: "Aims for the easiest pot, and goes for the queen when it's on." },
   { id: "ludo", how: "Up to three Senevis at once. Loves a capture." },
+  { id: "snake-ladder", how: "Pure luck, so he can't cheat. Watch him sulk on a long snake." },
   { id: "connect-four", how: "Always blocks your fours, so set up two threats at once." },
   { id: "noughts", how: "Never misses a win or a block. Can you force a draw… or better?" },
 ];

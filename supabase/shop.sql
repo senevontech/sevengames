@@ -77,7 +77,7 @@ on conflict (item_id) do nothing;
 alter table public.shop_items add column if not exists game text;
 -- which game's level unlocks an item: chess / ludo (game XP) or arrows (puzzle level reached)
 alter table public.shop_items drop constraint if exists shop_items_game_check;
-alter table public.shop_items add constraint shop_items_game_check check (game in ('chess', 'ludo', 'arrows', 'pool', 'chain', 'tune', 'lastcard'));
+alter table public.shop_items add constraint shop_items_game_check check (game in ('chess', 'ludo', 'arrows', 'pool', 'chain', 'tune', 'lastcard', 'snakeladder'));
 alter table public.shop_items add column if not exists min_level integer not null default 1 check (min_level between 1 and 30);
 -- Senevon Plus exclusives: members own them for free, nobody else can buy them
 alter table public.shop_items add column if not exists plus_only boolean not null default false;
@@ -203,14 +203,14 @@ alter table public.player_cosmetics add column if not exists pool_cue text;
 -- XP per game (chess, ludo, arrows, pool). Carrom keeps its own (carrom.sql).
 create table if not exists public.game_xp (
   user_id uuid not null references auth.users(id) on delete cascade,
-  game text not null check (game in ('chess', 'ludo', 'arrows', 'pool', 'chain', 'tune', 'lastcard')),
+  game text not null check (game in ('chess', 'ludo', 'arrows', 'pool', 'chain', 'tune', 'lastcard', 'snakeladder')),
   xp integer not null default 0 check (xp >= 0),
   last_award timestamptz,
   primary key (user_id, game)
 );
 -- (tables made earlier: keep the game list current — same list as matches.sql)
 alter table public.game_xp drop constraint if exists game_xp_game_check;
-alter table public.game_xp add constraint game_xp_game_check check (game in ('chess', 'ludo', 'arrows', 'pool', 'chain', 'tune', 'lastcard'));
+alter table public.game_xp add constraint game_xp_game_check check (game in ('chess', 'ludo', 'arrows', 'pool', 'chain', 'tune', 'lastcard', 'snakeladder'));
 alter table public.game_xp enable row level security;
 drop policy if exists "Own game xp" on public.game_xp;
 create policy "Own game xp" on public.game_xp for select to authenticated using (auth.uid() = user_id);
@@ -305,7 +305,7 @@ returns jsonb language sql stable security definer set search_path = public as $
         'pool_table', pool_table, 'pool_cue', pool_cue
       ) from player_cosmetics where user_id = p_user
     ), '{}'::jsonb),
-    'xp', jsonb_build_object('chess', _game_xp(p_user, 'chess'), 'ludo', _game_xp(p_user, 'ludo'), 'arrows', _game_xp(p_user, 'arrows'), 'pool', _game_xp(p_user, 'pool'), 'chain', _game_xp(p_user, 'chain'), 'tune', _game_xp(p_user, 'tune'), 'lastcard', _game_xp(p_user, 'lastcard')),
+    'xp', jsonb_build_object('chess', _game_xp(p_user, 'chess'), 'ludo', _game_xp(p_user, 'ludo'), 'arrows', _game_xp(p_user, 'arrows'), 'pool', _game_xp(p_user, 'pool'), 'chain', _game_xp(p_user, 'chain'), 'tune', _game_xp(p_user, 'tune'), 'lastcard', _game_xp(p_user, 'lastcard'), 'snakeladder', _game_xp(p_user, 'snakeladder')),
     'levels', jsonb_build_object('arrows', _shop_level(p_user, 'arrows')),
     'free', _shop_free(p_user),
     'tokens', coalesce((select balance from token_wallets where user_id = p_user), 0)
@@ -411,7 +411,7 @@ declare
   v_last timestamptz;
 begin
   if v_user is null then raise exception 'not_signed_in'; end if;
-  if p_game not in ('chess', 'ludo', 'pool', 'lastcard') then raise exception 'bad_game'; end if;
+  if p_game not in ('chess', 'ludo', 'pool', 'lastcard', 'snakeladder') then raise exception 'bad_game'; end if;
   insert into game_xp (user_id, game) values (v_user, p_game) on conflict do nothing;
   select last_award into v_last from game_xp where user_id = v_user and game = p_game for update;
   if v_last is null or v_last < now() - interval '20 seconds' then

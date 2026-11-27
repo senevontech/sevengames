@@ -41,7 +41,8 @@ export type GameEngine =
   | "pool"
   | "chain"
   | "tune"
-  | "lastcard";
+  | "lastcard"
+  | "snakeladder";
 
 export type Game = {
   id: string;
@@ -472,6 +473,17 @@ export const games: Game[] = [
     minutes: 15,
     accent: "#e53935",
     description: "Roll, race your four tokens home and knock rivals back to base. 2–4 players: Senevi, friends or online.",
+  },
+  {
+    id: "snake-ladder",
+    title: "Snake & Ladder",
+    category: "Classic",
+    kind: "builtin",
+    engine: "snakeladder",
+    difficulty: "Easy",
+    minutes: 10,
+    accent: "#4f7838",
+    description: "The classic board: roll, climb the ladders, slide down the snakes, and land exactly on 100 to win. 2–4 players: Senevi, friends on one device, or online.",
   },
   {
     id: "blackjack",

@@ -19,7 +19,7 @@ import {
   ShieldCheck,
   Users,
   type LucideIcon,
-} from "lucide-react";
+} from "../components/anim-icons";
 import TokenIcon from "../components/TokenIcon";
 import ChipShowcase from "../components/chip/ChipShowcase";
 import ChipMath from "../components/ChipMath";

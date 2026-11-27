@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { ChevronLeft, Play, Settings2 } from "lucide-react";
+import { ChevronLeft, Play, Settings2 } from "../components/anim-icons";
 import { Link } from "react-router-dom";
 import TokenIcon from "../components/TokenIcon";
 import { formatTokens } from "../lib/currency";

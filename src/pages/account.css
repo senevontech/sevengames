@@ -1,7 +1,7 @@
 /* ============================================================
-   Account pages (Profile, Tokens): shared surface + theme tokens.
-   SiteChrome sets .site[data-gtheme="light|dark"] on these routes;
-   both themes use the same soft (neumorphic) surfaces as game pages.
+   Account pages (Profile, Leaderboards, Player, Login, Chips, Clubs…): shared surface + theme
+   tokens. They all sit in the soft frame (SoftPage: .g2[data-theme]); the .site[data-gtheme]
+   rules are for account bits shown inside game pages. Same soft surfaces in both themes.
    ============================================================ */
 
 .acct {
@@ -256,5 +256,12 @@
 @media (max-width: 820px) {
   .g2[data-theme] .acct {
     padding-top: 84px;
+  }
+}
+
+/* phones: under the compact header */
+@media (max-width: 640px) {
+  .g2[data-theme] .acct {
+    padding-top: 66px;
   }
 }

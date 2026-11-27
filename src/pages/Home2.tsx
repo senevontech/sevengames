@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { House, Trophy } from "lucide-react";
+import { House, Trophy } from "../components/anim-icons";
 import { categories, games, getGame, scoreLabel, type Game, type GameCategory } from "../catalog";
 import { categoryIcon } from "../lib/categoryIcons";
 import { useBestForGame } from "../hooks/useBest";

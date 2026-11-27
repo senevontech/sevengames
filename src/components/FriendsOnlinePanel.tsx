@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare } from "./anim-icons";
 import { RiArrowRightLine } from "./ReIcons";
 
 export type Friend = {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "./anim-icons";
 import type { AuthState } from "../lib/auth";
 
 export default function AuthForm({

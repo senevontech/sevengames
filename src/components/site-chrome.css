@@ -254,48 +254,6 @@
   text-underline-offset: 3px;
 }
 
-.privacy-page {
-  max-width: 720px;
-  line-height: 1.65;
-  color: var(--text-secondary);
-}
-
-.privacy-page h1 {
-  color: var(--text);
-  margin: 6px 0 4px;
-}
-
-.privacy-page h2 {
-  color: var(--text);
-  font-size: 20px;
-  margin: 34px 0 10px;
-}
-
-.privacy-page p,
-.privacy-page li {
-  font-size: 15.5px;
-}
-
-.privacy-page ul {
-  padding-left: 20px;
-  display: grid;
-  gap: 8px;
-}
-
-.privacy-page strong {
-  color: var(--text);
-}
-
-.privacy-page a {
-  color: #ff8a3d;
-}
-
-.privacy-updated {
-  font-size: 13px !important;
-  opacity: 0.7;
-  margin-bottom: 22px;
-}
-
 /* Landing nav: white pill buttons (token balance, "Play now") beside the avatar */
 .h3-nav .h3-nav-end.h3-nav-pills {
   display: flex;
@@ -961,4 +919,15 @@
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+/* Game pages: the global header's wrapper only lends it the home page's styles and theme
+   (GamesNav is position: fixed), it takes no space and paints nothing itself. */
+.gs.g2.site-gnav {
+  display: contents;
+}
+
+.gs.g2.site-gnav::before,
+.gs.g2.site-gnav::after {
+  content: none;
 }

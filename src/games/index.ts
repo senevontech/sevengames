@@ -42,6 +42,7 @@ const loaders: Record<GameEngine, Loader<GameProps>> = {
   chain: () => import("./chain/index"),
   tune: () => import("./tune/index"),
   lastcard: () => import("./lastcard/index"),
+  snakeladder: () => import("./snakeladder/index"),
 };
 
 const previewLoaders: Partial<Record<GameEngine, Loader<object>>> = {

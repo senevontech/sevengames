@@ -5,7 +5,7 @@ import PlayerAvatar from "./PlayerAvatar";
 import { PlayerCardModal } from "./PlayerCard";
 import { useAuthContext } from "../context/AuthContext";
 import { respondToRequest, unfollow, unfriend, useFriendInbox, useMyCircle, type MiniPlayer } from "../lib/social";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle } from "./anim-icons";
 import FriendChat from "./chat/FriendChat";
 import { useChatUnread } from "./chat/ChatKit";
 

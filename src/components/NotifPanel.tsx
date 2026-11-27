@@ -5,7 +5,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
+import { X } from "./anim-icons";
 import {
   answerRequest,
   markAllRead,
@@ -13,6 +13,7 @@ import {
   markUnread,
   notifIcon,
   notifTarget,
+  pageTheme,
   notifText,
   refreshRequests,
   useNotifications,
@@ -43,6 +44,7 @@ export default function NotifPanel({ anchor, onClose }: { anchor: RefObject<HTML
   const navigate = useNavigate();
   const phone = usePhone();
   const [tab, setTab] = useState<"all" | "unread">("all");
+  const [theme] = useState(() => pageTheme(anchor.current));
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -124,6 +126,7 @@ export default function NotifPanel({ anchor, onClose }: { anchor: RefObject<HTML
       {phone ? <div className="np-scrim" aria-hidden="true" /> : null}
       <div
         ref={panelRef}
+        data-theme={theme}
         className={`np ${phone ? "np-sheet" : "np-drop"}`}
         role="dialog"
         aria-label="Notifications"

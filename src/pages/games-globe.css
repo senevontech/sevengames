@@ -927,6 +927,11 @@
   .gs .gs-has-burger .gs-burger {
     display: flex;
   }
+
+  /* clubs + light / dark: inside the hamburger menu on phones */
+  .gs .gs-has-burger .gs-desk-only {
+    display: none;
+  }
 }
 
 .gs .gs-burger.is-open .gs-icon-btn {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { X } from "lucide-react";
+import { X } from "./anim-icons";
 import { RiArrowRightLine, RiFlashlightLine, RiSparklesLine } from "./ReIcons";
 
 export default function PromoCards() {

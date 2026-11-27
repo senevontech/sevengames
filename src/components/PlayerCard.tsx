@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import GiftChipsButton from "./GiftChips";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { X } from "lucide-react";
+import { X } from "./anim-icons";
 import PlayerAvatar from "./PlayerAvatar";
 import { usePublicProfile, type PublicProfile } from "../lib/social";
 import { getGame, scoreLabel } from "../catalog";

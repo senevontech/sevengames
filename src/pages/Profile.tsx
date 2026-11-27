@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, Gamepad2, History, LogOut, Pencil, ShieldCheck, Trophy } from "lucide-react";
+import { ArrowRight, Gamepad2, History, LogOut, Pencil, ShieldCheck, Trophy } from "../components/anim-icons";
 import { promptAdFree } from "../lib/adFreePromo";
 import TokenIcon from "../components/TokenIcon";
 import { useAuthContext } from "../context/AuthContext";

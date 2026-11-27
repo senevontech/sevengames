@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Play } from "lucide-react";
+import { Play } from "./anim-icons";
 import type { Game } from "../catalog";
 import { scoreLabel } from "../catalog";
 import { GamePoster } from "./GamePoster";

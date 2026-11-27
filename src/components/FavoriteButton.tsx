@@ -1,4 +1,4 @@
-import { Heart } from "lucide-react";
+import { HeartToggle } from "./anim-icons/toggles";
 import { useFavorites } from "../lib/favorites";
 import "./favorite-button.css";
 
@@ -24,7 +24,7 @@ export default function FavoriteButton({ id, title, variant = "round" }: { id: s
         toggle(id);
       }}
     >
-      <Heart size={variant === "round" ? 19 : 15} strokeWidth={2} fill={on ? "currentColor" : "none"} aria-hidden="true" />
+      <HeartToggle on={on} size={variant === "round" ? 19 : 15} />
     </button>
   );
 }

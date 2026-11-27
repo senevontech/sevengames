@@ -1,7 +1,7 @@
 /* /business: Senevon Interactive, custom games and gamified marketing for organisations.
    The enquiry form saves to business_enquiries (supabase/engagement.sql); the admin panel lists them. */
 import { useEffect, useState } from "react";
-import { Building2, Check, GraduationCap, Megaphone, PartyPopper, Puzzle, Sparkles, Trophy } from "lucide-react";
+import { Building2, Check, GraduationCap, Megaphone, PartyPopper, Puzzle, Sparkles, Trophy } from "../components/anim-icons";
 import { engagementErrorText, submitEnquiry } from "../lib/engagement";
 import "./account.css";
 import "./business.css";

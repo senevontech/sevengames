@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, Play } from "./anim-icons";
 import { getGame, scoreLabel, type Game } from "../catalog";
 import { useRecent, timeAgo } from "../lib/recent";
 import { useBestForGame } from "../hooks/useBest";

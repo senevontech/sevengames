@@ -247,6 +247,16 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
     ],
     controls: ["Tap a raised card to play it · tap the deck to draw", "Online: 2–4 players, the host deals, 25 s a turn"],
   },
+  snakeladder: {
+    steps: [
+      { icon: "🎲", title: "Roll", text: "Tap the dice on your turn. Your token walks that many squares, following the numbers: left to right along the bottom row, then back the other way." },
+      { icon: "🪜", title: "Ladders", text: "Stop at the foot of a ladder and you climb straight to its top." },
+      { icon: "🐍", title: "Snakes", text: "Stop on a snake's head and you slide all the way down to its tail." },
+      { icon: "🎯", title: "Exactly 100", text: "You need the exact number to land on 100. Roll too high and you stay where you are." },
+      { icon: "🏆", title: "Win", text: "The first player to reach square 100 wins." },
+    ],
+    controls: ["Tap the dice to roll", "Online: 2–4 players, the host rolls for you after 15 s"],
+  },
   tune: {
     steps: [
       { icon: "✏️", title: "Draw", text: "Draw anything on the canvas. When you press Play, a bar sweeps from left to right and plays every line it touches." },

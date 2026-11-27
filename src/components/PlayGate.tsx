@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useOnline } from "../lib/online";
 import { Link } from "react-router-dom";
-import { LogIn, Play, Plus, RotateCcw, Tv, WifiOff } from "lucide-react";
+import { LogIn, Play, Plus, RotateCcw, Tv, WifiOff } from "./anim-icons";
 import { useAuthContext } from "../context/AuthContext";
 import { useTokens } from "../lib/tokens";
 import { formatTokens } from "../lib/currency";

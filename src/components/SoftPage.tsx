@@ -1,7 +1,6 @@
 /* The soft (neumorphic) page frame used by the home page's sibling pages (/app, /tokens):
    the home page's header, light/dark toggle and footer around the page's own content. */
 import type { CSSProperties, ReactNode } from "react";
-import { Moon, Sun } from "lucide-react";
 import { useGameTheme } from "../hooks/useGameTheme";
 import GamesNav from "./GamesNav";
 import TokenPill from "./TokenPill";
@@ -22,17 +21,8 @@ export default function SoftPage({ children, tokens = true }: { children: ReactN
       data-theme={theme}
       style={{ "--gs-bg": bg, "--gs-ink": ink } as CSSProperties}
     >
-      <GamesNav mobileMenu>
+      <GamesNav mobileMenu theme={{ dark, toggle }}>
         {tokens ? <TokenPill variant="solid" /> : null}
-        <button
-          type="button"
-          className="gs-icon-btn"
-          aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
-          title={dark ? "Light theme" : "Dark theme"}
-          onClick={toggle}
-        >
-          {dark ? <Sun size={19} strokeWidth={1.8} aria-hidden="true" /> : <Moon size={19} strokeWidth={1.8} aria-hidden="true" />}
-        </button>
       </GamesNav>
       {children}
       <SoftFooter />

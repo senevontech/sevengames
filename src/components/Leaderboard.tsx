@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Trophy } from "lucide-react";
+import { ArrowRight, Trophy } from "./anim-icons";
 import type { LeaderRow } from "../lib/scores";
 import PlayerAvatar from "./PlayerAvatar";
 

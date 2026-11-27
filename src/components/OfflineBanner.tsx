@@ -1,4 +1,4 @@
-import { WifiOff } from "lucide-react";
+import { WifiOff } from "./anim-icons";
 import { useOnline } from "../lib/online";
 import "./offline-banner.css";
 

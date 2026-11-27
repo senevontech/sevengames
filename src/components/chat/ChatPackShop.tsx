@@ -1,7 +1,7 @@
 /* Tokens page → Shop → Chat: every emoji / phrase / sticker pack with a preview and how to get it. */
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Check } from "lucide-react";
+import { Check } from "../anim-icons";
 import TokenIcon from "../TokenIcon";
 import { useShop } from "../../lib/shop";
 import { useTokens } from "../../lib/tokens";

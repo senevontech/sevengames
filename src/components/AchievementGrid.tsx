@@ -1,6 +1,6 @@
 /* Achievement badges with progress (Rewards page, your profile) or just the unlocked ones
    (another player's page). Styles: pages/rewards.css. */
-import { Check, Trophy } from "lucide-react";
+import { Check, Trophy } from "./anim-icons";
 import TokenIcon from "./TokenIcon";
 import type { Achievement } from "../lib/engagement";
 import "../pages/account.css";

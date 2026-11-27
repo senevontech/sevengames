@@ -30,6 +30,7 @@ const BusinessPage = lazy(() => import("./pages/BusinessPage"));
 const AdFreePromo = lazy(() => import("./components/AdFreePromo"));
 // small toast when a gift / friend request / new follower arrives live (the bell holds them all)
 const NotifToast = lazy(() => import("./components/NotifToast"));
+import Celebrations from "./components/Celebrations";
 
 /** /tokens → /chips, keeping ?query and #hash */
 function ToChips() {
@@ -63,6 +64,18 @@ function Landing() {
   );
 }
 
+/** Account + info pages: the soft frame (global header, light / dark, footer), no sidebar. */
+const SOFT_PAGES: [string, ReactNode][] = [
+  ["/login", <Login />],
+  ["/profile", <Profile />],
+  ["/auth/callback", <AuthCallback />],
+  ["/privacy", <Privacy />],
+  ["/about", <About />],
+  ["/connect/:id", <ConnectGame />],
+  ["/leaderboards", <Leaderboards />],
+  ["/player/:id", <PlayerPage />],
+];
+
 /** Pages outside the Shell still count page views. */
 function Tracked({ children }: { children: ReactNode }) {
   const location = useLocation();
@@ -72,7 +85,7 @@ function Tracked({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/** Every page except the home page, framed in the new UI (nav, glass sidebar, island backdrop). */
+/** Game pages: the global header over the fit-to-screen game (SiteChrome). Unknown paths → home. */
 function Shell() {
   const location = useLocation();
   useEffect(() => {
@@ -84,14 +97,6 @@ function Shell() {
       <Suspense fallback={<div className="page-loading" role="status" aria-label="Loading" />}>
       <RouterRoutes location={location}>
         <Route path="/game/:id" element={<GamePage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/connect/:id" element={<ConnectGame />} />
-        <Route path="/leaderboards" element={<Leaderboards />} />
-        <Route path="/player/:id" element={<PlayerPage />} />
         {/* The old home page is retired; old links land on the new one */}
         <Route path="/classic" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -154,6 +159,7 @@ export default function App() {
       <Suspense fallback={null}>
         <AdFreePromo />
         <NotifToast />
+        <Celebrations />
       </Suspense>
       <ShopProvider>
       <RouterRoutes>
@@ -166,6 +172,19 @@ export default function App() {
           }
         />
         <Route path="/" element={<Landing />} />
+        {SOFT_PAGES.map(([path, page]) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <Suspense fallback={<div style={{ minHeight: "100vh" }} />}>
+                <Tracked>
+                  <SoftPage>{page}</SoftPage>
+                </Tracked>
+              </Suspense>
+            }
+          />
+        ))}
         {/* soft page in the home page's frame (header, light/dark, footer) */}
         {/* the currency is now called Chips: old /tokens links (and their #buy / #plus) still land */}
         <Route path="/tokens" element={<ToChips />} />

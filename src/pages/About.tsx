@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import "./info-page.css";
 import { isNative } from "../lib/native";
 import { GET_APP_PATH } from "../lib/appLinks";
 
@@ -14,7 +15,7 @@ export default function About() {
   }, []);
 
   return (
-    <article className="page narrow privacy-page">
+    <article className="page info-page privacy-page">
       <p className="eyebrow">Senevon Game Studio</p>
       <h1>About us</h1>
 

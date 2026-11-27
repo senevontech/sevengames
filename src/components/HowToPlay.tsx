@@ -2,7 +2,7 @@
    (content: src/games/howToPlay.ts). Opens over the page, never inside the game window. */
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, ChevronRight, HelpCircle, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, HelpCircle, X } from "./anim-icons";
 import { howToFor, type HowTo } from "../games/howToPlay";
 import "./how-to-play.css";
 

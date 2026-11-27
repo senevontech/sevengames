@@ -6,6 +6,7 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { getGame } from "../catalog";
 import { useAuthContext } from "../context/AuthContext";
 import { supabase } from "../supabase";
+import "./info-page.css";
 import { isExternal } from "../lib/externalGames";
 
 export default function ConnectGame() {
@@ -31,7 +32,7 @@ export default function ConnectGame() {
 
   if (!ok) return <Navigate to="/" replace />;
   return (
-    <article className="page narrow">
+    <article className="page narrow info-page callback-page">
       <h1>{failed ? "Couldn't connect" : `Connecting to ${game.title}…`}</h1>
       <p>
         {failed

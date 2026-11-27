@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { X } from "lucide-react";
+import { X } from "../components/anim-icons";
 import { RiPlayFill, RiPlayCircleLine } from "../components/ReIcons";
 import { games, getGame, type Game, type GameCategory } from "../catalog";
 import { GameCard } from "../components/GameCard";
