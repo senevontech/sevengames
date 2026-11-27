@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { SeneviIcon } from "../senevi/Senevi";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Gift, LayoutGrid, Moon, Smartphone, Sun, Users } from "./anim-icons";
@@ -10,6 +10,9 @@ import { categoryIcon } from "../lib/categoryIcons";
 import NavAccount from "./NavAccount";
 import NotifBell from "./NotifBell";
 import { RiHomeSmile, RiSearchReicon, RiTrophyLine } from "./ReIcons";
+import SearchPanel from "./SearchPanel";
+import { useAuthContext } from "../context/AuthContext";
+import { useSiteSearch, type SearchFilter, type SearchItem } from "../lib/siteSearch";
 
 /*
  * The icon header of the home page (originally the /games globe page): logo, search, leaderboards, home, categories, account.
@@ -22,17 +25,6 @@ export const navCategories = categories
   .filter((c): c is Game["category"] => c !== "All")
   .map((c) => ({ name: c, count: games.filter((g) => g.category === c).length }))
   .filter((c) => c.count > 0);
-
-/** Title matches first (prefix before substring), then category matches; top 6. */
-function searchGames(query: string): Game[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return [];
-  const starts = games.filter((g) => g.title.toLowerCase().startsWith(q));
-  const rest = games.filter(
-    (g) => !starts.includes(g) && (g.title.toLowerCase().includes(q) || g.category.toLowerCase().includes(q)),
-  );
-  return [...starts, ...rest].slice(0, 6);
-}
 
 /** Icon-only "Categories" button with a dropdown of category pages. */
 function CategoryMenu() {
@@ -91,8 +83,9 @@ function CategoryMenu() {
   );
 }
 
+
 /**
- * Phones: one hamburger button opening a panel with search, home, leaderboards, clubs, the
+ * Phones: one hamburger button opening a panel with home, leaderboards, clubs, the
  * light / dark switch and categories.
  * Closes on outside tap, Escape, or picking anything.
  */
@@ -101,13 +94,8 @@ export type NavTheme = { dark: boolean; toggle: () => void };
 
 function MobileMenu({ onPick, theme }: { onPick: (g: Game) => void; theme?: NavTheme }) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
-  const results = useMemo(() => searchGames(query), [query]);
-  const close = () => {
-    setOpen(false);
-    setQuery("");
-  };
+  const close = () => setOpen(false);
 
   useEffect(() => {
     if (!open) return;
@@ -139,130 +127,86 @@ function MobileMenu({ onPick, theme }: { onPick: (g: Game) => void; theme?: NavT
       </button>
       {open ? (
         <div className="gs-burger-panel">
-          <div className="gs-burger-search">
-            <RiSearchReicon size={18} aria-hidden="true" />
-            <input
-              type="search"
-              placeholder="Search games…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && results[0]) {
-                  onPick(results[0]);
-                  close();
-                }
-              }}
-              aria-label="Search games"
-              autoComplete="off"
-            />
-          </div>
-
-          {query.trim() ? (
             <ul className="gs-burger-list">
-              {results.length ? (
-                results.map((g) => (
-                  <li key={g.id}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onPick(g);
-                        close();
-                      }}
-                    >
-                      <span className="gs-r-dot" style={{ background: g.accent }} />
-                      <span className="gs-cats-name">{g.title}</span>
-                      <span className="gs-r-cat">{g.category}</span>
-                    </button>
-                  </li>
-                ))
-              ) : (
-                <li className="gs-burger-empty">No games match "{query.trim()}"</li>
-              )}
+              <li>
+                <Link to="/" onClick={close}>
+                  <span className="gs-cats-icon" aria-hidden="true">
+                    <RiHomeSmile size={17} />
+                  </span>
+                  <span className="gs-cats-name">Home</span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/leaderboards" onClick={close}>
+                  <span className="gs-cats-icon" aria-hidden="true">
+                    <RiTrophyLine size={17} />
+                  </span>
+                  <span className="gs-cats-name">Leaderboards</span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/senevi" onClick={close}>
+                  <span className="gs-cats-icon" aria-hidden="true">
+                    <SeneviIcon size={18} />
+                  </span>
+                  <span className="gs-cats-name">Meet Senevi</span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/rewards" onClick={close}>
+                  <span className="gs-cats-icon" aria-hidden="true">
+                    <Gift size={16} />
+                  </span>
+                  <span className="gs-cats-name">Rewards</span>
+                </Link>
+              </li>
+              <li>
+                <Link to="/clubs" onClick={close}>
+                  <span className="gs-cats-icon" aria-hidden="true">
+                    <Users size={16} />
+                  </span>
+                  <span className="gs-cats-name">Clubs</span>
+                </Link>
+              </li>
+              {theme ? (
+                <li>
+                  {/* stays open, so the switch is seen */}
+                  <button type="button" onClick={theme.toggle}>
+                    <span className="gs-cats-icon" aria-hidden="true">
+                      {theme.dark ? <Sun size={16} /> : <Moon size={16} />}
+                    </span>
+                    <span className="gs-cats-name">{theme.dark ? "Light mode" : "Dark mode"}</span>
+                  </button>
+                </li>
+              ) : null}
+              {!isNative ? (
+                <li>
+                  <Link to={GET_APP_PATH} onClick={close}>
+                    <span className="gs-cats-icon" aria-hidden="true">
+                      <Smartphone size={16} />
+                    </span>
+                    <span className="gs-cats-name">Get the app</span>
+                  </Link>
+                </li>
+              ) : null}
             </ul>
-          ) : (
-            <>
-              <ul className="gs-burger-list">
-                <li>
-                  <Link to="/" onClick={close}>
-                    <span className="gs-cats-icon" aria-hidden="true">
-                      <RiHomeSmile size={17} />
-                    </span>
-                    <span className="gs-cats-name">Home</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/leaderboards" onClick={close}>
-                    <span className="gs-cats-icon" aria-hidden="true">
-                      <RiTrophyLine size={17} />
-                    </span>
-                    <span className="gs-cats-name">Leaderboards</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/senevi" onClick={close}>
-                    <span className="gs-cats-icon" aria-hidden="true">
-                      <SeneviIcon size={18} />
-                    </span>
-                    <span className="gs-cats-name">Meet Senevi</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/rewards" onClick={close}>
-                    <span className="gs-cats-icon" aria-hidden="true">
-                      <Gift size={16} />
-                    </span>
-                    <span className="gs-cats-name">Rewards</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/clubs" onClick={close}>
-                    <span className="gs-cats-icon" aria-hidden="true">
-                      <Users size={16} />
-                    </span>
-                    <span className="gs-cats-name">Clubs</span>
-                  </Link>
-                </li>
-                {theme ? (
-                  <li>
-                    {/* stays open, so the switch is seen */}
-                    <button type="button" onClick={theme.toggle}>
+            <p className="gs-burger-label">Categories</p>
+            <ul className="gs-burger-list">
+              {navCategories.map((c) => {
+                const Icon = categoryIcon[c.name];
+                return (
+                  <li key={c.name}>
+                    <Link to={`/category/${c.name.toLowerCase()}`} onClick={close}>
                       <span className="gs-cats-icon" aria-hidden="true">
-                        {theme.dark ? <Sun size={16} /> : <Moon size={16} />}
+                        <Icon size={16} />
                       </span>
-                      <span className="gs-cats-name">{theme.dark ? "Light mode" : "Dark mode"}</span>
-                    </button>
-                  </li>
-                ) : null}
-                {!isNative ? (
-                  <li>
-                    <Link to={GET_APP_PATH} onClick={close}>
-                      <span className="gs-cats-icon" aria-hidden="true">
-                        <Smartphone size={16} />
-                      </span>
-                      <span className="gs-cats-name">Get the app</span>
+                      <span className="gs-cats-name">{c.name}</span>
+                      <span className="gs-cats-count">{c.count}</span>
                     </Link>
                   </li>
-                ) : null}
-              </ul>
-              <p className="gs-burger-label">Categories</p>
-              <ul className="gs-burger-list">
-                {navCategories.map((c) => {
-                  const Icon = categoryIcon[c.name];
-                  return (
-                    <li key={c.name}>
-                      <Link to={`/category/${c.name.toLowerCase()}`} onClick={close}>
-                        <span className="gs-cats-icon" aria-hidden="true">
-                          <Icon size={16} />
-                        </span>
-                        <span className="gs-cats-name">{c.name}</span>
-                        <span className="gs-cats-count">{c.count}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          )}
+                );
+              })}
+            </ul>
         </div>
       ) : null}
     </div>
@@ -292,8 +236,10 @@ export default function GamesNav({
   const [query, setQuery] = useState("");
   const [hi, setHi] = useState(0);
   const searchRef = useRef<HTMLInputElement>(null);
-  const results = useMemo(() => searchGames(query), [query]);
-  useEffect(() => setHi(0), [query]);
+  const [filter, setFilter] = useState<SearchFilter>("all");
+  const { user } = useAuthContext();
+  const { items: results, loading: searching, tooShort } = useSiteSearch(query, filter, user?.id ?? null);
+  useEffect(() => setHi(0), [query, filter]);
   useEffect(() => {
     if (searchOpen) searchRef.current?.focus();
   }, [searchOpen]);
@@ -305,6 +251,11 @@ export default function GamesNav({
   const pickGame = (g: Game) => {
     if (onPick) onPick(g);
     else navigate(`/game/${g.id}`);
+    closeSearch();
+  };
+  const pickItem = (item: SearchItem) => {
+    if (item.kind === "game") return pickGame(item.game);
+    navigate(item.to);
     closeSearch();
   };
   const onSearchKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -319,7 +270,7 @@ export default function GamesNav({
       setHi((h) => Math.max(h - 1, 0));
     } else if (e.key === "Enter" && results[hi]) {
       e.preventDefault();
-      pickGame(results[hi]);
+      pickItem(results[hi]);
     }
   };
 
@@ -332,7 +283,7 @@ export default function GamesNav({
       </Link>
       <div className="h3-nav-end">
         {/* desktop icons (hidden on phones when the hamburger menu is on) */}
-        <div className="gs-desk">
+        {/* search: always in the header, phones too */}
         <div className={`gs-search${searchOpen ? " is-open" : ""}`}>
           {searchOpen ? (
             <>
@@ -340,7 +291,7 @@ export default function GamesNav({
                 ref={searchRef}
                 type="search"
                 className="gs-search-input"
-                placeholder="Search games…"
+                placeholder={filter === "players" ? "Search players…" : filter === "clubs" ? "Search clubs or #ID…" : filter === "games" ? "Search games…" : filter === "pages" ? "Search pages…" : "Search games, players, clubs…"}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={onSearchKey}
@@ -348,48 +299,39 @@ export default function GamesNav({
                 role="combobox"
                 aria-expanded={results.length > 0}
                 aria-controls="gs-search-results"
-                aria-activedescendant={results[hi] ? `gs-r-${results[hi].id}` : undefined}
-                aria-label="Search games"
+                aria-activedescendant={results[hi] ? `gs-search-results-${hi}` : undefined}
+                aria-label="Search games, players, clubs and pages"
                 autoComplete="off"
               />
-              {query.trim() ? (
-                <ul className="gs-search-results" id="gs-search-results" role="listbox">
-                  {results.length ? (
-                    results.map((g, i) => (
-                      <li
-                        key={g.id}
-                        id={`gs-r-${g.id}`}
-                        role="option"
-                        aria-selected={i === hi}
-                        className={i === hi ? "is-hi" : ""}
-                        onMouseEnter={() => setHi(i)}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          pickGame(g);
-                        }}
-                      >
-                        <span className="gs-r-dot" style={{ background: g.accent }} />
-                        <span className="gs-r-title">{g.title}</span>
-                        <span className="gs-r-cat">{g.category}</span>
-                      </li>
-                    ))
-                  ) : (
-                    <li className="gs-r-empty">No games match "{query.trim()}"</li>
-                  )}
-                </ul>
-              ) : null}
+              <SearchPanel
+                className="gs-search-results"
+                listId="gs-search-results"
+                query={query}
+                filter={filter}
+                onFilter={(f) => {
+                  setFilter(f);
+                  searchRef.current?.focus();
+                }}
+                items={results}
+                loading={searching}
+                tooShort={tooShort}
+                hi={hi}
+                onHi={setHi}
+                onPick={pickItem}
+              />
             </>
           ) : null}
           <button
             type="button"
             className="gs-icon-btn"
-            aria-label={searchOpen ? "Close search" : "Search games"}
+            aria-label={searchOpen ? "Close search" : "Search"}
             data-tip={searchOpen ? "Close search" : "Search"}
             onClick={() => (searchOpen ? closeSearch() : setSearchOpen(true))}
           >
             <RiSearchReicon size={21} aria-hidden="true" />
           </button>
         </div>
+        <div className="gs-desk">
         {/* NavLink: the current page's button gets .active (orange tint, pressed in) */}
         <NavLink className="gs-home" to="/senevi" aria-label="Meet Senevi" data-tip="Meet Senevi">
           <SeneviIcon size={22} />

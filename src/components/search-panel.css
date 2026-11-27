@@ -1,0 +1,147 @@
+/* Header search dropdown (SearchPanel.tsx). Colours follow the nav's --gs-ink / --neu-* tokens,
+   so it matches the soft panels in both themes. */
+
+/* desktop: the floating panel under the search box (position/colours from .gs-search-results) */
+.gs .gs-search-results.sx-panel {
+  width: min(380px, 88vw);
+  padding: 10px;
+}
+
+/* no overflow scrolling here: a scroll box clips the chips' soft shadows. They wrap instead. */
+.sx-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 4px 12px;
+}
+
+.sx-chip {
+  flex: none;
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--neu-bg, transparent);
+  box-shadow: var(--neu-raise-sm, inset 0 0 0 1px rgba(127, 127, 127, 0.3));
+  color: inherit;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.sx-chip.is-on {
+  color: var(--neu-accent, #f26a0c);
+  box-shadow: var(--neu-well, inset 0 0 0 1.5px currentColor);
+}
+
+.sx-chip:focus-visible {
+  outline: 2px solid var(--neu-accent, #f26a0c);
+  outline-offset: 2px;
+}
+
+.sx-list {
+  display: grid;
+  gap: 2px;
+  max-height: min(60vh, 420px);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+/* the desktop dropdown styles every li as a row: undo that for the wrappers */
+.gs .gs-search-results .sx-li,
+.sx-li {
+  display: block;
+  padding: 0;
+  cursor: default;
+}
+
+.sx-group {
+  display: block;
+  padding: 8px 10px 4px;
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--g2-muted, #777);
+}
+
+.sx-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.sx-row.is-hi {
+  box-shadow: var(--neu-well, none);
+  background: var(--sx-hi, transparent);
+}
+
+.sx-avatar {
+  flex: none;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.sx-ico {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: var(--neu-accent, #f26a0c);
+  box-shadow: var(--neu-raise-sm, inset 0 0 0 1px rgba(127, 127, 127, 0.3));
+}
+
+.sx-note,
+.sx-hint {
+  margin: 0;
+  padding: 10px;
+  font-size: 13px;
+  color: var(--g2-muted, #777);
+}
+
+/* Phones: the search button sits in the header (not the menu). Open, the box spans the header
+   from the left edge to the close button (pinned right), results drop below the header. */
+@media (max-width: 640px) {
+  .gs .h3-nav .gs-search.is-open {
+    position: static;
+  }
+
+  .gs .h3-nav .gs-search.is-open .gs-search-input {
+    position: absolute;
+    z-index: 61;
+    top: 50%;
+    left: 12px;
+    right: 58px;
+    width: auto;
+    height: 38px;
+    margin-top: -19px;
+    animation: none;
+  }
+
+  .gs .h3-nav .gs-search.is-open > .gs-icon-btn {
+    position: absolute;
+    z-index: 62;
+    top: 50%;
+    right: 12px;
+    margin-top: -17px;
+  }
+
+  .gs .h3-nav .gs-search.is-open .gs-search-results.sx-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+}

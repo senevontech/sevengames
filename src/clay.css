@@ -224,7 +224,8 @@
     .lc-btn-main,
     .pl-pill-main,
     .tn-btn-main,
-    .is-primary
+    .is-primary,
+    .pf-wallet .ac-btn-ghost
   ) {
   box-shadow:
     inset 2px 2px 5px var(--clay-hi),
@@ -257,7 +258,8 @@
       .lc-btn-main,
       .pl-pill-main,
       .tn-btn-main,
-      .is-primary
+      .is-primary,
+      .pf-wallet .ac-btn-ghost
     ):hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow:
@@ -287,7 +289,8 @@
     .lc-btn-main,
     .pl-pill-main,
     .tn-btn-main,
-    .is-primary
+    .is-primary,
+    .pf-wallet .ac-btn-ghost
   ):active:not(:disabled) {
   transform: translateY(1px) scale(0.96);
   box-shadow:
@@ -311,6 +314,46 @@
     .htp-nav
   ):disabled {
   transform: none;
+}
+
+/* ---------- electric lime: secondary buttons on the orange chip card (Profile → wallet) ---------- */
+:root .pf-wallet .ac-btn-ghost {
+  color: #1c2600 !important;
+  background: linear-gradient(150deg, #efff9a 0%, #d4ff3a 42%, #a8e000 100%);
+  box-shadow:
+    inset 3px 3px 6px rgba(250, 255, 220, 0.7),
+    inset -4px -5px 9px rgba(90, 130, 0, 0.38),
+    0 9px 18px -7px rgba(60, 25, 0, 0.55),
+    0 2px 4px rgba(60, 25, 0, 0.2);
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  :root .pf-wallet .ac-btn-ghost:hover:not(:disabled) {
+    transform: translateY(-2px);
+    filter: brightness(1.05);
+    box-shadow:
+      inset 3px 3px 6px rgba(250, 255, 220, 0.75),
+      inset -4px -5px 9px rgba(90, 130, 0, 0.36),
+      0 14px 24px -8px rgba(60, 25, 0, 0.6),
+      0 3px 6px rgba(60, 25, 0, 0.2);
+  }
+}
+
+:root .pf-wallet .ac-btn-ghost:active:not(:disabled) {
+  transform: translateY(1px) scale(0.96);
+  filter: none;
+  box-shadow:
+    inset 4px 5px 10px rgba(80, 115, 0, 0.5),
+    inset -2px -2px 5px rgba(250, 255, 220, 0.4),
+    0 3px 8px -4px rgba(60, 25, 0, 0.45);
+  transition:
+    transform 0.08s ease-out,
+    box-shadow 0.08s ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
