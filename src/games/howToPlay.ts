@@ -142,10 +142,11 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
   dodge: {
     steps: [
       { icon: "🚀", title: "Fly and fire", text: "Drag, or use the arrow keys or A / D, to move. Your blaster fires on its own: steer to aim." },
-      { icon: "☄️", title: "Meteors and creatures", text: "Rocks, comets, jellies, stingers and the big Eye. Tougher ones take more hits. One hit on your ship ends the run." },
-      { icon: "⭐", title: "Score", text: "10 per second survived, 5 per near miss, and points for every kill. Quick kills build a combo (up to ×4)." },
+      { icon: "☄️", title: "Meteors and creatures", text: "Rocks, comets, jellies, stingers and the big Eye. Tougher ones take more hits, and they toughen as the run goes on. One hit on your ship ends the run." },
+      { icon: "🔋", title: "Upgrade your blaster", text: "Destroyed foes drop capsules; fly into them. P: more damage. W: more laser rows (up to 7). R: faster fire. ★: a special: mega laser, homing missiles, a shield that blocks one hit, or a nova blast." },
+      { icon: "⭐", title: "Score", text: "10 per second survived, 5 per near miss, 25 per capsule and points for every kill. Quick kills build a combo (up to ×4)." },
     ],
-    controls: ["Drag or arrow keys / A, D", "Blaster fires automatically", "Chain kills for a combo"],
+    controls: ["Drag or arrow keys / A, D", "Blaster fires automatically", "Fly into capsules to upgrade", "Chain kills for a combo"],
   },
   "connect-four": {
     steps: [

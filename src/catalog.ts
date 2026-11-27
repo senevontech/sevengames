@@ -417,7 +417,7 @@ export const games: Game[] = [
     difficulty: "Medium",
     minutes: 3,
     accent: "#ff375f",
-    description: "Blast and weave through meteors, comets and space creatures. Your blaster fires on its own; one hit ends the run.",
+    description: "Blast and weave through meteors, comets and space creatures. Grab power-ups to upgrade your blaster; one hit ends the run.",
   },
   {
     id: "connect-four",

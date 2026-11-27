@@ -968,6 +968,16 @@
   width: 100%;
 }
 
+/* the frozen preview (paid games, before "Start game"): the game centred over the start bar, and
+   without its own Start button, which can't be pressed here; the bar under it starts the game */
+.gp-preview > .game-surface {
+  margin-inline: auto;
+}
+
+.gp-preview[inert] > .game-surface > .primary-btn {
+  display: none;
+}
+
 .gp-preview,
 .carrom-preview {
   padding-bottom: 0 !important;
