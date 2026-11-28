@@ -16,6 +16,7 @@ export const GAME_SHOPS: Partial<Record<string, { scope: ShopScope | "carrom"; t
   ludo: { scope: "ludo", title: "Ludo shop" },
   pool: { scope: "pool", title: "Pool shop" },
   tune: { scope: "tune", title: "Music shop" },
+  spacefall: { scope: "spacefall", title: "Spacefall shop" },
   carrom: { scope: "carrom", title: "Carrom shop" },
 };
 

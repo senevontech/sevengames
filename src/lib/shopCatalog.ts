@@ -13,7 +13,9 @@ export type ShopSlot =
   | "ludo_dice"
   | "ludo_token"
   | "pool_table"
-  | "pool_cue";
+  | "pool_cue"
+  | "sf_ship"
+  | "sf_sky";
 export type BoosterItem = "arrows_hint" | "arrows_undo";
 
 export type ArrowSkin = {
@@ -337,3 +339,30 @@ export const cueStats = (c: PoolCue) => ({
   /** share of full spin the tip can reach */
   spin: [0.55, 0.65, 0.76, 0.88, 1][c.spin - 1],
 });
+
+/* ---------------- Spacefall: ship lines and skies (slots sf_ship, sf_sky) ----------------
+   Looks only: every ship line has the same stats. A ship line is six images, one per evolution
+   stage (public/games/spacefall/ships/<line>-<stage>.webp, made with Canva AI). A missing stage
+   image falls back to the nearest earlier one; a line with no images yet is "coming soon" and
+   can't be bought. Skies are NASA photos (public domain); "Journey" follows the regions.
+   Keep the ids in sync with supabase/shop.sql. */
+export type SfShipLine = { name: string; blurb: string; accent: string; key: string; stages: number; ready: boolean };
+export const SF_SHIPS: Record<string, SfShipLine> = {
+  "sfship:aegis": { name: "Aegis", blurb: "Brushed silver with blue running lights. The fleet standard.", accent: "#59b8ff", key: "aegis", stages: 5, ready: true },
+  "sfship:viper": { name: "Crimson Viper", blurb: "Gloss red and black, swept for speed.", accent: "#ff4a4a", key: "viper", stages: 0, ready: false },
+  "sfship:phantom": { name: "Jade Phantom", blurb: "Stealth gunmetal with emerald glow.", accent: "#3fe0a0", key: "phantom", stages: 0, ready: false },
+  "sfship:lancer": { name: "Solar Lancer", blurb: "White and gold, built for parades and wars.", accent: "#ffd24a", key: "lancer", stages: 0, ready: false },
+  "sfship:reaper": { name: "Void Reaper", blurb: "Black hull, violet energy, alien tech.", accent: "#b46cff", key: "reaper", stages: 0, ready: false },
+  "sfship:titan": { name: "Titan Forge", blurb: "Industrial armour in hazard orange.", accent: "#ff9a3c", key: "titan", stages: 0, ready: false },
+};
+export const sfShipOf = (id: string | null | undefined) => (SF_SHIPS[id ?? ""]?.ready ? id! : "sfship:aegis");
+
+export type SfSky = { name: string; blurb: string; key: string | null; credit: string };
+export const SF_SKIES: Record<string, SfSky> = {
+  "sfsky:journey": { name: "Journey", blurb: "Space changes as you go: six regions, a new one after every boss.", key: null, credit: "NASA, ESA, CSA, STScI, JPL-Caltech" },
+  "sfsky:legion": { name: "Legion of Galaxies", blurb: "Thousands of distant galaxies, seen by Hubble.", key: "legion", credit: "NASA, ESA / Hubble" },
+  "sfsky:crab": { name: "Crab Nebula", blurb: "The glowing wreck of a star that exploded in 1054.", key: "crab", credit: "NASA, ESA, J. Hester (ASU)" },
+  "sfsky:mystic": { name: "Mystic Mountain", blurb: "A pillar of gas and dust in the Carina Nebula.", key: "mystic", credit: "NASA, ESA, M. Livio (STScI)" },
+  "sfsky:cliffs": { name: "Cosmic Cliffs", blurb: "Webb's famous mountains of star birth in Carina.", key: "cliffs", credit: "NASA, ESA, CSA, STScI" },
+};
+export const sfSkyOf = (id: string | null | undefined) => (SF_SKIES[id ?? ""] ? id! : "sfsky:journey");

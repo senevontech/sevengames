@@ -326,13 +326,10 @@
     gap: 8px;
   }
 
-  /* back button: icon only */
+  /* back button: a little smaller */
   .site.site-game .gp .gp-top .back-link {
-    padding: 7px;
-  }
-
-  .site.site-game .gp .gp-top .back-link span {
-    display: none;
+    width: 34px;
+    height: 34px;
   }
 
   .site.site-game .gp .gp-top .poster-hero {

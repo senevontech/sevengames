@@ -14,7 +14,7 @@
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
   check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match',
-                    'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'entry', 'gift', 'club'));
+                    'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'entry', 'gift', 'club', 'leaderboard'));
 
 -- the week / day for weekly competitions (India first, per the plan)
 create or replace function public._eng_tz() returns text language sql immutable as $$ select 'Asia/Kolkata' $$;

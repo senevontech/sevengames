@@ -67,6 +67,10 @@ export default function Login() {
         <p className="lg-guest">
           Just browsing? <Link to="/">Continue as guest</Link>. You can still play every game.
         </p>
+        <p className="lg-guest lg-legal">
+          By continuing you agree to our <Link to="/terms">Terms of use</Link> and <Link to="/privacy">Privacy policy</Link>. Under 18? A parent or
+          guardian must agree for you.
+        </p>
       </section>
     </div>
   );

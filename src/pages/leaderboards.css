@@ -385,3 +385,225 @@
     animation: none;
   }
 }
+
+/* ============================================================
+   Monthly prizes: prize tags, the month header, last month's winners, the claim card
+   ============================================================ */
+.lb-prize {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px 3px 5px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--ac-text);
+  background: color-mix(in srgb, var(--ac-accent) 14%, var(--ac-bg));
+  box-shadow: var(--ac-raise-sm);
+}
+
+/* a list row with a prize: one more column before the points */
+.lb-row:has(.lb-prize) {
+  grid-template-columns: 30px auto minmax(0, 1fr) auto auto;
+}
+
+.lb-month-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 0 0 18px;
+}
+
+.lb-month-ends,
+.lb-month-me {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ac-muted);
+}
+
+.lb-month-ends b,
+.lb-month-me b {
+  color: var(--ac-text);
+}
+
+.lb-month-me {
+  margin-left: auto;
+}
+
+.lb-month-prizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lb-month-prizes li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ac-muted);
+}
+
+.lb-last {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--ac-muted) 25%, transparent);
+}
+
+.lb-last h2 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.lb-last ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lb-last li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.lb-last li b {
+  max-width: 140px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lb-last-rank {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #fff;
+  background: #8a8f9c;
+}
+
+.lb-last-rank.place-1,
+.lb-claim-icon.place-1 {
+  background: linear-gradient(145deg, #ffe08a, #e0a400);
+  color: #4a3300;
+}
+
+.lb-last-rank.place-2,
+.lb-claim-icon.place-2 {
+  background: linear-gradient(145deg, #f1f3f7, #a9b0bd);
+  color: #333a46;
+}
+
+.lb-last-rank.place-3,
+.lb-claim-icon.place-3 {
+  background: linear-gradient(145deg, #f2c29b, #b8733f);
+  color: #45240c;
+}
+
+/* the claim card: one row per month waiting to be claimed */
+.lb-claim {
+  display: grid;
+  gap: 12px;
+  box-shadow: var(--ac-raise-sm), 0 0 0 2px color-mix(in srgb, var(--ac-accent) 55%, transparent);
+}
+
+.lb-claim-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.lb-claim-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  color: var(--ac-accent);
+  background: var(--ac-bg);
+  box-shadow: var(--ac-raise-sm);
+}
+
+.lb-claim-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lb-claim-text b {
+  font-size: 15px;
+}
+
+.lb-claim-text small {
+  font-size: 12.5px;
+  color: var(--ac-muted);
+}
+
+.lb-claim .ac-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.lb-claim-done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: 700;
+  color: var(--ac-accent);
+}
+
+.lb-claim-error {
+  margin: 0;
+  font-size: 13px;
+  color: #e5484d;
+}
+
+@media (max-width: 520px) {
+  .lb-month-me {
+    margin-left: 0;
+  }
+
+  /* phones: the prize sits under the name instead of in its own column */
+  .lb-row:has(.lb-prize) {
+    grid-template-columns: 30px auto minmax(0, 1fr) auto;
+    grid-template-areas: "rank av name value" "rank av prize value";
+  }
+
+  .lb-row:has(.lb-prize) > .lb-rank { grid-area: rank; }
+  .lb-row:has(.lb-prize) > :nth-child(2) { grid-area: av; }
+  .lb-row:has(.lb-prize) > .lb-name { grid-area: name; }
+  .lb-row:has(.lb-prize) > .lb-prize { grid-area: prize; justify-self: start; }
+  .lb-row:has(.lb-prize) > .lb-value { grid-area: value; }
+
+  .lb-claim-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .lb-claim-row .ac-btn {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+}

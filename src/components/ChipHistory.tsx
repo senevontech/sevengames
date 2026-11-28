@@ -6,6 +6,7 @@ import { CalendarClock, Check, ChevronDown, Coins, Crown, Gamepad2, Gift, HandCo
 import { useTokens, type LedgerRow } from "../lib/tokens";
 import { formatTokens } from "../lib/currency";
 import { getGame } from "../catalog";
+import { monthName } from "../lib/monthly";
 import "./chip-history.css";
 
 const REASON: Record<string, { label: string; Icon: LucideIcon }> = {
@@ -30,6 +31,7 @@ const REASON: Record<string, { label: string; Icon: LucideIcon }> = {
   entry: { label: "Chip match", Icon: Coins },
   gift: { label: "Gift", Icon: HandCoins },
   club: { label: "Club wallet", Icon: Users },
+  leaderboard: { label: "Monthly leaderboard prize", Icon: Crown },
 };
 
 /** chip packs: also used by the Chips page's pack cards and checkout */
@@ -82,6 +84,11 @@ function detailOf(r: LedgerRow) {
       return r.delta < 0 ? "Sent" : "Received";
     case "club":
       return clubRefLabel(r.ref);
+    case "leaderboard": {
+      // "2026-11 #2" → "November 2026 · #2"
+      const [ym, rank] = r.ref.split(" ");
+      return `${monthName(`${ym}-01`)}${rank ? ` · ${rank}` : ""}`;
+    }
     default:
       return null;
   }

@@ -187,12 +187,12 @@ function Row({ n, from, req, onOpen }: { n: Notif; from?: MiniPlayer; req?: Requ
         </span>
         <span className="np-text">
           <span className="np-line">{notifText(n, who)}</span>
-          {n.kind === "gift" ? (
+          {n.kind === "gift" || n.kind === "prize" ? (
             <span className="np-gift">
-              <TokenIcon size={15} /> +{formatTokens(n.amount ?? 0)} chips
+              <TokenIcon size={15} /> +{formatTokens(n.amount ?? 0)} chips{n.kind === "prize" ? " to claim" : ""}
             </span>
           ) : null}
-          {n.note ? <span className="np-note">“{n.note}”</span> : null}
+          {n.note && n.kind !== "prize" ? <span className="np-note">“{n.note}”</span> : null}
           <time className="np-time" dateTime={n.created_at}>
             {timeAgo(Date.parse(n.created_at))}
           </time>

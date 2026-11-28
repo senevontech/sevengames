@@ -189,17 +189,26 @@
 }
 
 /* ---------- dice + status ---------- */
+/* the dice in the middle (an easy reach for either thumb), the status under it, sound on the right */
 .sl-bar {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
   width: min(100%, 520px);
   margin: 4px auto 0;
   padding: 6px 10px;
 }
 .sl-info {
-  flex: 1;
   min-width: 0;
+  max-width: 100%;
+  text-align: center;
+}
+.sl-bar > .sl-icon-btn {
+  position: absolute;
+  top: 6px;
+  right: 10px;
 }
 .sl-status {
   margin: 0;

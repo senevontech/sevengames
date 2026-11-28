@@ -14,7 +14,8 @@
 alter table public.shop_items drop constraint if exists shop_items_kind_check;
 alter table public.shop_items add constraint shop_items_kind_check
   check (kind in ('arrow_skin', 'arrow_fx', 'arrow_board', 'arrow_head', 'frame', 'booster', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice',
-                  'dd_levels', 'dd_skin', 'dd_weapon', 'chat_pack'));
+                  'dd_levels', 'dd_skin', 'dd_weapon', 'chat_pack', 'ludo_token', 'pool_table', 'pool_cue', 'tune_pack', 'sf_ship', 'sf_sky'));
+-- (keep this list the same as in shop.sql)
 
 insert into public.shop_items (item_id, kind, price, sort, plus_only) values
   ('chat:emoji', 'chat_pack', 0, 0, false),

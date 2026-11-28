@@ -64,6 +64,7 @@ const byEngine: Record<string, LucideIcon> = {
   tune: Music4,
   lastcard: GalleryHorizontalEnd,
   snakeladder: Dices,
+  spacefall: Orbit,
 };
 
 const byId: Record<string, LucideIcon> = {

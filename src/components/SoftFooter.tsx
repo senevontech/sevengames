@@ -1,4 +1,4 @@
-/* Footer of the soft (neumorphic) pages: big faded wordmark, copyright, Privacy / About pills.
+/* Footer of the soft (neumorphic) pages: big faded wordmark, copyright, legal (privacy / terms / refunds) and About pills.
    Styles live in game2.css (.g2-foot), so use it inside a .g2 page. */
 import { Link } from "react-router-dom";
 
@@ -13,6 +13,12 @@ export default function SoftFooter() {
         <nav className="g2-foot-links" aria-label="Site">
           <Link className="g2-pill g2-pill-sm" to="/privacy">
             Privacy policy
+          </Link>
+          <Link className="g2-pill g2-pill-sm" to="/terms">
+            Terms of use
+          </Link>
+          <Link className="g2-pill g2-pill-sm" to="/refunds">
+            Refunds
           </Link>
           <Link className="g2-pill g2-pill-sm" to="/about">
             About us

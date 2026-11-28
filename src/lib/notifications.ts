@@ -9,7 +9,8 @@ import { useSyncExternalStore } from "react";
 import { supabase } from "../supabase";
 import { namesFor, respondToRequest, type MiniPlayer } from "./social";
 
-export type NotifKind = "gift" | "friend_request" | "follow";
+/** prize: a monthly leaderboard prize to claim (amount = chips, note = "November 2026", ref = rank) */
+export type NotifKind = "gift" | "friend_request" | "follow" | "prize";
 export type Notif = {
   id: number;
   kind: NotifKind;
@@ -163,14 +164,15 @@ export function pageTheme(from?: Element | null): "light" | "dark" {
   return (host?.getAttribute("data-theme") ?? host?.getAttribute("data-gtheme")) === "light" ? "light" : "dark";
 }
 
-/** Where tapping a notification goes (the sender's profile), or null. */
-export const notifTarget = (n: Notif) => (n.from_user ? `/player/${n.from_user}` : null);
+/** Where tapping a notification goes (a prize: the leaderboard to claim it; else the sender's profile), or null. */
+export const notifTarget = (n: Notif) => (n.kind === "prize" ? "/leaderboards?board=month" : n.from_user ? `/player/${n.from_user}` : null);
 
 /** One-line text for a notification. */
 export function notifText(n: Notif, who: string) {
+  if (n.kind === "prize") return `You finished #${n.ref ?? "?"} on the ${n.note ?? "monthly"} leaderboard! Tap to claim your prize`;
   if (n.kind === "gift") return `${who} sent you a gift`;
   if (n.kind === "friend_request") return `${who} wants to be your friend`;
   return `${who} started following you`;
 }
 
-export const notifIcon = (k: NotifKind) => (k === "gift" ? "🎁" : k === "friend_request" ? "🤝" : "👋");
+export const notifIcon = (k: NotifKind) => (k === "prize" ? "🏆" : k === "gift" ? "🎁" : k === "friend_request" ? "🤝" : "👋");

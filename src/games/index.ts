@@ -43,6 +43,7 @@ const loaders: Record<GameEngine, Loader<GameProps>> = {
   tune: () => import("./tune/index"),
   lastcard: () => import("./lastcard/index"),
   snakeladder: () => import("./snakeladder/index"),
+  spacefall: () => import("./spacefall/index"),
 };
 
 const previewLoaders: Partial<Record<GameEngine, Loader<object>>> = {

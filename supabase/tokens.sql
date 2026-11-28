@@ -59,7 +59,7 @@ create unique index if not exists token_ledger_one_signup on public.token_ledger
 -- databases created before guest carry-over existed: widen the reason check
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
-  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'entry', 'gift', 'club'));
+  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'entry', 'gift', 'club', 'leaderboard'));
 -- guest tokens can only be carried over once per account
 create unique index if not exists token_ledger_one_guest on public.token_ledger (user_id) where reason = 'guest';
 -- each subscription credit is unique (stops double credits if two requests race)

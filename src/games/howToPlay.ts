@@ -248,6 +248,17 @@ export const HOW_TO_PLAY: Record<string, HowTo> = {
     ],
     controls: ["Tap a raised card to play it · tap the deck to draw", "Online: 2–4 players, the host deals, 25 s a turn"],
   },
+  spacefall: {
+    steps: [
+      { icon: "🚀", title: "Fly", text: "Move anywhere with WASD or the arrow keys, or drag anywhere on the screen (your finger never covers the ship). Your guns fire on their own." },
+      { icon: "🎯", title: "Special weapons", text: "Q fires a salvo of homing missiles, E drops a bomb that wipes out enemy fire, Space is your special: an energy blast, later a laser beam. On a phone, use the round buttons." },
+      { icon: "🧬", title: "Evolve", text: "Destroying things and travelling gives XP. Every level makes your ship stronger, and every few levels it evolves: Scout, Fighter, Interceptor, Heavy Assault, Elite Warship, Ultimate Destroyer." },
+      { icon: "💎", title: "Pick-ups", text: "Wrecks drop crystals and capsules: weapon upgrades, missiles, shields, repairs, rapid fire, double damage, bombs, combat drones and rare invincibility. Ring colour shows rarity." },
+      { icon: "👾", title: "Bosses", text: "Every 5 levels a boss arrives. Shoot its glowing core for double damage, knock out turrets to silence them, and watch for red warning bands before lasers fire." },
+      { icon: "🛡️", title: "Survive", text: "Your shield takes hits first and recharges if you avoid damage for a moment. When the hull runs out, the run is over. Space gets more dangerous the further you go." },
+    ],
+    controls: ["WASD / arrows or drag to fly · Q missiles · E bomb · Space special", "P or Esc pauses · M mutes"],
+  },
   snakeladder: {
     steps: [
       { icon: "🎲", title: "Roll", text: "Tap the dice on your turn. Your token walks that many squares, following the numbers: left to right along the bottom row, then back the other way." },

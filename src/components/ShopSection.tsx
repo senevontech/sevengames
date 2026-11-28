@@ -21,6 +21,8 @@ import {
   LUDO_TOKENS,
   POOL_CUES,
   POOL_TABLES,
+  SF_SHIPS,
+  SF_SKIES,
   TUNE_ITEMS,
   chessPiecesOf,
   frameClass,
@@ -31,10 +33,10 @@ import "../pages/account.css";
 import "./shop.css";
 import "../games/arrows.css";
 
-type Tab = "skins" | "fx" | "boards" | "heads" | "frames" | "boosters" | "chessBoards" | "chessPieces" | "ludoBoards" | "ludoDice" | "ludoTokens" | "poolTables" | "poolCues" | "tuneInst" | "tuneBeats" | "tuneStudio";
+type Tab = "skins" | "fx" | "boards" | "heads" | "frames" | "boosters" | "chessBoards" | "chessPieces" | "ludoBoards" | "ludoDice" | "ludoTokens" | "poolTables" | "poolCues" | "tuneInst" | "tuneBeats" | "tuneStudio" | "sfShips" | "sfSkies";
 
 /** Which shop: one per game (shown inside that game), plus avatar frames on the Tokens page. */
-export type ShopScope = "arrows" | "chess" | "ludo" | "pool" | "tune" | "frames";
+export type ShopScope = "arrows" | "chess" | "ludo" | "pool" | "tune" | "spacefall" | "frames";
 
 const SCOPES: Record<ShopScope, { title: string; sub: string; tabs: { id: Tab; label: string }[] }> = {
   arrows: {
@@ -82,6 +84,14 @@ const SCOPES: Record<ShopScope, { title: string; sub: string; tabs: { id: Tab; l
       { id: "tuneStudio", label: "Studio" },
     ],
   },
+  spacefall: {
+    title: "Spacefall shop",
+    sub: "Ship lines (every evolution stage gets the new look) and real space skies. Looks only: every ship flies the same.",
+    tabs: [
+      { id: "sfShips", label: "Ships" },
+      { id: "sfSkies", label: "Skies" },
+    ],
+  },
   frames: {
     title: "Avatar frames",
     sub: "A frame around your picture, shown in every game and on leaderboards.",
@@ -89,7 +99,7 @@ const SCOPES: Record<ShopScope, { title: string; sub: string; tabs: { id: Tab; l
   },
 };
 
-const GAME_NAMES: Record<string, string> = { chess: "Chess", ludo: "Ludo", arrows: "Arrows", carrom: "Carrom", pool: "Pool", tune: "Draw a Tune" };
+const GAME_NAMES: Record<string, string> = { chess: "Chess", ludo: "Ludo", arrows: "Arrows", carrom: "Carrom", pool: "Pool", tune: "Draw a Tune", spacefall: "Spacefall" };
 
 /* defaults when nothing is equipped in a slot */
 const SLOT_DEFAULT: Partial<Record<ShopSlot, string>> = {
@@ -101,6 +111,8 @@ const SLOT_DEFAULT: Partial<Record<ShopSlot, string>> = {
   ludo_dice: "ldice:classic",
   pool_table: "ptable:club",
   pool_cue: "pcue:house",
+  sf_ship: "sfship:aegis",
+  sf_sky: "sfsky:journey",
 };
 
 /** A corner of a chess board with a few pieces. */
@@ -743,6 +755,41 @@ export default function ShopSection({ scope, embedded = false }: { scope: ShopSc
                       {cosmetic(id, "pool_cue", c.name)}
                     </li>
                   ))
+              : null}
+            {tab === "sfShips"
+              ? Object.entries(SF_SHIPS).map(([id, t]) => (
+                  <li key={id} className="ac-card shop-card">
+                    <div className="shop-preview shop-sf" style={{ "--sf-accent": t.accent } as React.CSSProperties}>
+                      {t.ready ? (
+                        <>
+                          <img src={`/games/spacefall/ships/${t.key}-1.webp`} alt="" loading="lazy" />
+                          <img src={`/games/spacefall/ships/${t.key}-${t.stages}.webp`} alt="" loading="lazy" className="shop-sf-big" />
+                        </>
+                      ) : (
+                        <span className="shop-sf-soon">Coming soon</span>
+                      )}
+                    </div>
+                    <h3>{t.name}</h3>
+                    <p>{t.blurb}</p>
+                    {t.ready ? cosmetic(id, "sf_ship", t.name) : <div className="shop-foot"><span className="shop-status">Being built</span></div>}
+                  </li>
+                ))
+              : null}
+            {tab === "sfSkies"
+              ? Object.entries(SF_SKIES).map(([id, t]) => (
+                  <li key={id} className="ac-card shop-card">
+                    <div className="shop-preview shop-sf shop-sf-sky">
+                      <img src={`/games/spacefall/skies/${t.key ?? "deep"}-thumb.webp`} alt="" loading="lazy" />
+                      {t.key ? null : <img src="/games/spacefall/skies/crimson-thumb.webp" alt="" loading="lazy" />}
+                      {t.key ? null : <img src="/games/spacefall/skies/alien-thumb.webp" alt="" loading="lazy" />}
+                    </div>
+                    <h3>{t.name}</h3>
+                    <p>
+                      {t.blurb} <small className="shop-credit">Photo: {t.credit}</small>
+                    </p>
+                    {cosmetic(id, "sf_sky", `${t.name} sky`)}
+                  </li>
+                ))
               : null}
             {tab === "tuneInst" ? tuneGroup("inst") : null}
             {tab === "tuneBeats" ? tuneGroup("beat") : null}

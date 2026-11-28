@@ -1,0 +1,436 @@
+/* Spacefall */
+.sf-surface {
+  max-width: 720px !important;
+  width: 100%;
+  gap: 0 !important;
+}
+
+/* the field keeps its 540 × 900 shape at any size (never stretched) */
+.sf-stage {
+  position: relative;
+  width: min(100%, calc((100dvh - 150px) * 0.6));
+  min-width: min(100%, 280px);
+  aspect-ratio: 540 / 900;
+  margin: 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #02040b;
+  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(127, 160, 255, 0.12);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: none;
+  overscroll-behavior: contain;
+  color: #eaf2ff;
+}
+.sf-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* top-right: pause and sound */
+/* a column down the right edge, under the HUD strip and the boss bar */
+.sf-top-btns {
+  position: absolute;
+  top: 10.8%;
+  right: 1.6%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 2;
+}
+.sf-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 10px;
+  color: #eaf2ff;
+  background: rgba(10, 16, 32, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(150, 190, 255, 0.25);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* bottom-right: special weapons */
+.sf-weapons {
+  position: absolute;
+  right: 2.4%;
+  bottom: 4.2%;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  z-index: 2;
+}
+.sf-wpn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.22), rgba(10, 16, 32, 0.75) 70%);
+  box-shadow: inset 0 0 0 1.5px var(--sf-c, #7fe3ff), 0 4px 14px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.sf-wpn:active {
+  transform: scale(0.93);
+}
+.sf-wpn-missile {
+  --sf-c: #ffb347;
+}
+.sf-wpn-bomb {
+  --sf-c: #ff5a4a;
+}
+.sf-wpn-special {
+  --sf-c: #c58bff;
+  width: 64px;
+  height: 64px;
+  --cd: 0;
+}
+/* ammo count */
+.sf-wpn-missile::after,
+.sf-wpn-bomb::after {
+  content: attr(data-count);
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 10px;
+  font: 800 11px/20px Inter, system-ui, sans-serif;
+  text-align: center;
+  color: #10131a;
+  background: var(--sf-c);
+}
+/* special: a cooldown sweep, a glow when ready */
+.sf-wpn-special::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(rgba(5, 8, 16, 0.72) calc(var(--cd) * 360deg), transparent 0);
+  pointer-events: none;
+}
+.sf-wpn-special::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  font: 800 9px/1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--sf-c);
+  white-space: nowrap;
+}
+.sf-wpn-special.is-ready {
+  box-shadow: inset 0 0 0 2px var(--sf-c), 0 0 18px rgba(197, 139, 255, 0.55), 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+.sf-wpn.is-empty {
+  opacity: 0.45;
+}
+.sf-key {
+  position: absolute;
+  bottom: 4px;
+  font: 700 7.5px/1 Inter, system-ui, sans-serif;
+  opacity: 0.6;
+}
+@media (hover: none) {
+  .sf-key {
+    display: none;
+  }
+}
+
+/* overlays */
+.sf-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  text-align: center;
+  background: radial-gradient(ellipse at center, rgba(4, 8, 20, 0.55), rgba(2, 4, 10, 0.88));
+}
+.sf-title {
+  margin: 0;
+  font: 900 clamp(30px, 9vw, 46px) / 1 Inter, system-ui, sans-serif;
+  letter-spacing: 6px;
+  background: linear-gradient(180deg, #ffffff 0%, #9fd8ff 55%, #4f8cff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 18px rgba(80, 160, 255, 0.45));
+}
+.sf-tag {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.sf-preview {
+  width: 160px;
+  height: 160px;
+}
+.sf-help {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12.5px;
+  line-height: 1.55;
+  opacity: 0.85;
+}
+.sf-help b {
+  color: #9fd8ff;
+}
+.sf-best,
+.sf-sub {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.7;
+}
+.sf-h3 {
+  margin: 0;
+  font: 900 22px/1.1 Inter, system-ui, sans-serif;
+  letter-spacing: 1px;
+}
+.sf-score {
+  margin: 0;
+  font: 900 40px/1 Inter, system-ui, sans-serif;
+  color: #ffe9a8;
+}
+.sf-record {
+  margin: 0;
+  font-weight: 800;
+  color: #7fe3ff;
+}
+.sf-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 18px;
+  width: min(320px, 100%);
+  margin: 6px 0;
+}
+.sf-stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(150, 190, 255, 0.15);
+  font-size: 13px;
+}
+.sf-stats dt {
+  opacity: 0.65;
+}
+.sf-stats dd {
+  margin: 0;
+  font-weight: 800;
+}
+.sf-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+.sf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 12px;
+  font: 800 14px/1 Inter, system-ui, sans-serif;
+  color: #eaf2ff;
+  text-decoration: none;
+  background: rgba(20, 30, 56, 0.85);
+  box-shadow: inset 0 0 0 1px rgba(150, 190, 255, 0.3);
+  cursor: pointer;
+}
+.sf-btn-main {
+  color: #06101f;
+  background: linear-gradient(180deg, #9fe6ff, #3fa8ff);
+  box-shadow: 0 6px 20px -6px rgba(63, 168, 255, 0.7);
+}
+.sf-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@media (max-width: 480px) {
+  .sf-stage {
+    width: 100%;
+    border-radius: 10px;
+  }
+  .sf-wpn {
+    width: 50px;
+    height: 50px;
+  }
+  .sf-wpn-special {
+    width: 58px;
+    height: 58px;
+  }
+}
+
+/* ============================================================
+   Clay controls, same recipe as the site (src/clay.css): puffy, lit top-left, shaded
+   bottom-right inside, a soft coloured glow under; hover lifts (mouse), press squishes in.
+   ============================================================ */
+.sf-btn,
+.sf-icon,
+.sf-wpn {
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+/* grey clay (secondary buttons, pause / sound) */
+.sf-btn,
+.sf-icon {
+  color: #eef3ff;
+  background: linear-gradient(150deg, #4a5060 0%, #2f343f 48%, #20242c 100%);
+  box-shadow:
+    inset 2px 2px 5px rgba(255, 255, 255, 0.16),
+    inset -3px -4px 8px rgba(0, 0, 0, 0.45),
+    0 8px 16px -6px rgba(0, 0, 0, 0.6);
+}
+.sf-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+}
+/* orange clay (Launch, Play again, Resume) */
+.sf-btn-main {
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(120, 40, 0, 0.35);
+  background: linear-gradient(150deg, #ffb273 0%, #ff8a3d 42%, #ec5f00 100%);
+  box-shadow:
+    inset 3px 3px 6px rgba(255, 238, 220, 0.6),
+    inset -4px -5px 9px rgba(170, 60, 0, 0.42),
+    0 9px 18px -6px rgba(236, 95, 0, 0.55),
+    0 2px 4px rgba(150, 50, 0, 0.18);
+}
+.sf-btn {
+  padding: 12px 22px;
+  border-radius: 16px;
+}
+@media (hover: hover) {
+  .sf-btn:hover:not(:disabled),
+  .sf-icon:hover {
+    transform: translateY(-2px);
+  }
+  .sf-btn-main:hover:not(:disabled) {
+    background: linear-gradient(150deg, #ffbd85 0%, #ff9450 42%, #f06600 100%);
+  }
+}
+.sf-btn:active:not(:disabled),
+.sf-icon:active {
+  transform: translateY(1px) scale(0.96);
+  box-shadow:
+    inset 4px 5px 10px rgba(0, 0, 0, 0.5),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.1);
+  transition:
+    transform 0.08s ease-out,
+    box-shadow 0.08s ease-out;
+}
+.sf-btn-main:active:not(:disabled) {
+  box-shadow:
+    inset 4px 5px 10px rgba(150, 50, 0, 0.55),
+    inset -2px -2px 5px rgba(255, 220, 190, 0.35),
+    0 3px 8px -4px rgba(236, 95, 0, 0.45);
+}
+.sf-btn-main:disabled {
+  filter: saturate(0.6);
+}
+/* weapon buttons: clay discs in their own colour */
+.sf-wpn {
+  background: radial-gradient(circle at 32% 28%, color-mix(in srgb, var(--sf-c) 55%, #fff) 0%, var(--sf-c) 38%, color-mix(in srgb, var(--sf-c) 45%, #000) 100%);
+  box-shadow:
+    inset 3px 3px 6px rgba(255, 255, 255, 0.45),
+    inset -4px -5px 9px rgba(0, 0, 0, 0.4),
+    0 9px 18px -6px color-mix(in srgb, var(--sf-c) 70%, transparent),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+}
+.sf-wpn svg {
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+.sf-wpn:active {
+  transform: translateY(1px) scale(0.93);
+  box-shadow:
+    inset 4px 5px 10px rgba(0, 0, 0, 0.5),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.25);
+}
+.sf-wpn-special.is-ready {
+  box-shadow:
+    inset 3px 3px 6px rgba(255, 255, 255, 0.45),
+    inset -4px -5px 9px rgba(0, 0, 0, 0.4),
+    0 0 22px rgba(197, 139, 255, 0.65),
+    0 9px 18px -6px rgba(197, 139, 255, 0.7);
+}
+.sf-wpn-missile::after,
+.sf-wpn-bomb::after {
+  color: #10131a;
+  background: linear-gradient(150deg, #ffffff, #dfe3ea);
+  box-shadow:
+    inset -1px -2px 3px rgba(0, 0, 0, 0.2),
+    0 3px 6px rgba(0, 0, 0, 0.35);
+}
+.sf-wpn.is-empty {
+  filter: saturate(0.2);
+}
+
+/* ============================================================
+   Phones: the run goes edge-to-edge (real fullscreen where allowed, a fixed layer otherwise)
+   ============================================================ */
+.sf-surface.is-full {
+  position: fixed !important;
+  inset: 0;
+  z-index: 2147483000; /* above the site's own bars */
+  max-width: none !important;
+  display: grid;
+  place-items: center;
+  background: #000;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.sf-surface.is-full .sf-stage {
+  width: min(100vw, 100dvh * 0.6);
+  height: auto;
+  border-radius: 0;
+  box-shadow: none;
+}
+/* a screen taller than 540:900: full width, the field centred with black above and below */
+@media (max-aspect-ratio: 3/5) {
+  .sf-surface.is-full .sf-stage {
+    width: 100vw;
+  }
+}
+
+/* while a run is full screen: no page scroll behind it */
+html.sf-full-on,
+html.sf-full-on body {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+/* the game page scales its games with a transform (FitBox), which would trap the fixed layer:
+   off while the run is full screen (!important beats FitBox's inline style) */
+html.sf-full-on .fitbox-inner:has(.sf-surface.is-full) {
+  transform: none !important;
+}

@@ -23,6 +23,7 @@ import TokenIcon from "../../components/TokenIcon";
 import { useGameShop } from "../gameShop";
 import PlayerAvatar from "../../components/PlayerAvatar";
 import { parseAvatar } from "../../lib/avatar";
+import { isNative, saveVideoToGallery, shareFileNative } from "../../lib/nativeFiles";
 import {
   BEATS,
   BEAT_LOCK,
@@ -573,7 +574,10 @@ export default function TuneGame(_props: GameProps) {
       const name = `${(viewing?.row.title || "draw-a-tune").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.wav`;
       const file = new File([blob], name, { type: "audio/wav" });
       const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
-      if (nav.canShare?.({ files: [file] }) && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
+      if (isNative) {
+        // the app can't download a blob: Android's share sheet (Files / Drive / WhatsApp…)
+        await shareFileNative(blob, name, { title: "Draw a Tune" });
+      } else if (nav.canShare?.({ files: [file] }) && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
         try {
           await navigator.share({ files: [file], title: "Draw a Tune" });
         } catch {
@@ -744,19 +748,38 @@ export default function TuneGame(_props: GameProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [run]);
   const canShareFile = (f?: File) => {
+    if (!f) return false;
+    if (isNative) return true; // the app shares through Android's share sheet (nativeFiles.ts)
     const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
-    return !!f && !!nav.canShare?.({ files: [f] });
+    return !!nav.canShare?.({ files: [f] });
   };
   const shareVideo = async () => {
     if (!sharing?.file) return;
     try {
-      await navigator.share({ files: [sharing.file], title: "Draw a Tune", text: `${shareText}\n${shareLinkUrl}` });
-    } catch {
-      /* cancelled */
+      if (isNative) await shareFileNative(sharing.file, sharing.file.name, { title: "Draw a Tune", text: `${shareText}\n${shareLinkUrl}` });
+      else await navigator.share({ files: [sharing.file], title: "Draw a Tune", text: `${shareText}\n${shareLinkUrl}` });
+    } catch (e) {
+      if (isNative) flash("Couldn't share the video");
+      else void e; /* cancelled */
     }
   };
-  const downloadVideo = () => {
+  const [savingVideo, setSavingVideo] = useState(false);
+  const downloadVideo = async () => {
     if (!sharing?.url || !sharing.file) return;
+    if (isNative) {
+      // the app's WebView ignores <a download>: save straight to the Gallery instead
+      if (savingVideo) return;
+      setSavingVideo(true);
+      try {
+        await saveVideoToGallery(sharing.file, sharing.file.name);
+        flash("Saved to your Gallery (Senevon album)");
+      } catch {
+        flash("Couldn't save the video");
+      } finally {
+        setSavingVideo(false);
+      }
+      return;
+    }
     const a = document.createElement("a");
     a.href = sharing.url;
     a.download = sharing.file.name;
@@ -1198,8 +1221,8 @@ export default function TuneGame(_props: GameProps) {
                   </button>
                 ) : null}
                 {sharing.phase === "ready" ? (
-                  <button type="button" className={`tn-btn${canShareFile(sharing.file) ? "" : " tn-btn-main"}`} onClick={downloadVideo}>
-                    <Film size={15} /> Download video
+                  <button type="button" className={`tn-btn${canShareFile(sharing.file) ? "" : " tn-btn-main"}`} onClick={() => void downloadVideo()} disabled={savingVideo}>
+                    <Film size={15} /> {isNative ? (savingVideo ? "Saving…" : "Save to Gallery") : "Download video"}
                   </button>
                 ) : null}
                 <div className="tn-socials">

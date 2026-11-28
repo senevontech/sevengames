@@ -42,7 +42,8 @@ export type GameEngine =
   | "chain"
   | "tune"
   | "lastcard"
-  | "snakeladder";
+  | "snakeladder"
+  | "spacefall";
 
 export type Game = {
   id: string;
@@ -473,6 +474,17 @@ export const games: Game[] = [
     minutes: 15,
     accent: "#e53935",
     description: "Roll, race your four tokens home and knock rivals back to base. 2–4 players: Senevi, friends or online.",
+  },
+  {
+    id: "spacefall",
+    title: "Spacefall",
+    category: "Action",
+    kind: "builtin",
+    engine: "spacefall",
+    difficulty: "Medium",
+    minutes: 8,
+    accent: "#3fa8ff",
+    description: "An endless space shooter. Fly free, blast fighters, rocks, aliens and mines, and evolve your ship from Scout to Ultimate Destroyer. A boss every five levels.",
   },
   {
     id: "snake-ladder",

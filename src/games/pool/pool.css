@@ -751,19 +751,30 @@
   box-sizing: border-box;
 }
 
-/* Senevi's line: covers his name and balls on the one-line card */
+/* Senevi's line takes his name's place on the one-line card; his balls stay visible beside it
+   (laid over the card, it covered his balls) */
 .pool-game.is-phone .pl-senevi-line {
-  inset: 0;
-  display: flex;
-  align-items: center;
+  position: static;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0;
   overflow: hidden;
   font-size: 11.5px;
   white-space: nowrap;
   text-overflow: ellipsis;
+  background: none;
 }
 
-.pool-game.is-phone .pl-player.is-right .pl-senevi-line {
-  justify-content: flex-end;
+.pool-game.is-phone .pl-pinfo:has(.pl-senevi-line) > b {
+  display: none;
+}
+
+.pool-game.is-phone .pl-pinfo {
+  flex: 1 1 auto;
+}
+
+.pool-game.is-phone .pl-balls {
+  flex: none;
 }
 
 /* picture + its shot-clock ring, shrunk as one piece */
@@ -893,6 +904,12 @@
 .pool-game.is-phone .pl-spin-big {
   width: 112px;
   height: 112px;
+}
+
+/* phones: no status pill over the table (the cards show whose turn and which balls); only
+   "Your opponent left" still shows */
+.pool-game.is-phone .pl-status:not(.is-key) {
+  display: none;
 }
 
 .pool-game.is-phone .pl-status {

@@ -101,3 +101,74 @@
     font-size: 15px;
   }
 }
+
+/* ---------- legal pages (LegalPage.tsx) ---------- */
+.g2 .legal-page .legal-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 22px;
+}
+
+.g2 .legal-page .legal-switch > * {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 650;
+  text-decoration: none;
+  color: var(--gs-ink);
+  background: var(--neu-bg);
+  box-shadow: var(--neu-raise-sm);
+}
+
+.g2 .legal-page .legal-switch [aria-current="page"] {
+  color: var(--neu-accent);
+  box-shadow: var(--neu-well);
+}
+
+.g2 .legal-page .legal-toc {
+  margin: 24px 0 8px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  box-shadow: var(--neu-well);
+}
+
+.g2 .legal-page .legal-toc p {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gs-ink);
+}
+
+.g2 .legal-page .legal-toc ol {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.g2 .legal-page .legal-toc a {
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.g2 .legal-page .legal-sec {
+  scroll-margin-top: 96px;
+}
+
+.g2 .legal-page p {
+  margin: 0 0 12px;
+}
+
+.g2 .legal-page ul {
+  margin: 0 0 12px;
+}
+
+.g2 .legal-page .legal-todo {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(242, 106, 12, 0.18);
+  color: var(--gs-ink);
+}

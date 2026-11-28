@@ -1373,7 +1373,7 @@ export default function PoolGame(_props: GameProps) {
         {layered ? <div className={`pl-rail pl-rail-left${myTurn ? "" : " is-off"}`}>{fineEl}</div> : null}
         <TableCanvas table={tableTheme} onView={onView} fill={layered} live={myTurn} onDown={onTableDown} onMove={onTableMove} onUp={onTableUp}>
           {status ? (
-            <p className="pl-status" aria-live="polite">
+            <p className={`pl-status${oppGone ? " is-key" : ""}`} aria-live="polite">
               {status}
             </p>
           ) : null}

@@ -23,7 +23,7 @@
 -- token ledger: allow 'shop' (keep this list in sync with tokens.sql, adfree.sql and carrom.sql)
 alter table public.token_ledger drop constraint if exists token_ledger_reason_check;
 alter table public.token_ledger add constraint token_ledger_reason_check
-  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'entry', 'gift', 'club'));
+  check (reason in ('signup', 'play', 'ad', 'subscription', 'admin', 'guest', 'purchase', 'carrom', 'adfree', 'shop', 'match', 'daily', 'challenge', 'achievement', 'referral', 'weekly', 'friend', 'tournament', 'entry', 'gift', 'club', 'leaderboard'));
 
 -- 1) Catalog ---------------------------------------------------------
 create table if not exists public.shop_items (
@@ -64,7 +64,7 @@ alter table public.shop_items drop constraint if exists shop_items_kind_check;
 alter table public.shop_items add constraint shop_items_kind_check
   -- dd_*: DroidDoom (embedded game) unlocks, see droiddoom.sql
   check (kind in ('arrow_skin', 'arrow_fx', 'arrow_board', 'arrow_head', 'frame', 'booster', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice',
-                  'dd_levels', 'dd_skin', 'dd_weapon', 'chat_pack', 'ludo_token', 'pool_table', 'pool_cue', 'tune_pack'));
+                  'dd_levels', 'dd_skin', 'dd_weapon', 'chat_pack', 'ludo_token', 'pool_table', 'pool_cue', 'tune_pack', 'sf_ship', 'sf_sky'));
 
 -- Ludo token colours: 9 free, 4 in the shop (keep ids in sync with LUDO_TOKENS in src/lib/shopCatalog.ts)
 insert into public.shop_items (item_id, kind, price, sort) values
@@ -117,6 +117,22 @@ insert into public.shop_items (item_id, kind, price, sort, game, min_level) valu
   ('pcue:carbon', 'pool_cue', 1800, 3, 'pool', 5),
   ('pcue:royal', 'pool_cue', 2600, 4, 'pool', 8),
   ('pcue:legend', 'pool_cue', 4000, 5, 'pool', 12)
+on conflict (item_id) do nothing;
+
+-- Spacefall: ship lines and skies (looks only, every ship flies the same; no level lock). Keep ids
+-- in sync with SF_SHIPS / SF_SKIES in src/lib/shopCatalog.ts.
+insert into public.shop_items (item_id, kind, price, sort) values
+  ('sfship:aegis', 'sf_ship', 0, 0),
+  ('sfship:viper', 'sf_ship', 600, 1),
+  ('sfship:phantom', 'sf_ship', 1200, 2),
+  ('sfship:lancer', 'sf_ship', 1800, 3),
+  ('sfship:reaper', 'sf_ship', 2500, 4),
+  ('sfship:titan', 'sf_ship', 3500, 5),
+  ('sfsky:journey', 'sf_sky', 0, 0),
+  ('sfsky:legion', 'sf_sky', 500, 1),
+  ('sfsky:crab', 'sf_sky', 900, 2),
+  ('sfsky:mystic', 'sf_sky', 1300, 3),
+  ('sfsky:cliffs', 'sf_sky', 1800, 4)
 on conflict (item_id) do nothing;
 
 -- Draw a Tune unlocks (nothing to equip: owning one unlocks it for making songs; anyone can always
@@ -199,6 +215,8 @@ alter table public.player_cosmetics add column if not exists arrow_head text;
 alter table public.player_cosmetics add column if not exists ludo_token text;
 alter table public.player_cosmetics add column if not exists pool_table text;
 alter table public.player_cosmetics add column if not exists pool_cue text;
+alter table public.player_cosmetics add column if not exists sf_ship text;
+alter table public.player_cosmetics add column if not exists sf_sky text;
 
 -- XP per game (chess, ludo, arrows, pool). Carrom keeps its own (carrom.sql).
 create table if not exists public.game_xp (
@@ -302,7 +320,7 @@ returns jsonb language sql stable security definer set search_path = public as $
         'frame', frame, 'arrow_skin', arrow_skin, 'arrow_fx', arrow_fx,
         'chess_board', chess_board, 'chess_pieces', chess_pieces, 'ludo_board', ludo_board, 'ludo_dice', ludo_dice,
         'arrow_board', arrow_board, 'arrow_head', arrow_head, 'ludo_token', ludo_token,
-        'pool_table', pool_table, 'pool_cue', pool_cue
+        'pool_table', pool_table, 'pool_cue', pool_cue, 'sf_ship', sf_ship, 'sf_sky', sf_sky
       ) from player_cosmetics where user_id = p_user
     ), '{}'::jsonb),
     'xp', jsonb_build_object('chess', _game_xp(p_user, 'chess'), 'ludo', _game_xp(p_user, 'ludo'), 'arrows', _game_xp(p_user, 'arrows'), 'pool', _game_xp(p_user, 'pool'), 'chain', _game_xp(p_user, 'chain'), 'tune', _game_xp(p_user, 'tune'), 'lastcard', _game_xp(p_user, 'lastcard'), 'snakeladder', _game_xp(p_user, 'snakeladder')),
@@ -359,7 +377,7 @@ declare
   v_kind text;
 begin
   if v_user is null then raise exception 'not_signed_in'; end if;
-  if p_slot not in ('frame', 'arrow_skin', 'arrow_fx', 'arrow_board', 'arrow_head', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice', 'ludo_token', 'pool_table', 'pool_cue') then
+  if p_slot not in ('frame', 'arrow_skin', 'arrow_fx', 'arrow_board', 'arrow_head', 'chess_board', 'chess_pieces', 'ludo_board', 'ludo_dice', 'ludo_token', 'pool_table', 'pool_cue', 'sf_ship', 'sf_sky') then
     raise exception 'bad_slot';
   end if;
   if p_item is not null then
@@ -381,6 +399,8 @@ begin
     ludo_token = case when p_slot = 'ludo_token' then p_item else ludo_token end,
     pool_table = case when p_slot = 'pool_table' then p_item else pool_table end,
     pool_cue = case when p_slot = 'pool_cue' then p_item else pool_cue end,
+    sf_ship = case when p_slot = 'sf_ship' then p_item else sf_ship end,
+    sf_sky = case when p_slot = 'sf_sky' then p_item else sf_sky end,
     updated_at = now()
   where user_id = v_user;
   return _shop_state(v_user);

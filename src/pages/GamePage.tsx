@@ -6,7 +6,8 @@ import { isNative, openExternal } from "../lib/native";
 import { asksForApp, openGameApp, openGameWeb } from "../lib/externalGames";
 import { openExternalGame } from "../components/ExternalGamePrompt";
 import { Link, useParams } from "react-router-dom";
-import { ChevronLeft, Crown, EllipsisVertical, ExternalLink, Info, Maximize, Minimize, Minimize2, Smartphone, Store, Trophy, X } from "lucide-react";
+import { ChevronLeft as BackIcon } from "../components/anim-icons";
+import { Crown, EllipsisVertical, ExternalLink, Info, Maximize, Minimize, Minimize2, Smartphone, Store, Trophy, X } from "lucide-react";
 import { useGameAccess } from "../lib/engagement";
 import { MatchChatButton, MatchChatHost } from "../components/chat/MatchChat";
 import { HowToPlayButton } from "../components/HowToPlay";
@@ -291,9 +292,8 @@ export default function GamePage() {
     <div className="page game-page gp" style={{ "--accent": game.accent } as React.CSSProperties}>
       {/* One slim row: back, picture, title + details (the game gets the rest of the screen) */}
       <header className="game-header gp-top">
-        <Link to="/" className="back-link" aria-label="All games">
-          <ChevronLeft size={18} />
-          <span>All games</span>
+        <Link to="/" className="back-link" aria-label="All games" title="All games">
+          <BackIcon size={18} />
         </Link>
         <GamePoster game={game} size="hero" />
         <div className="game-header-text">

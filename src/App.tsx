@@ -15,7 +15,7 @@ const GamePage = lazy(() => import("./pages/GamePage"));
 const Login = lazy(() => import("./pages/Login"));
 const Profile = lazy(() => import("./pages/Profile"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
-const Privacy = lazy(() => import("./pages/Privacy"));
+const LegalPage = lazy(() => import("./pages/LegalPage"));
 const About = lazy(() => import("./pages/About"));
 const ConnectGame = lazy(() => import("./pages/ConnectGame"));
 const Admin = lazy(() => import("./pages/admin/Admin"));
@@ -69,7 +69,9 @@ const SOFT_PAGES: [string, ReactNode][] = [
   ["/login", <Login />],
   ["/profile", <Profile />],
   ["/auth/callback", <AuthCallback />],
-  ["/privacy", <Privacy />],
+  ["/privacy", <LegalPage doc="privacy" />],
+  ["/terms", <LegalPage doc="terms" />],
+  ["/refunds", <LegalPage doc="refunds" />],
   ["/about", <About />],
   ["/connect/:id", <ConnectGame />],
   ["/leaderboards", <Leaderboards />],

@@ -3,6 +3,7 @@
 --   * gifts them chips        (chip_gifts, from entries.sql)
 --   * sends a friend request  (friend_requests, from social.sql)
 --   * starts following them   (follows, from social.sql)
+--   * wins a monthly leaderboard prize (written by monthly.sql when a month is settled)
 -- Run in: Supabase Dashboard → SQL Editor, AFTER social.sql (and entries.sql for gifts). Safe to re-run.
 --
 --   * Rows are written only by triggers (nobody inserts from the browser).
@@ -15,7 +16,7 @@
 create table if not exists public.notifications (
   id bigint generated always as identity primary key,
   user_id uuid not null references auth.users(id) on delete cascade,
-  kind text not null check (kind in ('gift', 'friend_request', 'follow')),
+  kind text not null check (kind in ('gift', 'friend_request', 'follow', 'prize')),
   from_user uuid references auth.users(id) on delete cascade,
   amount integer,
   note text,
@@ -24,6 +25,11 @@ create table if not exists public.notifications (
   created_at timestamptz not null default now()
 );
 create index if not exists notifications_user_idx on public.notifications (user_id, seen, created_at desc);
+-- tables made before 'prize' (monthly.sql: a monthly leaderboard prize; amount = chips, note = the
+-- month, ref = the rank) existed: widen their kinds
+alter table public.notifications drop constraint if exists notifications_kind_check;
+alter table public.notifications add constraint notifications_kind_check
+  check (kind in ('gift', 'friend_request', 'follow', 'prize'));
 
 alter table public.notifications enable row level security;
 drop policy if exists "Own notifications" on public.notifications;
