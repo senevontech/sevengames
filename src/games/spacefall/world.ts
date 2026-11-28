@@ -185,6 +185,8 @@ export class World {
   muzzle = 0;
   /** where the engines are (set by the renderer when the ship is a picture; 0 = drawn ship) */
   tail = 0;
+  /** engine colour of the equipped ship line (null: the stage's own) */
+  flame: string | null = null;
   // pools
   enemies: Enemy[];
   bullets: Bullet[];
@@ -354,7 +356,7 @@ export class World {
         p.max = p.life = rand(0.12, 0.26);
         p.size = nw * sc * 0.55;
         p.grow = -2;
-        p.color = S.flame;
+        p.color = this.flame ?? S.flame;
         p.drag = 0;
       }
     }

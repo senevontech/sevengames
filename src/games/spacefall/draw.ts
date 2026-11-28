@@ -5,7 +5,7 @@ import { glowSprite } from "../fx";
 import { bayArt, bossSprite, crystalSprite, droneSprite, enemySprite, eyeSprite, oreSprite, pickupSprite, regionArt, shardSprite, shipSprites, smokeSprite, turretSprite, vignette, type Sprite } from "./art";
 import { H, PICKUPS, RARITY_RING, REGIONS, SHOT_LOOK, STAGES, TIERS, W } from "./config";
 import type { World } from "./world";
-import { shipImage, skyImage } from "./images";
+import { shipFlame, shipImage, skyImage } from "./images";
 
 type C = CanvasRenderingContext2D;
 const TAU = Math.PI * 2;
@@ -545,10 +545,11 @@ function drawShip(g: C, w: World) {
   const picE = shipImage(w.stage);
   const tail = picE ? S.size * 0.56 : 0;
   w.tail = tail; // the exhaust particles start here too
+  w.flame = shipFlame();
   for (const [nx, ny, nw] of S.nozzles) {
     const x = w.px + nx * sc;
     const y = picE ? w.py + tail - 2 : w.py + ny * sc + 3;
-    glow(g, x, y + 6 + boost * 6, nw * sc * (1.6 + boost) * flick, S.flame, 0.9);
+    glow(g, x, y + 6 + boost * 6, nw * sc * (1.6 + boost) * flick, shipFlame() ?? S.flame, 0.9);
     glow(g, x, y + 2, nw * sc * 0.8, "rgba(255,255,255,1)", 0.8);
   }
   // muzzle flashes
@@ -818,7 +819,7 @@ export function drawShipPreview(g: C, stage: number, w: number, h: number, t: nu
   g.scale(sc, sc);
   g.globalCompositeOperation = "lighter";
   const tailY = shipImage(stage) ? S.size * 0.56 : 0;
-  for (const [nx, ny, nw] of S.nozzles) glow(g, nx, (tailY || ny + 9) + 2, nw * (1.8 + 0.2 * Math.sin(t * 20)), S.flame, 0.9);
+  for (const [nx, ny, nw] of S.nozzles) glow(g, nx, (tailY || ny + 9) + 2, nw * (1.8 + 0.2 * Math.sin(t * 20)), shipFlame() ?? S.flame, 0.9);
   g.globalCompositeOperation = "source-over";
   g.globalAlpha = 1;
   const pic = shipImage(stage);

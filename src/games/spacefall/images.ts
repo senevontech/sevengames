@@ -36,6 +36,9 @@ export function shipImage(stage: number, shipId = looks.ship): HTMLImageElement 
   return img(`/games/spacefall/ships/${line.key}-${n}.webp`);
 }
 
+/** the equipped line's engine colour (null: the stage's own) */
+export const shipFlame = () => SF_SHIPS[looks.ship]?.flame ?? null;
+
 /** the sky for a region: the equipped one, or the region's own on "Journey" */
 export function skyImage(region: number): HTMLImageElement | null {
   const key = SF_SKIES[looks.sky]?.key ?? REGION_SKIES[region % REGION_SKIES.length];

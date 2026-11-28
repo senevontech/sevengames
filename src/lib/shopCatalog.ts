@@ -342,18 +342,20 @@ export const cueStats = (c: PoolCue) => ({
 
 /* ---------------- Spacefall: ship lines and skies (slots sf_ship, sf_sky) ----------------
    Looks only: every ship line has the same stats. A ship line is six images, one per evolution
-   stage (public/games/spacefall/ships/<line>-<stage>.webp, made with Canva AI). A missing stage
+   stage (public/games/spacefall/ships/<line>-<stage>.webp). Aegis was made with Canva AI; the other
+   lines are repaints of it (asset-sources/spacefall/recolor.py) until they get their own. A missing stage
    image falls back to the nearest earlier one; a line with no images yet is "coming soon" and
    can't be bought. Skies are NASA photos (public domain); "Journey" follows the regions.
    Keep the ids in sync with supabase/shop.sql. */
-export type SfShipLine = { name: string; blurb: string; accent: string; key: string; stages: number; ready: boolean };
+/** `flame`: engine glow (rgba); the default line uses each stage's own colour */
+export type SfShipLine = { name: string; blurb: string; accent: string; key: string; stages: number; ready: boolean; flame?: string };
 export const SF_SHIPS: Record<string, SfShipLine> = {
   "sfship:aegis": { name: "Aegis", blurb: "Brushed silver with blue running lights. The fleet standard.", accent: "#59b8ff", key: "aegis", stages: 5, ready: true },
-  "sfship:viper": { name: "Crimson Viper", blurb: "Gloss red and black, swept for speed.", accent: "#ff4a4a", key: "viper", stages: 0, ready: false },
-  "sfship:phantom": { name: "Jade Phantom", blurb: "Stealth gunmetal with emerald glow.", accent: "#3fe0a0", key: "phantom", stages: 0, ready: false },
-  "sfship:lancer": { name: "Solar Lancer", blurb: "White and gold, built for parades and wars.", accent: "#ffd24a", key: "lancer", stages: 0, ready: false },
-  "sfship:reaper": { name: "Void Reaper", blurb: "Black hull, violet energy, alien tech.", accent: "#b46cff", key: "reaper", stages: 0, ready: false },
-  "sfship:titan": { name: "Titan Forge", blurb: "Industrial armour in hazard orange.", accent: "#ff9a3c", key: "titan", stages: 0, ready: false },
+  "sfship:viper": { name: "Crimson Viper", blurb: "Gloss red and black, swept for speed.", accent: "#ff4a4a", key: "viper", stages: 5, ready: true, flame: "rgba(255,90,60,1)" },
+  "sfship:phantom": { name: "Jade Phantom", blurb: "Stealth gunmetal with emerald glow.", accent: "#3fe0a0", key: "phantom", stages: 5, ready: true, flame: "rgba(60,255,160,1)" },
+  "sfship:lancer": { name: "Solar Lancer", blurb: "White and gold, built for parades and wars.", accent: "#ffd24a", key: "lancer", stages: 5, ready: true, flame: "rgba(255,210,90,1)" },
+  "sfship:reaper": { name: "Void Reaper", blurb: "Black hull, violet energy, alien tech.", accent: "#b46cff", key: "reaper", stages: 5, ready: true, flame: "rgba(190,90,255,1)" },
+  "sfship:titan": { name: "Titan Forge", blurb: "Industrial armour in hazard orange.", accent: "#ff9a3c", key: "titan", stages: 5, ready: true, flame: "rgba(255,200,60,1)" },
 };
 export const sfShipOf = (id: string | null | undefined) => (SF_SHIPS[id ?? ""]?.ready ? id! : "sfship:aegis");
 
